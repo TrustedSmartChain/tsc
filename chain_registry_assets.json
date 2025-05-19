@@ -1,0 +1,40 @@
+{
+  "$schema": "https://github.com/cosmos/chain-registry/blob/master/assetlist.schema.json",
+  "chain_name": "trustedsmartchain",
+  "assets": [
+    {
+      "description": "The native token of trustedsmartchain",
+      "denom_units": [
+        {
+          "denom": "utsc",
+          "exponent": 0
+        },
+        {
+          "denom": "TSC",
+          "exponent": 18
+        }
+      ],
+      "base": "utsc",
+      "name": "trustedsmartchain TSC",
+      "display": "tsc",
+      "symbol": "TSC",
+      "logo_URIs": {
+        "png": "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.png",
+        "svg": "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.svg"
+      },
+      "images": [
+        {
+          "png": "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.png",
+          "svg": "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.svg",
+          "theme": {
+            "primary_color_hex": "#FF2D00"
+          }
+        }
+      ],
+      "socials": {
+        "website": "https://example.com",
+        "twitter": "https://x.com/cosmoshub"
+      }
+    }
+  ]
+}
