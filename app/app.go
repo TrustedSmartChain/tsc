@@ -155,6 +155,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
+	chainante "github.com/TrustedSmartChain/tsc/app/ante"
 	evmosante "github.com/cosmos/evm/ante"
 	evmosevmante "github.com/cosmos/evm/ante/evm"
 	evmosencoding "github.com/cosmos/evm/encoding"
@@ -172,7 +173,6 @@ import (
 	_ "github.com/cosmos/evm/x/vm/core/tracers/native"
 	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
-	chainante "github.com/rollchains/trustedsmartchain/app/ante"
 )
 
 const (

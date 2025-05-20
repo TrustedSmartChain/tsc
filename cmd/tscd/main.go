@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/TrustedSmartChain/tsc/app"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/rollchains/trustedsmartchain/app"
 )
 
 func main() {

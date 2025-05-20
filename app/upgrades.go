@@ -5,8 +5,8 @@ import (
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
-	"github.com/rollchains/trustedsmartchain/app/upgrades"
-	"github.com/rollchains/trustedsmartchain/app/upgrades/noop"
+	"github.com/TrustedSmartChain/tsc/app/upgrades"
+	"github.com/TrustedSmartChain/tsc/app/upgrades/noop"
 )
 
 // Upgrades list of chain upgrades

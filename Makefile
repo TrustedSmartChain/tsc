@@ -10,7 +10,7 @@ SIMAPP = ./app
 
 # for dockerized protobuf tools
 DOCKER := $(shell which docker)
-HTTPS_GIT := github.com/rollchains/trustedsmartchain.git
+HTTPS_GIT := github.com/TrustedSmartChain/tsc.git
 
 export GO111MODULE = on
 

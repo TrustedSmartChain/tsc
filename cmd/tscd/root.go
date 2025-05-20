@@ -19,9 +19,9 @@ import (
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	"github.com/TrustedSmartChain/tsc/app"
+	"github.com/TrustedSmartChain/tsc/app/params"
 	evmoskeyring "github.com/cosmos/evm/crypto/keyring"
-	"github.com/rollchains/trustedsmartchain/app"
-	"github.com/rollchains/trustedsmartchain/app/params"
 )
 
 // NewRootCmd creates a new root command for chain app. It is called once in the

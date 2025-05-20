@@ -2,7 +2,7 @@ project_name: trustedsmartchain
 
 release:
   github:
-    owner: rollchains
+    owner: tsc
     name: trustedsmartchain
   name_template: '{{.Tag}}'
 

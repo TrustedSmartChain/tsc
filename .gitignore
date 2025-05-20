@@ -1,4 +1,4 @@
-# Built with https://github.com/rollchains/spawn
+# Built with https://github.com/tsc/spawn
 configs/logs.json
 dist/
 
@@ -6,3 +6,4 @@ dist/
 web/
 
 .vscode
+build/

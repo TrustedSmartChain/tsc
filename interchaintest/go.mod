@@ -1,4 +1,4 @@
-module github.com/rollchains/trustedsmartchain/interchaintest
+module github.com/TrustedSmartChain/tsc/interchaintest
 
 go 1.23.6
 
@@ -15,7 +15,7 @@ replace (
 	github.com/spf13/viper => github.com/spf13/viper v1.17.0
 
 	// If using custom internal modules, replace your app here with the parent application
-	// github.com/rollchains/trustedsmartchain => ../.
+	// github.com/TrustedSmartChain/tsc => ../.
 
 	github.com/vedhavyas/go-subkey => github.com/strangelove-ventures/go-subkey v1.0.7
 )

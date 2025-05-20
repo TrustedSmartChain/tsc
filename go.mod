@@ -1,4 +1,4 @@
-module github.com/rollchains/trustedsmartchain
+module github.com/TrustedSmartChain/tsc
 
 go 1.23.6
 

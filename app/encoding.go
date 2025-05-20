@@ -14,7 +14,7 @@ import (
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/rollchains/trustedsmartchain/app/params"
+	"github.com/TrustedSmartChain/tsc/app/params"
 )
 
 // MakeEncodingConfig creates a new EncodingConfig with all modules registered. For testing only

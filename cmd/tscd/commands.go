@@ -5,9 +5,9 @@ import (
 	"io"
 	"os"
 
+	"github.com/TrustedSmartChain/tsc/app"
 	cmtcfg "github.com/cometbft/cometbft/config"
 	dbm "github.com/cosmos/cosmos-db"
-	"github.com/rollchains/trustedsmartchain/app"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
