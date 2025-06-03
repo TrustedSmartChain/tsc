@@ -95,6 +95,9 @@ else
 	go build -mod=readonly $(BUILD_FLAGS) -o build/tscd ./cmd/tscd
 endif
 
+build-linux: 
+	GOOS=linux GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/tscd-linux ./cmd/tscd
+
 build-windows-client: go.sum
 	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/tscd.exe ./cmd/tscd
 
