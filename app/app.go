@@ -180,7 +180,7 @@ const (
 	NodeDir      = ".tsc"
 	Bech32Prefix = "tsc"
 
-	ChainID = "localchain_9000-1"
+	ChainID = "tsc_devnet-1"
 )
 
 var (
