@@ -210,7 +210,7 @@ var (
 
 	BaseDenomUnit int64 = 6
 
-	BaseDenom    = "utsc"
+	BaseDenom    = "uTSC"
 	DisplayDenom = "TSC"
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
