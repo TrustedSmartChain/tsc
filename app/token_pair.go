@@ -3,7 +3,7 @@ package app
 import erc20types "github.com/cosmos/evm/x/erc20/types"
 
 // WTokenContractMainnet is the WrappedToken contract address for mainnet
-const WTokenContractMainnet = "0xD4949664cD82660AaE99bEdc034a0deA8A0bd517"
+const WTokenContractMainnet = "0x04831A17C82f5B1E723a094F261c44EDAD123a9C"
 
 // ExampleTokenPairs creates a slice of token pairs, that contains a pair for the native denom of the example chain
 // implementation.
