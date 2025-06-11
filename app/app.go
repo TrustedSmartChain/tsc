@@ -208,7 +208,7 @@ var (
 
 	CoinType uint32 = 60
 
-	BaseDenomUnit int64 = 8
+	BaseDenomUnit int64 = 6
 
 	BaseDenom    = "uTSC"
 	DisplayDenom = "TSC"
