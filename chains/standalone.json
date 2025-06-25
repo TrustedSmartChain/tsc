@@ -2,13 +2,13 @@
     "chains": [
         {
             "name": "trustedsmartchain",
-            "chain_id": "localchain_9000-1",
+            "chain_id": "tsc_8878788-1",
             "docker_image": {
                 "repository": "trustedsmartchain",
                 "version": "local",
                 "uid-gid": ""
             },
-            "gas_prices": "0.0utsc",
+            "gas_prices": "0.000000000000000001aTSC",
             "gas_adjustment": 2,
             "genesis": {
                 "modify": [
@@ -22,11 +22,23 @@
                     },
                     {
                         "key": "app_state.gov.params.min_deposit.0.denom",
-                        "value": "utsc"
+                        "value": "aTSC"
                     },
                     {
                         "key": "app_state.gov.params.min_deposit.0.amount",
                         "value": "1"
+                    },
+                    {
+                        "key": "app_state.feemarket.params.no_base_fee",
+                        "value": false
+                    },
+                    {
+                        "key": "app_state.feemarket.params.base_fee_change_denominator",
+                        "value": 18
+                    },
+                    {
+                        "key": "app_state.feemarket.params.base_fee",
+                        "value": "0.00000001"
                     }
                 ],
                 "accounts": [
@@ -78,7 +90,7 @@
             "coin_type": 60,
             "binary": "tscd",
             "bech32_prefix": "tsc",
-            "denom": "utsc",
+            "denom": "aTSC",
             "trusting_period": "336h",
             "debugging": false,
             "block_time": "2000ms",

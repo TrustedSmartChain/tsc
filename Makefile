@@ -300,7 +300,7 @@ setup-testnet: mod-tidy is-localic-installed install local-image set-testnet-con
 # Run this before testnet keys are added
 # This chain id is used in the testnet.json as well
 set-testnet-configs:
-	tscd config set client chain-id localchain_9000-1
+	tscd config set client chain-id tsc_8878788-1
 	tscd config set client keyring-backend test
 	tscd config set client output text
 
@@ -313,7 +313,7 @@ testnet: setup-testnet
 	spawn local-ic start testnet
 
 sh-testnet: mod-tidy
-	CHAIN_ID="localchain_9000-1" BLOCK_TIME="1000ms" CLEAN=true sh scripts/test_node.sh
+	CHAIN_ID="tsc_8878788-1" BLOCK_TIME="1000ms" CLEAN=true sh scripts/test_node.sh
 
 .PHONY: setup-testnet set-testnet-configs testnet testnet-basic sh-testnet
 

@@ -6,7 +6,7 @@
       "description": "The native token of trustedsmartchain",
       "denom_units": [
         {
-          "denom": "utsc",
+          "denom": "aTSC",
           "exponent": 0
         },
         {
@@ -14,7 +14,7 @@
           "exponent": 18
         }
       ],
-      "base": "utsc",
+      "base": "aTSC",
       "name": "trustedsmartchain TSC",
       "display": "tsc",
       "symbol": "TSC",

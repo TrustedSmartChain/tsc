@@ -2,7 +2,7 @@
 # Run this script to quickly install, setup, and run the current version of the network without docker.
 #
 # Examples:
-# CHAIN_ID="localchain_9000-1" HOME_DIR="~/.trustedsmartchain" BLOCK_TIME="1000ms" CLEAN=true sh scripts/test_node.sh
+# CHAIN_ID="tsc_8878788-1" HOME_DIR="~/.trustedsmartchain" BLOCK_TIME="1000ms" CLEAN=true sh scripts/test_node.sh
 # CHAIN_ID="localchain_9000-2" HOME_DIR="~/.trustedsmartchain" CLEAN=true RPC=36657 REST=2317 PROFF=6061 P2P=36656 GRPC=8090 GRPC_WEB=8091 ROSETTA=8081 BLOCK_TIME="500ms" sh scripts/test_node.sh
 
 set -eu
@@ -10,13 +10,13 @@ set -eu
 export KEY="acc0"
 export KEY2="acc1"
 
-export CHAIN_ID=${CHAIN_ID:-"localchain_9000-1"}
+export CHAIN_ID=${CHAIN_ID:-"tsc_8878788-1"}
 export MONIKER="localvalidator"
 export KEYALGO="eth_secp256k1"
 export KEYRING=${KEYRING:-"test"}
 export HOME_DIR=$(eval echo "${HOME_DIR:-"~/.trustedsmartchain"}")
 export BINARY=${BINARY:-tscd}
-export DENOM=${DENOM:-utsc}
+export DENOM=${DENOM:-aTSC}
 
 export CLEAN=${CLEAN:-"false"}
 export RPC=${RPC:-"26657"}

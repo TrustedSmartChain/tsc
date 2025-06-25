@@ -180,7 +180,7 @@ const (
 	NodeDir      = ".tsc"
 	Bech32Prefix = "tsc"
 
-	ChainID = "tsc_9000-1"
+	ChainID = "tsc_8878788-1"
 )
 
 var (
@@ -208,9 +208,9 @@ var (
 
 	CoinType uint32 = 60
 
-	BaseDenomUnit int64 = 8
+	BaseDenomUnit int64 = 18
 
-	BaseDenom    = "uTSC"
+	BaseDenom    = "aTSC"
 	DisplayDenom = "TSC"
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address

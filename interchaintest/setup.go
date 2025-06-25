@@ -27,10 +27,10 @@ var (
 	VotingPeriod     = "15s"
 	MaxDepositPeriod = "10s"
 
-	Denom = "utsc"
+	Denom = "aTSC"
 	Name  = "trustedsmartchain"
 
-	ChainID = "localchain_9000-1"
+	ChainID = "tsc_8878788-1"
 	Binary  = "tscd"
 	Bech32  = "tsc"
 	ibcPath = "ibc-path"
@@ -73,7 +73,7 @@ var (
 		Denom:          Denom,
 
 		CoinType:       "60",
-		GasPrices:      "0" + Denom,
+		GasPrices:      "1" + Denom,
 		TrustingPeriod: "504h",
 	}
 
