@@ -450,14 +450,24 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_Params            protoreflect.MessageDescriptor
-	fd_Params_some_value protoreflect.FieldDescriptor
+	md_Params                       protoreflect.MessageDescriptor
+	fd_Params_mintingAddress        protoreflect.FieldDescriptor
+	fd_Params_receivingAddress      protoreflect.FieldDescriptor
+	fd_Params_denom                 protoreflect.FieldDescriptor
+	fd_Params_maxSupply             protoreflect.FieldDescriptor
+	fd_Params_distributionStartDate protoreflect.FieldDescriptor
+	fd_Params_monthsInHalvingPeriod protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_distro_v1_genesis_proto_init()
 	md_Params = File_distro_v1_genesis_proto.Messages().ByName("Params")
-	fd_Params_some_value = md_Params.Fields().ByName("some_value")
+	fd_Params_mintingAddress = md_Params.Fields().ByName("mintingAddress")
+	fd_Params_receivingAddress = md_Params.Fields().ByName("receivingAddress")
+	fd_Params_denom = md_Params.Fields().ByName("denom")
+	fd_Params_maxSupply = md_Params.Fields().ByName("maxSupply")
+	fd_Params_distributionStartDate = md_Params.Fields().ByName("distributionStartDate")
+	fd_Params_monthsInHalvingPeriod = md_Params.Fields().ByName("monthsInHalvingPeriod")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -525,9 +535,39 @@ func (x *fastReflection_Params) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.SomeValue != false {
-		value := protoreflect.ValueOfBool(x.SomeValue)
-		if !f(fd_Params_some_value, value) {
+	if x.MintingAddress != "" {
+		value := protoreflect.ValueOfString(x.MintingAddress)
+		if !f(fd_Params_mintingAddress, value) {
+			return
+		}
+	}
+	if x.ReceivingAddress != "" {
+		value := protoreflect.ValueOfString(x.ReceivingAddress)
+		if !f(fd_Params_receivingAddress, value) {
+			return
+		}
+	}
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_Params_denom, value) {
+			return
+		}
+	}
+	if x.MaxSupply != "" {
+		value := protoreflect.ValueOfString(x.MaxSupply)
+		if !f(fd_Params_maxSupply, value) {
+			return
+		}
+	}
+	if x.DistributionStartDate != "" {
+		value := protoreflect.ValueOfString(x.DistributionStartDate)
+		if !f(fd_Params_distributionStartDate, value) {
+			return
+		}
+	}
+	if x.MonthsInHalvingPeriod != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.MonthsInHalvingPeriod)
+		if !f(fd_Params_monthsInHalvingPeriod, value) {
 			return
 		}
 	}
@@ -546,8 +586,18 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "distro.v1.Params.some_value":
-		return x.SomeValue != false
+	case "distro.v1.Params.mintingAddress":
+		return x.MintingAddress != ""
+	case "distro.v1.Params.receivingAddress":
+		return x.ReceivingAddress != ""
+	case "distro.v1.Params.denom":
+		return x.Denom != ""
+	case "distro.v1.Params.maxSupply":
+		return x.MaxSupply != ""
+	case "distro.v1.Params.distributionStartDate":
+		return x.DistributionStartDate != ""
+	case "distro.v1.Params.monthsInHalvingPeriod":
+		return x.MonthsInHalvingPeriod != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -564,8 +614,18 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "distro.v1.Params.some_value":
-		x.SomeValue = false
+	case "distro.v1.Params.mintingAddress":
+		x.MintingAddress = ""
+	case "distro.v1.Params.receivingAddress":
+		x.ReceivingAddress = ""
+	case "distro.v1.Params.denom":
+		x.Denom = ""
+	case "distro.v1.Params.maxSupply":
+		x.MaxSupply = ""
+	case "distro.v1.Params.distributionStartDate":
+		x.DistributionStartDate = ""
+	case "distro.v1.Params.monthsInHalvingPeriod":
+		x.MonthsInHalvingPeriod = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -582,9 +642,24 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "distro.v1.Params.some_value":
-		value := x.SomeValue
-		return protoreflect.ValueOfBool(value)
+	case "distro.v1.Params.mintingAddress":
+		value := x.MintingAddress
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.Params.receivingAddress":
+		value := x.ReceivingAddress
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.Params.denom":
+		value := x.Denom
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.Params.maxSupply":
+		value := x.MaxSupply
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.Params.distributionStartDate":
+		value := x.DistributionStartDate
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.Params.monthsInHalvingPeriod":
+		value := x.MonthsInHalvingPeriod
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -605,8 +680,18 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "distro.v1.Params.some_value":
-		x.SomeValue = value.Bool()
+	case "distro.v1.Params.mintingAddress":
+		x.MintingAddress = value.Interface().(string)
+	case "distro.v1.Params.receivingAddress":
+		x.ReceivingAddress = value.Interface().(string)
+	case "distro.v1.Params.denom":
+		x.Denom = value.Interface().(string)
+	case "distro.v1.Params.maxSupply":
+		x.MaxSupply = value.Interface().(string)
+	case "distro.v1.Params.distributionStartDate":
+		x.DistributionStartDate = value.Interface().(string)
+	case "distro.v1.Params.monthsInHalvingPeriod":
+		x.MonthsInHalvingPeriod = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -627,8 +712,18 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "distro.v1.Params.some_value":
-		panic(fmt.Errorf("field some_value of message distro.v1.Params is not mutable"))
+	case "distro.v1.Params.mintingAddress":
+		panic(fmt.Errorf("field mintingAddress of message distro.v1.Params is not mutable"))
+	case "distro.v1.Params.receivingAddress":
+		panic(fmt.Errorf("field receivingAddress of message distro.v1.Params is not mutable"))
+	case "distro.v1.Params.denom":
+		panic(fmt.Errorf("field denom of message distro.v1.Params is not mutable"))
+	case "distro.v1.Params.maxSupply":
+		panic(fmt.Errorf("field maxSupply of message distro.v1.Params is not mutable"))
+	case "distro.v1.Params.distributionStartDate":
+		panic(fmt.Errorf("field distributionStartDate of message distro.v1.Params is not mutable"))
+	case "distro.v1.Params.monthsInHalvingPeriod":
+		panic(fmt.Errorf("field monthsInHalvingPeriod of message distro.v1.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -642,8 +737,18 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "distro.v1.Params.some_value":
-		return protoreflect.ValueOfBool(false)
+	case "distro.v1.Params.mintingAddress":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.Params.receivingAddress":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.Params.denom":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.Params.maxSupply":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.Params.distributionStartDate":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.Params.monthsInHalvingPeriod":
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -713,8 +818,28 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.SomeValue {
-			n += 2
+		l = len(x.MintingAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.ReceivingAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Denom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.MaxSupply)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.DistributionStartDate)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.MonthsInHalvingPeriod != 0 {
+			n += 1 + runtime.Sov(uint64(x.MonthsInHalvingPeriod))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -745,15 +870,45 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.SomeValue {
+		if x.MonthsInHalvingPeriod != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.MonthsInHalvingPeriod))
 			i--
-			if x.SomeValue {
-				dAtA[i] = 1
-			} else {
-				dAtA[i] = 0
-			}
+			dAtA[i] = 0x30
+		}
+		if len(x.DistributionStartDate) > 0 {
+			i -= len(x.DistributionStartDate)
+			copy(dAtA[i:], x.DistributionStartDate)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.DistributionStartDate)))
 			i--
-			dAtA[i] = 0x10
+			dAtA[i] = 0x2a
+		}
+		if len(x.MaxSupply) > 0 {
+			i -= len(x.MaxSupply)
+			copy(dAtA[i:], x.MaxSupply)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MaxSupply)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if len(x.ReceivingAddress) > 0 {
+			i -= len(x.ReceivingAddress)
+			copy(dAtA[i:], x.ReceivingAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ReceivingAddress)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.MintingAddress) > 0 {
+			i -= len(x.MintingAddress)
+			copy(dAtA[i:], x.MintingAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MintingAddress)))
+			i--
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -804,11 +959,11 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
-			case 2:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SomeValue", wireType)
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MintingAddress", wireType)
 				}
-				var v int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -818,12 +973,171 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					v |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				x.SomeValue = bool(v != 0)
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MintingAddress = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ReceivingAddress", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ReceivingAddress = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Denom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MaxSupply", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MaxSupply = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DistributionStartDate", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.DistributionStartDate = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 6:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MonthsInHalvingPeriod", wireType)
+				}
+				x.MonthsInHalvingPeriod = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.MonthsInHalvingPeriod |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -915,7 +1229,12 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	SomeValue bool `protobuf:"varint,2,opt,name=some_value,json=someValue,proto3" json:"some_value,omitempty"`
+	MintingAddress        string `protobuf:"bytes,1,opt,name=mintingAddress,proto3" json:"mintingAddress,omitempty"`
+	ReceivingAddress      string `protobuf:"bytes,2,opt,name=receivingAddress,proto3" json:"receivingAddress,omitempty"`
+	Denom                 string `protobuf:"bytes,3,opt,name=denom,proto3" json:"denom,omitempty"`
+	MaxSupply             string `protobuf:"bytes,4,opt,name=maxSupply,proto3" json:"maxSupply,omitempty"`
+	DistributionStartDate string `protobuf:"bytes,5,opt,name=distributionStartDate,proto3" json:"distributionStartDate,omitempty"`
+	MonthsInHalvingPeriod uint64 `protobuf:"varint,6,opt,name=monthsInHalvingPeriod,proto3" json:"monthsInHalvingPeriod,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -938,11 +1257,46 @@ func (*Params) Descriptor() ([]byte, []int) {
 	return file_distro_v1_genesis_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Params) GetSomeValue() bool {
+func (x *Params) GetMintingAddress() string {
 	if x != nil {
-		return x.SomeValue
+		return x.MintingAddress
 	}
-	return false
+	return ""
+}
+
+func (x *Params) GetReceivingAddress() string {
+	if x != nil {
+		return x.ReceivingAddress
+	}
+	return ""
+}
+
+func (x *Params) GetDenom() string {
+	if x != nil {
+		return x.Denom
+	}
+	return ""
+}
+
+func (x *Params) GetMaxSupply() string {
+	if x != nil {
+		return x.MaxSupply
+	}
+	return ""
+}
+
+func (x *Params) GetDistributionStartDate() string {
+	if x != nil {
+		return x.DistributionStartDate
+	}
+	return ""
+}
+
+func (x *Params) GetMonthsInHalvingPeriod() uint64 {
+	if x != nil {
+		return x.MonthsInHalvingPeriod
+	}
+	return 0
 }
 
 var File_distro_v1_genesis_proto protoreflect.FileDescriptor
@@ -956,22 +1310,46 @@ var file_distro_v1_genesis_proto_rawDesc = []byte{
 	0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x2f, 0x0a,
 	0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e,
 	0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x43,
-	0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x6f, 0x6d, 0x65,
-	0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x09, 0x73, 0x6f,
-	0x6d, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x1a, 0x98, 0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f,
-	0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x0d, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x70, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x42, 0x9b, 0x01, 0x0a, 0x0d, 0x63, 0x6f, 0x6d, 0x2e, 0x64, 0x69, 0x73, 0x74,
-	0x72, 0x6f, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72,
-	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
-	0x6d, 0x2f, 0x54, 0x72, 0x75, 0x73, 0x74, 0x65, 0x64, 0x53, 0x6d, 0x61, 0x72, 0x74, 0x43, 0x68,
-	0x61, 0x69, 0x6e, 0x2f, 0x74, 0x73, 0x63, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x64, 0x69, 0x73, 0x74,
-	0x72, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x76, 0x31, 0xa2, 0x02,
-	0x03, 0x44, 0x58, 0x58, 0xaa, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x56, 0x31,
-	0xca, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x15, 0x44,
-	0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0a, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x3a, 0x3a, 0x56,
-	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0xc4,
+	0x03, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x42, 0x0a, 0x0e, 0x6d, 0x69, 0x6e,
+	0x74, 0x69, 0x6e, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x1a, 0xf2, 0xde, 0x1f, 0x16, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6d, 0x69, 0x6e,
+	0x74, 0x69, 0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x52, 0x0e, 0x6d,
+	0x69, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x48, 0x0a,
+	0x10, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x1c, 0xf2, 0xde, 0x1f, 0x18, 0x79, 0x61, 0x6d,
+	0x6c, 0x3a, 0x22, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x22, 0x52, 0x10, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x26, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x10, 0xf2, 0xde, 0x1f, 0x0c, 0x79, 0x61, 0x6d, 0x6c,
+	0x3a, 0x22, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12,
+	0x33, 0x0a, 0x09, 0x6d, 0x61, 0x78, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x42, 0x15, 0xf2, 0xde, 0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6d, 0x61,
+	0x78, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x22, 0x52, 0x09, 0x6d, 0x61, 0x78, 0x53, 0x75,
+	0x70, 0x70, 0x6c, 0x79, 0x12, 0x58, 0x0a, 0x15, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75,
+	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x44, 0x61, 0x74, 0x65, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x22, 0xf2, 0xde, 0x1f, 0x1e, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x64,
+	0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x72,
+	0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x22, 0x52, 0x15, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62,
+	0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x44, 0x61, 0x74, 0x65, 0x12, 0x59,
+	0x0a, 0x15, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x49, 0x6e, 0x48, 0x61, 0x6c, 0x76, 0x69, 0x6e,
+	0x67, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x42, 0x23, 0xf2,
+	0xde, 0x1f, 0x1f, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x5f,
+	0x69, 0x6e, 0x5f, 0x68, 0x61, 0x6c, 0x76, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f,
+	0x64, 0x22, 0x52, 0x15, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x49, 0x6e, 0x48, 0x61, 0x6c, 0x76,
+	0x69, 0x6e, 0x67, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x3a, 0x1a, 0x98, 0xa0, 0x1f, 0x00, 0xe8,
+	0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x0d, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x70,
+	0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x9b, 0x01, 0x0a, 0x0d, 0x63, 0x6f, 0x6d, 0x2e, 0x64, 0x69,
+	0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73,
+	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
+	0x63, 0x6f, 0x6d, 0x2f, 0x54, 0x72, 0x75, 0x73, 0x74, 0x65, 0x64, 0x53, 0x6d, 0x61, 0x72, 0x74,
+	0x43, 0x68, 0x61, 0x69, 0x6e, 0x2f, 0x74, 0x73, 0x63, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x64, 0x69,
+	0x73, 0x74, 0x72, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x76, 0x31,
+	0xa2, 0x02, 0x03, 0x44, 0x58, 0x58, 0xaa, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e,
+	0x56, 0x31, 0xca, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0xe2, 0x02,
+	0x15, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0a, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x3a,
+	0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

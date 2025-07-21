@@ -10,36 +10,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	abci "github.com/cometbft/cometbft/abci/types"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	dbm "github.com/cosmos/cosmos-db"
-	"github.com/cosmos/gogoproto/proto"
-	"github.com/cosmos/ibc-go/modules/capability"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	ica "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts"
-	icacontroller "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller"
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
-	icacontrollertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
-	icahost "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host"
-	icahostkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper"
-	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
-	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
-	ibcfee "github.com/cosmos/ibc-go/v8/modules/apps/29-fee"
-	ibcfeekeeper "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/keeper"
-	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	transfer "github.com/cosmos/evm/x/ibc/transfer"
-	ibctransferkeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v8/modules/core"
-	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types" //nolint:staticcheck
-	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
-	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
-	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
-	"github.com/spf13/cast"
+
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	"cosmossdk.io/client/v2/autocli"
@@ -62,6 +33,14 @@ import (
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	wasmvm "github.com/CosmWasm/wasmvm"
+	chainante "github.com/TrustedSmartChain/tsc/app/ante"
+	distro "github.com/TrustedSmartChain/tsc/x/distro"
+	distrokeeper "github.com/TrustedSmartChain/tsc/x/distro/keeper"
+	distrotypes "github.com/TrustedSmartChain/tsc/x/distro/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -103,10 +82,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
+	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
@@ -123,25 +104,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	wasmvm "github.com/CosmWasm/wasmvm"
-	wasmlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm"
-	wasmlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/keeper"
-	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/types"
-	tokenfactory "github.com/strangelove-ventures/tokenfactory/x/tokenfactory"
-	tokenfactorykeeper "github.com/strangelove-ventures/tokenfactory/x/tokenfactory/keeper"
-	tokenfactorytypes "github.com/strangelove-ventures/tokenfactory/x/tokenfactory/types"
-	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward"
-	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/keeper"
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/types"
-	ratelimit "github.com/cosmos/ibc-apps/modules/rate-limiting/v8"
-	ratelimitkeeper "github.com/cosmos/ibc-apps/modules/rate-limiting/v8/keeper"
-	ratelimittypes "github.com/cosmos/ibc-apps/modules/rate-limiting/v8/types"
-	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/gov"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	chainante "github.com/TrustedSmartChain/tsc/app/ante"
 	evmosante "github.com/cosmos/evm/ante"
 	evmosevmante "github.com/cosmos/evm/ante/evm"
 	evmosencoding "github.com/cosmos/evm/encoding"
@@ -154,14 +119,50 @@ import (
 	"github.com/cosmos/evm/x/feemarket"
 	feemarketkeeper "github.com/cosmos/evm/x/feemarket/keeper"
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
+	transfer "github.com/cosmos/evm/x/ibc/transfer"
+	ibctransferkeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
 	cosmosevmvm "github.com/cosmos/evm/x/vm"
 	_ "github.com/cosmos/evm/x/vm/core/tracers/js"
 	_ "github.com/cosmos/evm/x/vm/core/tracers/native"
 	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
-	distro "github.com/TrustedSmartChain/tsc/x/distro"
-	distrokeeper "github.com/TrustedSmartChain/tsc/x/distro/keeper"
-	distrotypes "github.com/TrustedSmartChain/tsc/x/distro/types"
+	"github.com/cosmos/gogoproto/proto"
+	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward"
+	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/keeper"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/types"
+	ratelimit "github.com/cosmos/ibc-apps/modules/rate-limiting/v8"
+	ratelimitkeeper "github.com/cosmos/ibc-apps/modules/rate-limiting/v8/keeper"
+	ratelimittypes "github.com/cosmos/ibc-apps/modules/rate-limiting/v8/types"
+	"github.com/cosmos/ibc-go/modules/capability"
+	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	wasmlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm"
+	wasmlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/keeper"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/types"
+	ica "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts"
+	icacontroller "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
+	icacontrollertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
+	icahost "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host"
+	icahostkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
+	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
+	ibcfee "github.com/cosmos/ibc-go/v8/modules/apps/29-fee"
+	ibcfeekeeper "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/keeper"
+	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v8/modules/core"
+	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types" //nolint:staticcheck
+	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
+	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/spf13/cast"
+	tokenfactory "github.com/strangelove-ventures/tokenfactory/x/tokenfactory"
+	tokenfactorykeeper "github.com/strangelove-ventures/tokenfactory/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/strangelove-ventures/tokenfactory/x/tokenfactory/types"
 )
 
 const (
@@ -233,6 +234,7 @@ var maccPerms = map[string][]string{
 	evmtypes.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	feemarkettypes.ModuleName:    nil,
 	erc20types.ModuleName:        {authtypes.Minter, authtypes.Burner},
+	distrotypes.ModuleName:       {authtypes.Minter, authtypes.Burner},
 }
 
 var (
@@ -293,7 +295,7 @@ type ChainApp struct {
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
 	ScopedIBCFeeKeeper        capabilitykeeper.ScopedKeeper
-	DistroKeeper distrokeeper.Keeper
+	DistroKeeper              distrokeeper.Keeper
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -657,6 +659,8 @@ func NewChainApp(
 		runtime.NewKVStoreService(keys[distrotypes.StoreKey]),
 		logger,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		app.AccountKeeper,
+		app.BankKeeper,
 	)
 
 	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(
@@ -927,7 +931,6 @@ func NewChainApp(
 		feemarket.NewAppModule(app.FeeMarketKeeper, app.GetSubspace(feemarkettypes.ModuleName)),
 		erc20.NewAppModule(app.Erc20Keeper, app.AccountKeeper, app.GetSubspace(erc20types.ModuleName)),
 		distro.NewAppModule(appCodec, app.DistroKeeper),
-
 	)
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,

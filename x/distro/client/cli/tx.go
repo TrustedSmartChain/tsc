@@ -1,13 +1,10 @@
 package cli
 
 import (
-	"strconv"
-
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/tx"
 
 	"github.com/TrustedSmartChain/tsc/x/distro/types"
 )
@@ -35,35 +32,9 @@ func NewTxCmd() *cobra.Command {
 // contract for the module.
 func MsgUpdateParams() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "update-params [some-value]",
+		Use:   "update-params [minting-address] [receiving-address]",
 		Short: "Update the params (must be submitted from the authority)",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			senderAddress := cliCtx.GetFromAddress()
-
-			someValue, err := strconv.ParseBool(args[0])
-			if err != nil {
-				return err
-			}
-
-			msg := &types.MsgUpdateParams{
-				Authority: senderAddress.String(),
-				Params: types.Params{
-					SomeValue: someValue,
-				},
-			}
-
-			if err := msg.Validate(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
+		Args:  cobra.ExactArgs(2),
 	}
 
 	flags.AddTxFlagsToCmd(cmd)

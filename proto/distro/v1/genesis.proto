@@ -18,5 +18,10 @@ message Params {
   option (gogoproto.equal) = true;
   option (gogoproto.goproto_stringer) = false;
 
-  bool some_value = 2;
+  string mintingAddress = 1 [(gogoproto.moretags) = "yaml:\"minting_address\""];
+  string receivingAddress = 2 [(gogoproto.moretags) = "yaml:\"receiving_address\""];
+  string denom = 3 [(gogoproto.moretags) = "yaml:\"denom\""];
+  string maxSupply = 4 [(gogoproto.moretags) = "yaml:\"max_supply\""];
+  string distributionStartDate = 5 [(gogoproto.moretags) = "yaml:\"distribution_start_date\""];
+  uint64 monthsInHalvingPeriod = 6 [(gogoproto.moretags) = "yaml:\"months_in_halving_period\""];
 }

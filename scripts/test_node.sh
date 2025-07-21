@@ -9,6 +9,7 @@ set -eu
 
 export KEY="acc0"
 export KEY2="acc1"
+export KEY3="minting"
 
 export CHAIN_ID=${CHAIN_ID:-"tsc_8878788-1"}
 export MONIKER="localvalidator"
@@ -72,6 +73,8 @@ from_scratch () {
   add_key $KEY "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry"
   # tsc1r6yue0vuyj9m7xw78npspt9drq2tmtvggwt5x2
   add_key $KEY2 "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise"
+  # tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4
+  add_key $KEY3 "tilt steel wet bottom afraid return thrive wrestle camera bitter tape pretty"
 
   $BINARY init $MONIKER --chain-id $CHAIN_ID --default-denom $DENOM --home $HOME_DIR
 
@@ -115,14 +118,15 @@ from_scratch () {
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_gas_consume"]=100000'
 
 
-  BASE_GENESIS_ALLOCATIONS="100000000000000000000000000$DENOM"
+  BASE_GENESIS_ALLOCATIONS="1000000000000000000000$DENOM"
 
   # Allocate genesis accounts
   $BINARY genesis add-genesis-account $KEY $BASE_GENESIS_ALLOCATIONS --keyring-backend $KEYRING --home $HOME_DIR --append
   $BINARY genesis add-genesis-account $KEY2 $BASE_GENESIS_ALLOCATIONS --keyring-backend $KEYRING --home $HOME_DIR --append
+  $BINARY genesis add-genesis-account $KEY3 $BASE_GENESIS_ALLOCATIONS --keyring-backend $KEYRING --home $HOME_DIR --append
 
   # Sign genesis transaction
-  $BINARY genesis gentx $KEY 1000000000000000000000$DENOM --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $HOME_DIR
+  $BINARY genesis gentx $KEY 500000000000000000000$DENOM --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $HOME_DIR
 
   $BINARY genesis collect-gentxs --home $HOME_DIR
 

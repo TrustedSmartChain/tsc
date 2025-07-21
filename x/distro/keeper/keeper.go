@@ -28,6 +28,9 @@ type Keeper struct {
 	OrmDB  apiv1.StateStore
 
 	authority string
+
+	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
 }
 
 // NewKeeper creates a new Keeper instance
@@ -36,6 +39,8 @@ func NewKeeper(
 	storeService storetypes.KVStoreService,
 	logger log.Logger,
 	authority string,
+	accountKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
 ) Keeper {
 	logger = logger.With(log.ModuleKey, "x/"+types.ModuleName)
 
@@ -62,7 +67,9 @@ func NewKeeper(
 		Params: collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		OrmDB:  store,
 
-		authority: authority,
+		authority:     authority,
+		accountKeeper: accountKeeper,
+		bankKeeper:    bankKeeper,
 	}
 
 	schema, err := sb.Build()

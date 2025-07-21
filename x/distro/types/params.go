@@ -8,7 +8,12 @@ import (
 func DefaultParams() Params {
 	// TODO:
 	return Params{
-		SomeValue: true,
+		MintingAddress:        "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4",
+		ReceivingAddress:      "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4",
+		Denom:                 "aTSC",
+		MaxSupply:             "21000000000000000000000000",
+		DistributionStartDate: "2025-01-01",
+		MonthsInHalvingPeriod: 48,
 	}
 }
 

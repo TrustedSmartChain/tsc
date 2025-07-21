@@ -22,6 +22,16 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			Service: modulev1.Msg_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
+					RpcMethod: "Mint",
+					Use:       "mint [amount]",
+					Short:     "Mint tokens",
+					Long:      "Mint tokens to the minting address",
+					Example:   "mint [amount]",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "amount"},
+					},
+				},
+				{
 					RpcMethod: "UpdateParams",
 					Skip:      false, // set to true if authority gated
 				},

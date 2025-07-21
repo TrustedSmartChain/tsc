@@ -27,10 +27,3 @@ func (ms msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams
 
 	return nil, ms.k.Params.Set(ctx, msg.Params)
 }
-
-// Mint implements types.MsgServer.
-func (ms msgServer) Mint(ctx context.Context, msg *types.MsgMint) (*types.MsgMintResponse, error) {
-	// ctx := sdk.UnwrapSDKContext(goCtx)
-	panic("Mint is unimplemented")
-	return &types.MsgMintResponse{}, nil
-}
