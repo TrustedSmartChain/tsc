@@ -1,11 +1,6 @@
 name: Build Linux Binary
 
 on:
-  push:
-    branches: [ main, develop ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main, develop ]
   workflow_dispatch:
     inputs:
       version:
@@ -63,7 +58,7 @@ jobs:
 
   release:
     needs: build
-    if: github.event.inputs.create_release == 'true' || startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event.inputs.create_release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
