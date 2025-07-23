@@ -12,6 +12,10 @@ on:
         description: 'Version to build (e.g., 1.0.0)'
         required: true
         default: '1.0.0'
+      create_release:
+        description: 'Create GitHub release'
+        required: false
+        default: 'false'
 
 jobs:
   build:
@@ -53,4 +57,59 @@ jobs:
         echo "Binary size:"
         ls -lh build/tscd-linux
         echo "Binary version info:"
-        ./build/tscd-linux version 
+        ./build/tscd-linux version
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.create_release == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Download binary artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: tscd-linux-${{ github.event.inputs.version || '1.0.0' }}
+        path: build/
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.event.inputs.version || '1.0.0' }}
+        release_name: TrustedSmartChain v${{ github.event.inputs.version || '1.0.0' }}
+        body: |
+          ## TrustedSmartChain v${{ github.event.inputs.version || '1.0.0' }}
+          
+          ### Downloads
+          - **Linux (x86_64)**: `tscd-linux`
+          
+          ### Installation
+          ```bash
+          # Download and make executable
+          chmod +x tscd-linux
+          
+          # Move to your PATH
+          sudo mv tscd-linux /usr/local/bin/tscd
+          ```
+          
+          ### Version Info
+          Built with Go 1.23.6
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./build/tscd-linux
+        asset_name: tscd-linux-v${{ github.event.inputs.version || '1.0.0' }}
+        asset_content_type: application/octet-stream 
