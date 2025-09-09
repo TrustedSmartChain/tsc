@@ -7,12 +7,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-const DefaultMinitingAddress string = ""
-const DefaultReceivingAddress string = ""
-const DefaultDenom string = "stake"
-const DefaultMaxSupply string = ""
+const DefaultMinitingAddress string = "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"
+const DefaultReceivingAddress string = "tsc1grl8wuaj0yg6wvzvyxdtnnajp9em49m5fjz07v"
+const DefaultDenom string = "aTSC"
+const DefaultMaxSupply string = "21000000000000000000000000"
 const DefaultDistributionStartDate string = "2025-07-22"
-const DefaultMonthsInHalvingPeriod uint64 = 12
+const DefaultMonthsInHalvingPeriod uint64 = 48
 
 // NewParams creates a new Params instance.
 func NewParams(
