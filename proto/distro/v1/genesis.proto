@@ -14,7 +14,7 @@ message GenesisState {
 
 // Params defines the set of module parameters.
 message Params {
-  option (amino.name) = "tsc/xdistro/params";
+  option (amino.name) = "tsc/x/distro/params";
   option (gogoproto.equal) = true;
 
   string mintingAddress = 1 [(gogoproto.moretags) = "json:\"minting_address\""];
