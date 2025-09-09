@@ -7,17 +7,33 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// DefaultParams returns default module parameters.
-func DefaultParams() Params {
-	// TODO:
+const DefaultMinitingAddress string = ""
+const DefaultReceivingAddress string = ""
+const DefaultDenom string = "stake"
+const DefaultMaxSupply string = ""
+const DefaultDistributionStartDate string = "2025-07-22"
+const DefaultMonthsInHalvingPeriod uint64 = 12
+
+// NewParams creates a new Params instance.
+func NewParams(
+	minting_address string,
+	receiving_address string,
+	denom string,
+	max_supply string,
+	distribution_start_date string,
+	months_in_halving_period uint64) Params {
 	return Params{
-		MintingAddress:        "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4",
-		ReceivingAddress:      "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4",
-		Denom:                 "aTSC",
-		MaxSupply:             "21000000000000000000000000",
-		DistributionStartDate: "2025-01-01",
-		MonthsInHalvingPeriod: 48,
+		MintingAddress:        minting_address,
+		ReceivingAddress:      receiving_address,
+		Denom:                 denom,
+		MaxSupply:             max_supply,
+		DistributionStartDate: distribution_start_date,
+		MonthsInHalvingPeriod: months_in_halving_period,
 	}
+}
+
+func DefaultParams() Params {
+	return NewParams(DefaultMinitingAddress, DefaultReceivingAddress, DefaultDenom, DefaultMaxSupply, DefaultDistributionStartDate, DefaultMonthsInHalvingPeriod)
 }
 
 // Validate validates the set of params.

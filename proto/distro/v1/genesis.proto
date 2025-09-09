@@ -17,10 +17,10 @@ message Params {
   option (amino.name) = "tsc/x/distro/params";
   option (gogoproto.equal) = true;
 
-  string mintingAddress = 1 [(gogoproto.moretags) = "json:\"minting_address\""];
-  string receivingAddress = 2 [(gogoproto.moretags) = "json:\"receiving_address\""];
-  string denom = 3 [(gogoproto.moretags) = "json:\"denom\""];
-  string maxSupply = 4 [(gogoproto.moretags) = "json:\"max_supply\""];
-  string distributionStartDate = 5 [(gogoproto.moretags) = "json:\"distribution_start_date\""];
-  uint64 monthsInHalvingPeriod = 6 [(gogoproto.moretags) = "json:\"months_in_halving_period\""];
+  string minting_address = 1;
+  string receiving_address = 2;
+  string denom = 3;
+  string max_supply = 4;
+  string distribution_start_date = 5;
+  uint64 months_in_halving_period = 6;
 }
