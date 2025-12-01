@@ -38,6 +38,9 @@ import (
 	distro "github.com/TrustedSmartChain/tsc/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/x/distro/keeper"
 	distrotypes "github.com/TrustedSmartChain/tsc/x/distro/types"
+	lockup "github.com/TrustedSmartChain/tsc/x/lockup"
+	lockupkeeper "github.com/TrustedSmartChain/tsc/x/lockup/keeper"
+	lockuptypes "github.com/TrustedSmartChain/tsc/x/lockup/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -296,6 +299,7 @@ type ChainApp struct {
 	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
 	ScopedIBCFeeKeeper        capabilitykeeper.ScopedKeeper
 	DistroKeeper              distrokeeper.Keeper
+	LockupKeeper              lockupkeeper.Keeper
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -405,6 +409,7 @@ func NewChainApp(
 		feemarkettypes.StoreKey,
 		erc20types.StoreKey,
 		distrotypes.StoreKey,
+		lockuptypes.StoreKey,
 	)
 
 	tkeys := storetypes.NewTransientStoreKeys(
@@ -652,6 +657,16 @@ func NewChainApp(
 	)
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
+
+	// Create the lockup Keeper
+	app.LockupKeeper = lockupkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[lockuptypes.StoreKey]),
+		logger,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		app.AccountKeeper,
+		app.BankKeeper,
+	)
 
 	// Create the distro Keeper
 	app.DistroKeeper = distrokeeper.NewKeeper(
@@ -931,6 +946,7 @@ func NewChainApp(
 		feemarket.NewAppModule(app.FeeMarketKeeper, app.GetSubspace(feemarkettypes.ModuleName)),
 		erc20.NewAppModule(app.Erc20Keeper, app.AccountKeeper, app.GetSubspace(erc20types.ModuleName)),
 		distro.NewAppModule(appCodec, app.DistroKeeper),
+		lockup.NewAppModule(appCodec, app.LockupKeeper),
 	)
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
@@ -977,6 +993,7 @@ func NewChainApp(
 		wasmlctypes.ModuleName,
 		ratelimittypes.ModuleName,
 		distrotypes.ModuleName,
+		lockuptypes.ModuleName,
 	)
 
 	app.ModuleManager.SetOrderEndBlockers(
@@ -998,6 +1015,7 @@ func NewChainApp(
 		wasmlctypes.ModuleName,
 		ratelimittypes.ModuleName,
 		distrotypes.ModuleName,
+		lockuptypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -1046,6 +1064,7 @@ func NewChainApp(
 		wasmlctypes.ModuleName,
 		ratelimittypes.ModuleName,
 		distrotypes.ModuleName,
+		lockuptypes.ModuleName,
 	}
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)
@@ -1478,6 +1497,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(feemarkettypes.ModuleName)
 	paramsKeeper.Subspace(erc20types.ModuleName)
 	paramsKeeper.Subspace(distrotypes.ModuleName)
+	paramsKeeper.Subspace(lockuptypes.ModuleName)
 
 	return paramsKeeper
 }

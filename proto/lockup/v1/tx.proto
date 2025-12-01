@@ -1,0 +1,97 @@
+syntax = "proto3";
+package lockup.v1;
+
+import "cosmos/msg/v1/msg.proto";
+import "lockup/v1/genesis.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "lockup/v1/account.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/x/lockup/types";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a governance operation for updating the parameters.
+  //
+  // Since: cosmos-sdk 0.47
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc Lock        (MsgLock        ) returns (MsgLockResponse        );
+  rpc ExtendLocks  (MsgExtend  ) returns (MsgExtendResponse  );
+  rpc SendAndLock (MsgSendAndLock ) returns (MsgSendAndLockResponse );
+  rpc MultiSendAndLock (MsgMultiSendAndLock ) returns (MsgMultiSendAndLockResponse );
+}
+
+// MsgUpdateParams is the Msg/UpdateParams request type.
+//
+// Since: cosmos-sdk 0.47
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address of the governance account.
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // params defines the parameters to update.
+  //
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+//
+// Since: cosmos-sdk 0.47
+message MsgUpdateParamsResponse {}
+
+message MsgLock {
+  option (cosmos.msg.v1.signer) = "lockup_address";
+
+  repeated Lock lockups = 1;
+  string lockup_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+message MsgLockResponse {}
+
+message MsgExtend {
+  option (cosmos.msg.v1.signer) = "extending_address";
+
+  string extending_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  repeated Extension extensions = 2;
+}
+
+message MsgExtendResponse {}
+
+message MsgSendAndLock {
+  option (cosmos.msg.v1.signer) = "from_address";
+
+  string from_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  SendAndLock send_and_lock = 2;
+}
+
+message MsgSendAndLockResponse {}
+
+message MsgMultiSendAndLock {
+  option (cosmos.msg.v1.signer) = "from_address";
+
+  string from_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  repeated SendAndLock send_and_locks = 2;
+}
+
+message MsgMultiSendAndLockResponse {}
+
+message Lock {
+  string unlock_date = 1;
+  cosmos.base.v1beta1.Coin amount = 2 [(gogoproto.nullable) = false];
+}
+
+message Extension {
+  string from = 1;
+  Lock lock = 2;
+}
+
+message SendAndLock {
+  string to_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  Lock lock = 2;
+}

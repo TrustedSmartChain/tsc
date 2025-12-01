@@ -14,16 +14,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	anteinterfaces "github.com/cosmos/evm/ante/interfaces"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 )
-
-// BankKeeper defines the contract needed for supply related APIs (noalias)
-type BankKeeper interface {
-	IsSendEnabledCoins(ctx context.Context, coins ...sdk.Coin) error
-	SendCoins(ctx context.Context, from, to sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
-}
 
 type AccountKeeper interface {
 	NewAccountWithAddress(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
@@ -41,7 +35,7 @@ type AccountKeeper interface {
 type HandlerOptions struct {
 	Cdc                    codec.BinaryCodec
 	AccountKeeper          AccountKeeper
-	BankKeeper             BankKeeper
+	BankKeeper             bankkeeper.Keeper
 	FeegrantKeeper         ante.FeegrantKeeper
 	ExtensionOptionChecker ante.ExtensionOptionChecker
 	SignModeHandler        *txsigning.HandlerMap

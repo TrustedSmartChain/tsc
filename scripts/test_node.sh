@@ -15,7 +15,7 @@ export CHAIN_ID=${CHAIN_ID:-"tsc_8878788-1"}
 export MONIKER="localvalidator"
 export KEYALGO="eth_secp256k1"
 export KEYRING=${KEYRING:-"test"}
-export HOME_DIR=$(eval echo "${HOME_DIR:-"~/.trustedsmartchain"}")
+export HOME_DIR=$(eval echo "${HOME_DIR:-"~/.tsc"}")
 export BINARY=${BINARY:-tscd}
 export DENOM=${DENOM:-aTSC}
 

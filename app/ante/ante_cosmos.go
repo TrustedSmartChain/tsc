@@ -9,7 +9,10 @@ import (
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 
 	circuitante "cosmossdk.io/x/circuit/ante"
+
 	ibcante "github.com/cosmos/ibc-go/v8/modules/core/ante"
+
+	ltsante "github.com/TrustedSmartChain/tsc/x/lockup/ante"
 )
 
 // newCosmosAnteHandler creates the default ante handler for Cosmos transactions
@@ -26,6 +29,7 @@ func NewCosmosAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		circuitante.NewCircuitBreakerDecorator(options.CircuitKeeper),
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		ante.NewValidateBasicDecorator(),
+		ltsante.NewLockedBalanceDecorator(options.AccountKeeper, options.BankKeeper),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
 		evmoscosmosante.NewMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper),

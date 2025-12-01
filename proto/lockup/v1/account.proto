@@ -1,0 +1,28 @@
+syntax = "proto3";
+package lockup.v1;
+
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/auth/v1beta1/auth.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/x/lockup/types";
+
+// Account represents a new account type that tracks long-term stakes
+// and locks them for specified durations. Each account can have multiple long-term stakes
+// with different lock durations. The locked tokens are not transferable until the lock
+// period expires, but they are still able to be staked to earn staking rewards.
+message Account {
+    option (amino.name)                = "tsc/Account";
+    option (gogoproto.goproto_getters) = false;
+
+    cosmos.auth.v1beta1.BaseAccount base_account       = 1 [(gogoproto.embed) = true];
+    map<string, Lockup>        lockups = 2;
+}
+
+// Lockup represents an individual long-term stake with a specific lock duration
+message Lockup {
+    // The amount locked in this lockup
+    cosmos.base.v1beta1.Coin amount = 1 [(gogoproto.nullable) = false];
+}
