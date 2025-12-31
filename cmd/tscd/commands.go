@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/TrustedSmartChain/tsc/app"
 	cmtcfg "github.com/cometbft/cometbft/config"
@@ -27,10 +28,9 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/module"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	evmosserverconfig "github.com/cosmos/evm/server/config"
 
 	evmoscmd "github.com/cosmos/evm/client"
@@ -78,18 +78,19 @@ func initAppConfig() (string, interface{}) {
 	//   own app.toml to override, or use this default value.
 	//
 	// In simapp, we set the min gas prices to 0.
-	srvCfg.MinGasPrices = "0stake"
-	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
+	srvCfg.MinGasPrices = "0" + app.BaseDenom
+
+	evmCfg := evmosserverconfig.DefaultEVMConfig()
+	evmCfg.EVMChainID = app.EVMChainID
 
 	customAppConfig := CustomAppConfig{
 		Config:  *srvCfg,
-		EVM:     *evmosserverconfig.DefaultEVMConfig(),
+		EVM:     *evmCfg,
 		JSONRPC: *evmosserverconfig.DefaultJSONRPCConfig(),
 		TLS:     *evmosserverconfig.DefaultTLSConfig(),
 	}
 
 	customAppTemplate := serverconfig.DefaultConfigTemplate
-
 	customAppTemplate += evmosserverconfig.DefaultEVMConfigTemplate
 
 	return customAppTemplate, customAppConfig
@@ -102,14 +103,18 @@ func initRootCmd(
 	cfg := sdk.GetConfig()
 	cfg.Seal()
 
+	sdkAppCreator := func(l log.Logger, d dbm.DB, w io.Writer, ao servertypes.AppOptions) servertypes.Application {
+		return newApp(l, d, w, ao)
+	}
+
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(chainApp.BasicModuleManager, app.DefaultNodeHome),
 		genutilcli.Commands(chainApp.TxConfig(), chainApp.BasicModuleManager, app.DefaultNodeHome),
 		cmtcli.NewCompletionCmd(rootCmd, true),
 		debug.Cmd(),
 		confixcmd.ConfigCommand(),
-		pruning.Cmd(newApp, app.DefaultNodeHome),
-		snapshot.Cmd(newApp),
+		pruning.Cmd(sdkAppCreator, app.DefaultNodeHome),
+		snapshot.Cmd(sdkAppCreator),
 	)
 
 	// add EVM' flavored TM commands to start server, etc.
@@ -128,7 +133,6 @@ func initRootCmd(
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
 		server.StatusCommand(),
-
 		queryCommand(),
 		txCommand(),
 	)
@@ -139,22 +143,10 @@ func initRootCmd(
 	if err != nil {
 		panic(err)
 	}
-
 }
 
-func addModuleInitFlags(startCmd *cobra.Command) {
-	crisis.AddModuleInitFlags(startCmd)
-}
-
-// genesisCommand builds genesis-related `simd genesis` command. Users may provide application specific commands as a parameter
-func genesisCommand(txConfig client.TxConfig, basicManager module.BasicManager, cmds ...*cobra.Command) *cobra.Command {
-	cmd := genutilcli.Commands(txConfig, basicManager, app.DefaultNodeHome)
-
-	for _, subCmd := range cmds {
-		cmd.AddCommand(subCmd)
-	}
-	return cmd
-}
+// addModuleInitFlags is a no-op now that crisis module is removed
+func addModuleInitFlags(_ *cobra.Command) {}
 
 func queryCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -212,18 +204,32 @@ func newApp(
 	db dbm.DB,
 	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
-) servertypes.Application {
+) evmosserver.Application {
 	baseappOptions := sdkserver.DefaultBaseappOptions(appOpts)
-
-	if cast.ToBool(appOpts.Get("telemetry.enabled")) {
-	}
 
 	return app.NewChainApp(
 		logger, db, traceStore, true,
 		appOpts,
-		app.EVMAppOptions,
 		baseappOptions...,
 	)
+}
+
+// getChainIDFromOpts returns the chain Id from app Opts
+// It first tries to get from the chainId flag, if not available
+// it will load from home
+func getChainIDFromOpts(appOpts servertypes.AppOptions) (chainID string, err error) {
+	chainID = cast.ToString(appOpts.Get(flags.FlagChainID))
+	if chainID != "" {
+		return chainID, nil
+	}
+
+	homeDir := cast.ToString(appOpts.Get(flags.FlagHome))
+	genDocFile := filepath.Join(homeDir, cast.ToString(appOpts.Get("genesis_file")))
+	appGenesis, err := genutiltypes.AppGenesisFromFile(genDocFile)
+	if err != nil {
+		return "", err
+	}
+	return appGenesis.ChainID, nil
 }
 
 func appExport(
@@ -259,7 +265,6 @@ func appExport(
 		traceStore,
 		height == -1,
 		appOpts,
-		app.EVMAppOptions,
 	)
 
 	if height != -1 {
@@ -272,7 +277,7 @@ func appExport(
 }
 
 var tempDir = func() string {
-	dir, err := os.MkdirTemp("", "simd")
+	dir, err := os.MkdirTemp("", "tscd")
 	if err != nil {
 		panic("failed to create temp dir: " + err.Error())
 	}

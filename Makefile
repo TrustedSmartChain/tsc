@@ -186,7 +186,6 @@ format: format-tools
 
 mod-tidy:
 	go mod tidy
-	cd interchaintest && go mod tidy
 
 .PHONY: format-tools lint format mod-tidy
 
@@ -204,7 +203,6 @@ protoImage="$(DOCKER)" run -e BUF_CACHE_DIR=/tmp/buf --rm -v "$(CURDIR)":/worksp
 proto-all: proto-format proto-lint proto-gen format
 
 proto-gen:
-	@go install cosmossdk.io/orm/cmd/protoc-gen-go-cosmos-orm@v1.0.0-beta.3
 	@echo "Generating Protobuf files"
 	@$(protoImage) sh ./scripts/protocgen.sh
 # generate the stubs for the proto files from the proto directory
