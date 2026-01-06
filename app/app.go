@@ -84,6 +84,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -108,7 +111,7 @@ import (
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
 	ibccallbackskeeper "github.com/cosmos/evm/x/ibc/callbacks/keeper"
 	"github.com/cosmos/evm/x/ibc/transfer"
-	transferkeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
+	ibctransferkeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
 	"github.com/cosmos/evm/x/precisebank"
 	precisebankkeeper "github.com/cosmos/evm/x/precisebank/keeper"
 	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
@@ -121,10 +124,20 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	// IBC imports
+	ica "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
+	icacontroller "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/keeper"
+	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
+	icahost "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host"
+	icahostkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
+	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
 	ibccallbacks "github.com/cosmos/ibc-go/v10/modules/apps/callbacks"
 	ibctransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/v10/modules/core"
+	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibcconnectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
 	porttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
@@ -189,6 +202,7 @@ var maccPerms = map[string][]string{
 	govtypes.ModuleName:            {authtypes.Burner},
 	nft.ModuleName:                 nil,
 	ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+	icatypes.ModuleName:            nil,
 	evmtypes.ModuleName:            {authtypes.Minter, authtypes.Burner},
 	feemarkettypes.ModuleName:      nil,
 	erc20types.ModuleName:          {authtypes.Minter, authtypes.Burner},
@@ -222,6 +236,7 @@ type ChainApp struct {
 	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             govkeeper.Keeper
 	UpgradeKeeper         *upgradekeeper.Keeper
+	ParamsKeeper          paramskeeper.Keeper
 	AuthzKeeper           authzkeeper.Keeper
 	EvidenceKeeper        evidencekeeper.Keeper
 	FeeGrantKeeper        feegrantkeeper.Keeper
@@ -229,9 +244,11 @@ type ChainApp struct {
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 
 	// IBC keepers
-	IBCKeeper      *ibckeeper.Keeper
-	TransferKeeper *transferkeeper.Keeper
-	CallbackKeeper ibccallbackskeeper.ContractKeeper
+	IBCKeeper           *ibckeeper.Keeper
+	TransferKeeper      *ibctransferkeeper.Keeper
+	CallbackKeeper      ibccallbackskeeper.ContractKeeper
+	ICAControllerKeeper icacontrollerkeeper.Keeper
+	ICAHostKeeper       icahostkeeper.Keeper
 
 	// Cosmos EVM keepers
 	FeeMarketKeeper   feemarketkeeper.Keeper
@@ -296,6 +313,7 @@ func NewChainApp(
 		distrtypes.StoreKey,
 		slashingtypes.StoreKey,
 		govtypes.StoreKey,
+		paramstypes.StoreKey,
 		consensusparamtypes.StoreKey,
 		upgradetypes.StoreKey,
 		feegrant.StoreKey,
@@ -305,6 +323,8 @@ func NewChainApp(
 		// IBC keys
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
+		icahosttypes.StoreKey,
+		icacontrollertypes.StoreKey,
 		// Cosmos EVM store keys
 		evmtypes.StoreKey,
 		feemarkettypes.StoreKey,
@@ -313,7 +333,7 @@ func NewChainApp(
 		// Custom keys
 		distrotypes.StoreKey,
 	)
-	tkeys := storetypes.NewTransientStoreKeys(evmtypes.TransientKey, feemarkettypes.TransientKey)
+	tkeys := storetypes.NewTransientStoreKeys(paramstypes.TStoreKey, evmtypes.TransientKey, feemarkettypes.TransientKey)
 
 	// load state streaming if enabled
 	if err := bApp.RegisterStreamingServices(appOpts, keys); err != nil {
@@ -333,6 +353,8 @@ func NewChainApp(
 
 	// get authority address
 	authAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	app.ParamsKeeper = initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
 
 	// set the BaseApp's parameter store
 	app.ConsensusParamsKeeper = consensusparamkeeper.NewKeeper(
@@ -456,7 +478,7 @@ func NewChainApp(
 	app.IBCKeeper = ibckeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[ibcexported.StoreKey]),
-		nil,
+		app.GetSubspace(ibcexported.ModuleName),
 		app.UpgradeKeeper,
 		authAddr,
 	)
@@ -569,8 +591,30 @@ func NewChainApp(
 		app.TransferKeeper,
 	)
 
+	app.ICAHostKeeper = icahostkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[icahosttypes.StoreKey]),
+		app.GetSubspace(icahosttypes.SubModuleName),
+		app.IBCKeeper.ChannelKeeper,
+		app.IBCKeeper.ChannelKeeper,
+		app.AccountKeeper,
+		app.MsgServiceRouter(),
+		app.GRPCQueryRouter(),
+		authAddr,
+	)
+
+	app.ICAControllerKeeper = icacontrollerkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[icacontrollertypes.StoreKey]),
+		app.GetSubspace(icacontrollertypes.SubModuleName),
+		app.IBCKeeper.ChannelKeeper,
+		app.IBCKeeper.ChannelKeeper,
+		app.MsgServiceRouter(),
+		authAddr,
+	)
+
 	// instantiate IBC transfer keeper AFTER the ERC-20 keeper
-	transferKeeper := transferkeeper.NewKeeper(
+	ibctransferKeeper := ibctransferkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[ibctransfertypes.StoreKey]),
 		app.IBCKeeper.ChannelKeeper,
@@ -581,8 +625,8 @@ func NewChainApp(
 		app.Erc20Keeper,
 		authAddr,
 	)
-	transferKeeper.SetAddressCodec(evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix()))
-	app.TransferKeeper = &transferKeeper
+	ibctransferKeeper.SetAddressCodec(evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix()))
+	app.TransferKeeper = &ibctransferKeeper
 
 	/*
 		Create Transfer Stack
@@ -618,9 +662,15 @@ func NewChainApp(
 		maxCallbackGas,
 	)
 
+	// Create ICA module stacks
+	icaControllerStack := icacontroller.NewIBCMiddleware(app.ICAControllerKeeper)
+	icaHostStack := icahost.NewIBCModule(app.ICAHostKeeper)
+
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferStack)
+	ibcRouter.AddRoute(icacontrollertypes.SubModuleName, icaControllerStack)
+	ibcRouter.AddRoute(icahosttypes.SubModuleName, icaHostStack)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	clientKeeper := app.IBCKeeper.ClientKeeper
@@ -652,14 +702,15 @@ func NewChainApp(
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, nil),
 		upgrade.NewAppModule(app.UpgradeKeeper, app.AccountKeeper.AddressCodec()),
 		evidence.NewAppModule(app.EvidenceKeeper),
+		params.NewAppModule(app.ParamsKeeper),
 		authzmodule.NewAppModule(appCodec, app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
-		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
 		// IBC modules
 		ibc.NewAppModule(app.IBCKeeper),
 		ibctm.NewAppModule(tmLightClientModule),
 		transferModule,
+		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		// Cosmos EVM modules
 		vm.NewAppModule(app.EVMKeeper, app.AccountKeeper, app.BankKeeper, app.AccountKeeper.AddressCodec()),
 		feemarket.NewAppModule(app.FeeMarketKeeper),
@@ -696,6 +747,7 @@ func NewChainApp(
 		minttypes.ModuleName,
 		// IBC modules
 		ibcexported.ModuleName, ibctransfertypes.ModuleName,
+		icatypes.ModuleName,
 		// Cosmos EVM BeginBlockers
 		erc20types.ModuleName, feemarkettypes.ModuleName,
 		evmtypes.ModuleName, // NOTE: EVM BeginBlocker must come after FeeMarket BeginBlocker
@@ -722,7 +774,7 @@ func NewChainApp(
 		// Cosmos EVM EndBlockers
 		evmtypes.ModuleName, erc20types.ModuleName, feemarkettypes.ModuleName,
 		// no-ops
-		ibcexported.ModuleName, ibctransfertypes.ModuleName,
+		ibcexported.ModuleName, ibctransfertypes.ModuleName, icatypes.ModuleName,
 		distrtypes.ModuleName, slashingtypes.ModuleName, minttypes.ModuleName,
 		genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
 		nft.ModuleName,
@@ -744,6 +796,7 @@ func NewChainApp(
 		govtypes.ModuleName,
 		minttypes.ModuleName,
 		ibcexported.ModuleName,
+		icatypes.ModuleName,
 		// Cosmos EVM modules
 		// NOTE: feemarket module needs to be initialized before genutil module:
 		// gentx transactions use MinGasPriceDecorator.AnteHandle
@@ -759,6 +812,7 @@ func NewChainApp(
 		nft.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+		consensusparamtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
 	}
@@ -1022,6 +1076,14 @@ func (app *ChainApp) GetStoreKeys() []storetypes.StoreKey {
 	return keys
 }
 
+// GetSubspace returns a param subspace for a given module name.
+//
+// NOTE: This is solely to be used for testing purposes.
+func (app *ChainApp) GetSubspace(moduleName string) paramstypes.Subspace {
+	subspace, _ := app.ParamsKeeper.GetSubspace(moduleName)
+	return subspace
+}
+
 // SimulationManager implements the SimulationApp interface
 func (app *ChainApp) SimulationManager() *module.SimulationManager {
 	return app.sm
@@ -1149,7 +1211,7 @@ func (app *ChainApp) GetCallbackKeeper() ibccallbackskeeper.ContractKeeper {
 	return app.CallbackKeeper
 }
 
-func (app *ChainApp) GetTransferKeeper() transferkeeper.Keeper {
+func (app *ChainApp) GetTransferKeeper() ibctransferkeeper.Keeper {
 	return *app.TransferKeeper
 }
 
@@ -1194,4 +1256,19 @@ func (app *ChainApp) Close() error {
 	}
 
 	return err
+}
+
+// initParamsKeeper init params keeper and its subspaces
+func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey storetypes.StoreKey) paramskeeper.Keeper {
+	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
+
+	// register the key tables for legacy param subspaces
+	keyTable := ibcclienttypes.ParamKeyTable()
+	keyTable.RegisterParamSet(&ibcconnectiontypes.Params{})
+	paramsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keyTable)
+	paramsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
+	paramsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
+	paramsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
+
+	return paramsKeeper
 }
