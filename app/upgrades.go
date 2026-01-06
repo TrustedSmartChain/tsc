@@ -6,20 +6,16 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
 	"github.com/TrustedSmartChain/tsc/app/upgrades"
-	"github.com/TrustedSmartChain/tsc/app/upgrades/noop"
+	v2 "github.com/TrustedSmartChain/tsc/app/upgrades/v2"
 )
 
 // Upgrades list of chain upgrades
-var Upgrades = []upgrades.Upgrade{}
+var Upgrades = []upgrades.Upgrade{
+	v2.NewUpgrade("v2"),
+}
 
 // RegisterUpgradeHandlers registers the chain upgrade handlers
 func (app *ChainApp) RegisterUpgradeHandlers() {
-	// setupLegacyKeyTables(&app.ParamsKeeper)
-	if len(Upgrades) == 0 {
-		// always have a unique upgrade registered for the current version to test in system tests
-		Upgrades = append(Upgrades, noop.NewUpgrade(app.Version()))
-	}
-
 	keepers := upgrades.AppKeepers{
 		AccountKeeper:         &app.AccountKeeper,
 		ConsensusParamsKeeper: &app.ConsensusParamsKeeper,

@@ -76,6 +76,9 @@ import (
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/cosmos/cosmos-sdk/x/epochs"
+	epochskeeper "github.com/cosmos/cosmos-sdk/x/epochs/keeper"
+	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -242,6 +245,7 @@ type ChainApp struct {
 	FeeGrantKeeper        feegrantkeeper.Keeper
 	NFTKeeper             nftkeeper.Keeper
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
+	EpochsKeeper          epochskeeper.Keeper
 
 	// IBC keepers
 	IBCKeeper           *ibckeeper.Keeper
@@ -320,6 +324,7 @@ func NewChainApp(
 		evidencetypes.StoreKey,
 		authzkeeper.StoreKey,
 		nftkeeper.StoreKey,
+		epochstypes.StoreKey,
 		// IBC keys
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
@@ -522,6 +527,12 @@ func NewChainApp(
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
 
+	// Create Epochs keeper
+	app.EpochsKeeper = epochskeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[epochstypes.StoreKey]),
+		appCodec,
+	)
+
 	// Create the distro Keeper
 	app.DistroKeeper = distrokeeper.NewKeeper(
 		appCodec,
@@ -705,6 +716,7 @@ func NewChainApp(
 		params.NewAppModule(app.ParamsKeeper),
 		authzmodule.NewAppModule(appCodec, app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
+		epochs.NewAppModule(app.EpochsKeeper),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
 		// IBC modules
 		ibc.NewAppModule(app.IBCKeeper),
@@ -744,6 +756,7 @@ func NewChainApp(
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool.
 	app.ModuleManager.SetOrderBeginBlockers(
+		epochstypes.ModuleName,
 		minttypes.ModuleName,
 		// IBC modules
 		ibcexported.ModuleName, ibctransfertypes.ModuleName,
@@ -779,6 +792,7 @@ func NewChainApp(
 		genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
 		nft.ModuleName,
 		feegrant.ModuleName, upgradetypes.ModuleName, consensusparamtypes.ModuleName,
+		epochstypes.ModuleName,
 		precisebanktypes.ModuleName,
 		vestingtypes.ModuleName,
 		// Custom
@@ -810,9 +824,14 @@ func NewChainApp(
 		authz.ModuleName,
 		feegrant.ModuleName,
 		nft.ModuleName,
+		paramstypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		ibcexported.ModuleName,
+		icatypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
+		epochstypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
 	}
@@ -1158,6 +1177,21 @@ func BlockedAddresses() map[string]bool {
 	return blockedAddrs
 }
 
+// initParamsKeeper init params keeper and its subspaces
+func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey storetypes.StoreKey) paramskeeper.Keeper {
+	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
+
+	// register the key tables for legacy param subspaces
+	keyTable := ibcclienttypes.ParamKeyTable()
+	keyTable.RegisterParamSet(&ibcconnectiontypes.Params{})
+	paramsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keyTable)
+	paramsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
+	paramsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
+	paramsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
+
+	return paramsKeeper
+}
+
 // GetIBCKeeper implements the TestingApp interface.
 func (app *ChainApp) GetIBCKeeper() *ibckeeper.Keeper {
 	return app.IBCKeeper
@@ -1256,19 +1290,4 @@ func (app *ChainApp) Close() error {
 	}
 
 	return err
-}
-
-// initParamsKeeper init params keeper and its subspaces
-func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey storetypes.StoreKey) paramskeeper.Keeper {
-	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
-
-	// register the key tables for legacy param subspaces
-	keyTable := ibcclienttypes.ParamKeyTable()
-	keyTable.RegisterParamSet(&ibcconnectiontypes.Params{})
-	paramsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keyTable)
-	paramsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
-	paramsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
-	paramsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
-
-	return paramsKeeper
 }
