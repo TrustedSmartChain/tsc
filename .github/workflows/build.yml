@@ -25,9 +25,9 @@ jobs:
         fetch-depth: 0  # Fetch all history for git describe
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.23.6'
+        go-version-file: go.mod
         cache: true
 
     - name: Install dependencies
@@ -39,6 +39,7 @@ jobs:
       env:
         VERSION: ${{ github.event.inputs.version || '1.0.0' }}
         CGO_ENABLED: 1
+        LEDGER_ENABLED: false
       run: |
         make build-linux VERSION=$VERSION
         ls -la build/
