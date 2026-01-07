@@ -10,8 +10,11 @@ on:
       create_release:
         description: 'Create GitHub release'
         required: false
-        default: 'false'
-
+        default: 'true'
+      prerelease:
+        description: 'Mark release as pre-release'
+        required: false
+        default: 'true'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -99,6 +102,6 @@ jobs:
           ### Version Info
           Built with Go 1.23.6
         draft: false
-        prerelease: false
+        prerelease: ${{ github.event.inputs.prerelease == 'true' }}
         files: build/tscd-linux
         token: ${{ secrets.GITHUB_TOKEN }} 
