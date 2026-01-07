@@ -1,61 +1,84 @@
 package app
 
 import (
-	"fmt"
+	"context"
 
+	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/TrustedSmartChain/tsc/app/upgrades"
-	"github.com/TrustedSmartChain/tsc/app/upgrades/noop"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	"github.com/cosmos/cosmos-sdk/types/module"
+	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
+	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
+	"github.com/cosmos/cosmos-sdk/x/group"
 )
 
-// Upgrades list of chain upgrades
-var Upgrades = []upgrades.Upgrade{}
+const UpgradeName = "v2"
 
-// RegisterUpgradeHandlers registers the chain upgrade handlers
 func (app *ChainApp) RegisterUpgradeHandlers() {
-	// setupLegacyKeyTables(&app.ParamsKeeper)
-	if len(Upgrades) == 0 {
-		// always have a unique upgrade registered for the current version to test in system tests
-		Upgrades = append(Upgrades, noop.NewUpgrade(app.Version()))
-	}
+	app.UpgradeKeeper.SetUpgradeHandler(
+		UpgradeName,
+		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	keepers := upgrades.AppKeepers{
-		AccountKeeper:         &app.AccountKeeper,
-		ParamsKeeper:          &app.ParamsKeeper,
-		ConsensusParamsKeeper: &app.ConsensusParamsKeeper,
-		CapabilityKeeper:      app.CapabilityKeeper,
-		IBCKeeper:             app.IBCKeeper,
-		Codec:                 app.appCodec,
-		GetStoreKey:           app.GetKey,
-	}
+			sdkCtx.Logger().Info("Setting denom metadata for upgrade", "denom", BaseDenom)
+			app.BankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
+				Description: "The native staking token of Trusted Smart Chain",
+				DenomUnits: []*banktypes.DenomUnit{
+					{
+						Denom:    BaseDenom,
+						Exponent: 0,
+						Aliases:  []string{"atsc"},
+					},
+					{
+						Denom:    DisplayDenom,
+						Exponent: uint32(BaseDenomUnit),
+						Aliases:  nil,
+					},
+				},
+				Base:    BaseDenom,
+				Display: DisplayDenom,
+				Name:    "Trusted Smart Chain",
+				Symbol:  DisplayDenom,
+				URI:     "",
+				URIHash: "",
+			})
 
-	// register all upgrade handlers
-	for _, upgrade := range Upgrades {
-		app.UpgradeKeeper.SetUpgradeHandler(
-			upgrade.UpgradeName,
-			upgrade.CreateUpgradeHandler(
-				app.ModuleManager,
-				app.configurator,
-				&keepers,
-			),
-		)
-	}
+			sdkCtx.Logger().Info("Initializing EVM coin info from denom metadata")
+			if err := app.EVMKeeper.InitEvmCoinInfo(sdkCtx); err != nil {
+				return nil, err
+			}
+			sdkCtx.Logger().Info("EVM coin info initialized successfully")
+
+			return app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
+		},
+	)
 
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
-		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
+		panic(err)
 	}
 
-	if app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		return
-	}
-
-	// register store loader for current upgrade
-	for _, upgrade := range Upgrades {
-		if upgradeInfo.Name == upgrade.UpgradeName {
-			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &upgrade.StoreUpgrades)) // nolint:gosec
-			break
+	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := storetypes.StoreUpgrades{
+			Added: []string{
+				epochstypes.StoreKey,
+			},
+			Deleted: []string{
+				crisistypes.StoreKey,
+				group.StoreKey,
+				"circuit",
+				"feeibc",
+				"capability",
+				"tokenfactory",
+				"packetfowardmiddleware",
+				"08-wasm",
+				"ratelimit",
+			},
 		}
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
 }

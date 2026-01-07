@@ -118,9 +118,9 @@ func validateMintingLimits(ctx sdk.Context, currentSupply math.Int, amount math.
 	var totalDistributable math.Int = math.ZeroInt()
 
 	for period := uint64(1); period < currentHalvingPeriod; period++ {
-		periodYearlyLimit, _ := math.NewIntFromString(params.MaxSupply)
-		periodYearlyLimit = periodYearlyLimit.Quo(math.NewIntFromUint64(1 << (period - 1))).Quo(math.NewIntFromUint64(2))
-		totalDistributable = totalDistributable.Add(periodYearlyLimit)
+		periodLimit, _ := math.NewIntFromString(params.MaxSupply)
+		periodLimit = periodLimit.Quo(math.NewIntFromUint64(1 << (period - 1))).Quo(math.NewIntFromUint64(2))
+		totalDistributable = totalDistributable.Add(periodLimit)
 	}
 
 	if currentHalvingPeriod > 0 {
@@ -128,8 +128,8 @@ func validateMintingLimits(ctx sdk.Context, currentSupply math.Int, amount math.
 		periodEnd := startDate.AddDate(0, int(currentHalvingPeriod*params.MonthsInHalvingPeriod), -1)
 
 		daysInPeriod := math.NewIntFromUint64(uint64(periodEnd.Sub(periodStart).Hours()/24) + 1)
-		periodYearlyLimit, _ := math.NewIntFromString(params.MaxSupply)
-		periodYearlyLimit = periodYearlyLimit.Quo(math.NewIntFromUint64(1 << (currentHalvingPeriod - 1))).Quo(math.NewIntFromUint64(2))
+		periodLimit, _ := math.NewIntFromString(params.MaxSupply)
+		periodLimit = periodLimit.Quo(math.NewIntFromUint64(1 << (currentHalvingPeriod - 1))).Quo(math.NewIntFromUint64(2))
 
 		daysElapsed := math.NewIntFromUint64(uint64(targetDate.Sub(periodStart).Hours() / 24))
 		if daysElapsed.GT(daysInPeriod) {
@@ -137,7 +137,7 @@ func validateMintingLimits(ctx sdk.Context, currentSupply math.Int, amount math.
 		}
 
 		if !daysInPeriod.IsZero() {
-			currentPeriodAmount := periodYearlyLimit.Mul(daysElapsed).Quo(daysInPeriod)
+			currentPeriodAmount := periodLimit.Mul(daysElapsed).Quo(daysInPeriod)
 			totalDistributable = totalDistributable.Add(currentPeriodAmount)
 		}
 	}

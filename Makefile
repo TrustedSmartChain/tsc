@@ -64,12 +64,14 @@ build_tags_comma_sep := $(subst $(empty),$(comma),$(build_tags))
 
 # flags '-s -w' resolves an issue with xcode 16 and signing of go binaries
 # ref: https://github.com/golang/go/issues/63997
+# flag '-checklinkname=0' resolves sonic issue with Go 1.24.0
+# ref: https://github.com/golang/go/issues/71672
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=trustedsmartchain \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=tscd \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
-		  -s -w
+		  -s -w -checklinkname=0
 
 ifeq ($(WITH_CLEVELDB),yes)
   ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
@@ -186,7 +188,6 @@ format: format-tools
 
 mod-tidy:
 	go mod tidy
-	cd interchaintest && go mod tidy
 
 .PHONY: format-tools lint format mod-tidy
 
@@ -204,7 +205,6 @@ protoImage="$(DOCKER)" run -e BUF_CACHE_DIR=/tmp/buf --rm -v "$(CURDIR)":/worksp
 proto-all: proto-format proto-lint proto-gen format
 
 proto-gen:
-	@go install cosmossdk.io/orm/cmd/protoc-gen-go-cosmos-orm@v1.0.0-beta.3
 	@echo "Generating Protobuf files"
 	@$(protoImage) sh ./scripts/protocgen.sh
 # generate the stubs for the proto files from the proto directory
