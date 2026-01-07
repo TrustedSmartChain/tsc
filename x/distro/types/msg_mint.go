@@ -32,7 +32,7 @@ func (msg *MsgMint) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{addr}
 }
 
-func (msg *MsgMint) Validate() error {
+func (msg *MsgMint) ValidateBasic() error {
 	amount, ok := math.NewIntFromString(msg.Amount)
 	if !ok {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "amount cannot be converted to int")
