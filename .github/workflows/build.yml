@@ -38,6 +38,7 @@ jobs:
     - name: Build Linux binary
       env:
         VERSION: ${{ github.event.inputs.version || '1.0.0' }}
+        CGO_ENABLED: 1
       run: |
         make build-linux VERSION=$VERSION
         ls -la build/
