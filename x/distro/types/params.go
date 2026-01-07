@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-const DefaultMinitingAddress string = "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"
+const DefaultMintingAddress string = "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"
 const DefaultReceivingAddress string = "tsc1grl8wuaj0yg6wvzvyxdtnnajp9em49m5fjz07v"
 const DefaultDenom string = "aTSC"
 const DefaultMaxSupply string = "21000000000000000000000000"
@@ -33,12 +34,12 @@ func NewParams(
 }
 
 func DefaultParams() Params {
-	return NewParams(DefaultMinitingAddress, DefaultReceivingAddress, DefaultDenom, DefaultMaxSupply, DefaultDistributionStartDate, DefaultMonthsInHalvingPeriod)
+	return NewParams(DefaultMintingAddress, DefaultReceivingAddress, DefaultDenom, DefaultMaxSupply, DefaultDistributionStartDate, DefaultMonthsInHalvingPeriod)
 }
 
 // Validate validates the set of params.
 func (p Params) Validate() error {
-	if err := validateMinitingAddress(p.MintingAddress); err != nil {
+	if err := validateMintingAddress(p.MintingAddress); err != nil {
 		return err
 	}
 	if err := validateReceivingAddress(p.ReceivingAddress); err != nil {
@@ -59,7 +60,7 @@ func (p Params) Validate() error {
 
 	return nil
 }
-func validateMinitingAddress(v string) error {
+func validateMintingAddress(v string) error {
 	if v == "" {
 		return fmt.Errorf("minting address cannot be empty")
 	}
@@ -83,11 +84,24 @@ func validateDenom(v string) error {
 	if v == "" {
 		return fmt.Errorf("denom cannot be empty")
 	}
+
+	if DefaultDenom != v {
+		return fmt.Errorf("denom must be '%s'", DefaultDenom)
+	}
 	return nil
 }
 func validateMaxSupply(v string) error {
 	if v == "" {
 		return fmt.Errorf("max supply cannot be empty")
+	}
+
+	maxSupply, ok := math.NewIntFromString(v)
+	if !ok {
+		return fmt.Errorf("max supply must be a valid integer")
+	}
+
+	if !maxSupply.IsPositive() {
+		return fmt.Errorf("max supply must be positive")
 	}
 	return nil
 }

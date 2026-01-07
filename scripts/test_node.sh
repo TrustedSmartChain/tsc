@@ -92,6 +92,10 @@ from_scratch () {
   update_test_genesis '.app_state["gov"]["params"]["voting_period"]="30s"'
   update_test_genesis '.app_state["gov"]["params"]["expedited_voting_period"]="15s"'
 
+  # Bank - register denom metadata for EVM (required by cosmos-evm v0.5.1)
+  DENOM_METADATA="{\"description\":\"The native staking token of Trusted Smart Chain\",\"denom_units\":[{\"denom\":\"$DENOM\",\"exponent\":0,\"aliases\":[\"atsc\"]},{\"denom\":\"TSC\",\"exponent\":18}],\"base\":\"$DENOM\",\"display\":\"TSC\",\"name\":\"Trusted Smart Chain\",\"symbol\":\"TSC\"}"
+  cat $HOME_DIR/config/genesis.json | jq ".app_state.bank.denom_metadata = [$DENOM_METADATA]" > $HOME_DIR/config/tmp_genesis.json && mv $HOME_DIR/config/tmp_genesis.json $HOME_DIR/config/genesis.json
+
   update_test_genesis `printf '.app_state["evm"]["params"]["evm_denom"]="%s"' $DENOM`
   update_test_genesis '.app_state["evm"]["params"]["active_static_precompiles"]=["0x0000000000000000000000000000000000000100","0x0000000000000000000000000000000000000400","0x0000000000000000000000000000000000000800","0x0000000000000000000000000000000000000801","0x0000000000000000000000000000000000000802","0x0000000000000000000000000000000000000803","0x0000000000000000000000000000000000000804","0x0000000000000000000000000000000000000805"]'
   # update_test_genesis '.app_state["erc20"]["params"]["native_precompiles"]=["0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"]' # https://eips.ethereum.org/EIPS/eip-7528

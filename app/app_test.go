@@ -18,11 +18,13 @@ import (
 func TestAppExport(t *testing.T) {
 	db := dbm.NewMemDB()
 	logger := log.NewTestLogger(t)
-	gapp := NewChainAppWithCustomOptions(t, false, SetupOptions{
-		Logger:  logger.With("instance", "first"),
-		DB:      db,
-		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-	})
+	gapp := NewChainApp(
+		logger.With("instance", "first"),
+		db,
+		nil,
+		false,
+		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+	)
 
 	// finalize block so we have CheckTx state set
 	_, err := gapp.FinalizeBlock(&abci.RequestFinalizeBlock{
@@ -36,7 +38,6 @@ func TestAppExport(t *testing.T) {
 	// Making a new app object with the db, so that initchain hasn't been called
 	newGapp := NewChainApp(
 		logger, db, nil, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-		EVMAppOptions,
 	)
 	_, err = newGapp.ExportAppStateAndValidators(false, []string{}, nil)
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
@@ -44,7 +45,7 @@ func TestAppExport(t *testing.T) {
 
 // ensure that blocked addresses are properly set in bank keeper
 func TestBlockedAddrs(t *testing.T) {
-	gapp := Setup(t)
+	gapp := Setup(t, "chain-test", 9001)
 
 	for acc := range BlockedAddresses() {
 		t.Run(acc, func(t *testing.T) {

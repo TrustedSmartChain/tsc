@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	sdktestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -20,8 +21,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/TrustedSmartChain/tsc/app"
-	"github.com/TrustedSmartChain/tsc/app/params"
-	evmoskeyring "github.com/cosmos/evm/crypto/keyring"
+	"github.com/cosmos/evm/crypto/hd"
 )
 
 // NewRootCmd creates a new root command for chain app. It is called once in the
@@ -31,9 +31,8 @@ func NewRootCmd() *cobra.Command {
 	// note, this is not necessary when using app wiring, as depinject can be directly used (see root_v2.go)
 	tempApp := app.NewChainApp(
 		log.NewNopLogger(), dbm.NewMemDB(), nil, false, simtestutil.NewAppOptionsWithFlagHome(tempDir()),
-		app.EVMAppOptions,
 	)
-	encodingConfig := params.EncodingConfig{
+	encodingConfig := sdktestutil.TestEncodingConfig{
 		InterfaceRegistry: tempApp.InterfaceRegistry(),
 		Codec:             tempApp.AppCodec(),
 		TxConfig:          tempApp.TxConfig(),
@@ -49,7 +48,8 @@ func NewRootCmd() *cobra.Command {
 		WithAccountRetriever(authtypes.AccountRetriever{}).
 		WithHomeDir(app.DefaultNodeHome).
 		WithBroadcastMode(flags.FlagBroadcastMode).
-		WithKeyringOptions(evmoskeyring.Option()).
+		// Cosmos EVM specific setup
+		WithKeyringOptions(hd.EthSecp256k1Option()).
 		WithLedgerHasProtobuf(true).
 		WithViper("")
 
