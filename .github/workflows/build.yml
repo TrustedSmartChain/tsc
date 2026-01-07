@@ -39,7 +39,6 @@ jobs:
       env:
         VERSION: ${{ github.event.inputs.version || '1.0.0' }}
         CGO_ENABLED: 1
-        LEDGER_ENABLED: false
       run: |
         make build-linux VERSION=$VERSION
         ls -la build/

@@ -64,12 +64,14 @@ build_tags_comma_sep := $(subst $(empty),$(comma),$(build_tags))
 
 # flags '-s -w' resolves an issue with xcode 16 and signing of go binaries
 # ref: https://github.com/golang/go/issues/63997
+# flag '-checklinkname=0' resolves sonic issue with Go 1.24.0
+# ref: https://github.com/golang/go/issues/71672
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=trustedsmartchain \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=tscd \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
-		  -s -w
+		  -s -w -checklinkname=0
 
 ifeq ($(WITH_CLEVELDB),yes)
   ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
