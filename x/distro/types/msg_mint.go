@@ -9,9 +9,10 @@ import (
 
 var _ sdk.Msg = &MsgMint{}
 
-func NewMsgMint(fromAddress string, amount string) *MsgMint {
+func NewMsgMint(fromAddress string, amount string, minter string) *MsgMint {
 	return &MsgMint{
 		Amount: amount,
+		Minter: minter,
 	}
 }
 
@@ -26,7 +27,7 @@ func (msg MsgMint) GetSignBytes() []byte {
 	return sdk.MustSortJSON(AminoCdc.MustMarshalJSON(&msg))
 }
 
-// GetSigners returns the expected signers for a MsgUpdateParams message.
+// GetSigners returns the expected signers for a MsgMint message.
 func (msg *MsgMint) GetSigners() []sdk.AccAddress {
 	addr, _ := sdk.AccAddressFromBech32(msg.Minter)
 	return []sdk.AccAddress{addr}
