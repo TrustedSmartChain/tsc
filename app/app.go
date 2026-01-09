@@ -32,6 +32,9 @@ import (
 	distro "github.com/TrustedSmartChain/tsc/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/x/distro/keeper"
 	distrotypes "github.com/TrustedSmartChain/tsc/x/distro/types"
+	lockup "github.com/TrustedSmartChain/tsc/x/lockup"
+	lockupkeeper "github.com/TrustedSmartChain/tsc/x/lockup/keeper"
+	lockuptypes "github.com/TrustedSmartChain/tsc/x/lockup/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -141,9 +144,6 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
-	lockup "github.com/TrustedSmartChain/tsc/x/lockup"
-	lockupkeeper "github.com/TrustedSmartChain/tsc/x/lockup/keeper"
-	lockuptypes "github.com/TrustedSmartChain/tsc/x/lockup/types"
 	"github.com/ethereum/go-ethereum/common"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
@@ -534,6 +534,9 @@ func NewChainApp(
 		runtime.NewKVStoreService(keys[lockuptypes.StoreKey]),
 		logger,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.StakingKeeper,
 	)
 
 	// Create Epochs keeper

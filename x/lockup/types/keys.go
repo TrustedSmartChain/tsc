@@ -1,18 +1,15 @@
 package types
 
-import (
-	"cosmossdk.io/collections"
-)
-
-var (
-	// ParamsKey saves the current module params.
-	ParamsKey = collections.NewPrefix(0)
-)
-
 const (
 	ModuleName = "lockup"
 
 	StoreKey = ModuleName
 
 	QuerierRoute = ModuleName
+)
+
+var (
+	LocksByDateKey    = []byte("locks_by_date")
+	LocksByAddressKey = []byte("locks_by_address")
+	TotalLockedKey    = []byte("total_locked")
 )
