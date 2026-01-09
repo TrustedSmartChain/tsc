@@ -20,6 +20,10 @@ type Keeper struct {
 	logger       log.Logger
 
 	authority string
+
+	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
+	stakingKeeper types.StakingKeeper
 }
 
 // NewKeeper creates a new Keeper instance
@@ -28,6 +32,9 @@ func NewKeeper(
 	storeService storetypes.KVStoreService,
 	logger log.Logger,
 	authority string,
+	accountKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
+	stakingKeeper types.StakingKeeper,
 ) Keeper {
 	logger = logger.With(log.ModuleKey, "x/"+types.ModuleName)
 
@@ -41,6 +48,10 @@ func NewKeeper(
 		logger:       logger,
 
 		authority: authority,
+
+		accountKeeper: accountKeeper,
+		bankKeeper:    bankKeeper,
+		stakingKeeper: stakingKeeper,
 	}
 
 	return k
