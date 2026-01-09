@@ -114,7 +114,7 @@ import (
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
 	ibccallbackskeeper "github.com/cosmos/evm/x/ibc/callbacks/keeper"
 	"github.com/cosmos/evm/x/ibc/transfer"
-	ibctransferkeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
+	transferKeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
 	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
 	"github.com/cosmos/evm/x/vm"
 	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
@@ -247,7 +247,7 @@ type ChainApp struct {
 
 	// IBC keepers
 	IBCKeeper           *ibckeeper.Keeper
-	TransferKeeper      *ibctransferkeeper.Keeper
+	TransferKeeper      transferKeeper.Keeper
 	CallbackKeeper      ibccallbackskeeper.ContractKeeper
 	ICAControllerKeeper icacontrollerkeeper.Keeper
 	ICAHostKeeper       icahostkeeper.Keeper
@@ -571,7 +571,7 @@ func NewChainApp(
 			app.DistrKeeper,
 			app.BankKeeper,
 			&app.Erc20Keeper,
-			app.TransferKeeper,
+			&app.TransferKeeper,
 			app.IBCKeeper.ChannelKeeper,
 			app.GovKeeper,
 			app.SlashingKeeper,
@@ -587,7 +587,7 @@ func NewChainApp(
 		app.BankKeeper,
 		app.EVMKeeper,
 		app.StakingKeeper,
-		app.TransferKeeper,
+		&app.TransferKeeper,
 	)
 
 	app.ICAHostKeeper = icahostkeeper.NewKeeper(
@@ -613,7 +613,7 @@ func NewChainApp(
 	)
 
 	// instantiate IBC transfer keeper AFTER the ERC-20 keeper
-	ibctransferKeeper := ibctransferkeeper.NewKeeper(
+	ibctransferKeeper := transferKeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[ibctransfertypes.StoreKey]),
 		app.IBCKeeper.ChannelKeeper,
@@ -625,7 +625,7 @@ func NewChainApp(
 		authAddr,
 	)
 	ibctransferKeeper.SetAddressCodec(evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix()))
-	app.TransferKeeper = &ibctransferKeeper
+	app.TransferKeeper = ibctransferKeeper
 
 	/*
 		Create Transfer Stack
@@ -645,7 +645,7 @@ func NewChainApp(
 	// create IBC module from top to bottom of stack
 	var transferStack porttypes.IBCModule
 
-	transferStack = transfer.NewIBCModule(*app.TransferKeeper)
+	transferStack = transfer.NewIBCModule(app.TransferKeeper)
 	maxCallbackGas := uint64(1_000_000)
 	transferStack = erc20.NewIBCMiddleware(app.Erc20Keeper, transferStack)
 	app.CallbackKeeper = ibccallbackskeeper.NewKeeper(
@@ -678,7 +678,7 @@ func NewChainApp(
 	clientKeeper.AddRoute(ibctm.ModuleName, &tmLightClientModule)
 
 	// Override the ICS20 app module
-	transferModule := transfer.NewAppModule(*app.TransferKeeper)
+	transferModule := transfer.NewAppModule(app.TransferKeeper)
 
 	/****  Module Options ****/
 
@@ -1226,8 +1226,8 @@ func (app *ChainApp) GetCallbackKeeper() ibccallbackskeeper.ContractKeeper {
 	return app.CallbackKeeper
 }
 
-func (app *ChainApp) GetTransferKeeper() ibctransferkeeper.Keeper {
-	return *app.TransferKeeper
+func (app *ChainApp) GetTransferKeeper() transferKeeper.Keeper {
+	return app.TransferKeeper
 }
 
 func (app *ChainApp) GetMempool() sdkmempool.ExtMempool {
