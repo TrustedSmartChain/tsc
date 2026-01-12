@@ -27,7 +27,7 @@ func (msg MsgMint) GetSignBytes() []byte {
 	return sdk.MustSortJSON(AminoCdc.MustMarshalJSON(&msg))
 }
 
-// GetSigners returns the expected signers for a MsgMint message.
+// GetSigners returns the signer address for a MsgMint message.
 func (msg *MsgMint) GetSigners() []sdk.AccAddress {
 	addr, _ := sdk.AccAddressFromBech32(msg.Minter)
 	return []sdk.AccAddress{addr}
