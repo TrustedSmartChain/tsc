@@ -14,12 +14,20 @@ func NewMsgUpdateParams(
 	sender sdk.Address,
 	mintingAddress string,
 	receivingAddress string,
+	denom string,
+	maxSupply string,
+	distroStartDate string,
+	monthsInHalvingPeriod uint64,
 ) *MsgUpdateParams {
 	return &MsgUpdateParams{
 		Authority: sender.String(),
 		Params: Params{
-			MintingAddress:   mintingAddress,
-			ReceivingAddress: receivingAddress,
+			MintingAddress:        mintingAddress,
+			ReceivingAddress:      receivingAddress,
+			Denom:                 denom,
+			MaxSupply:             maxSupply,
+			DistributionStartDate: distroStartDate,
+			MonthsInHalvingPeriod: monthsInHalvingPeriod,
 		},
 	}
 }
