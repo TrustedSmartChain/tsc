@@ -15,7 +15,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "Params",
 					Use:       "params",
 					Short:     "Query the current consensus parameters",
-					Skip:      true,
 				},
 			},
 		},
@@ -34,7 +33,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod: "UpdateParams",
-					Skip:      false,
+					Skip:      true,
 				},
 			},
 		},
