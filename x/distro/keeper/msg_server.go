@@ -25,5 +25,15 @@ func (ms msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams
 		return nil, errors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", ms.k.authority, msg.Authority)
 	}
 
-	return &types.MsgUpdateParamsResponse{}, ms.k.Params.Set(ctx, msg.Params)
+	err := msg.Params.Validate()
+	if err != nil {
+		return &types.MsgUpdateParamsResponse{}, err
+	}
+
+	err = ms.k.Params.Set(ctx, msg.Params)
+	if err != nil {
+		return &types.MsgUpdateParamsResponse{}, err
+	}
+
+	return &types.MsgUpdateParamsResponse{}, nil
 }

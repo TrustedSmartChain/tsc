@@ -1060,26 +1060,10 @@ func (app *ChainApp) DefaultGenesis() map[string]json.RawMessage {
 	erc20GenState := NewErc20GenesisState()
 	genesis[erc20types.ModuleName] = app.appCodec.MustMarshalJSON(erc20GenState)
 
-	// Update staking genesis to use the correct bond denom
-	stakingGenState := stakingtypes.DefaultGenesisState()
-	stakingGenState.Params.BondDenom = BaseDenom
+	stakingGenState := NewStakingGenesisState()
 	genesis[stakingtypes.ModuleName] = app.appCodec.MustMarshalJSON(stakingGenState)
 
-	// Update bank genesis to set proper denom metadata
-	bankGenState := banktypes.DefaultGenesisState()
-	bankGenState.DenomMetadata = []banktypes.Metadata{
-		{
-			Description: "The native staking token of the TSC network.",
-			DenomUnits: []*banktypes.DenomUnit{
-				{Denom: BaseDenom, Exponent: 0, Aliases: []string{"atsc"}},
-				{Denom: DisplayDenom, Exponent: uint32(BaseDenomUnit), Aliases: []string{}},
-			},
-			Base:    BaseDenom,
-			Display: DisplayDenom,
-			Name:    DisplayDenom,
-			Symbol:  DisplayDenom,
-		},
-	}
+	bankGenState := NewBankGenesisState()
 	genesis[banktypes.ModuleName] = app.appCodec.MustMarshalJSON(bankGenState)
 
 	return genesis
