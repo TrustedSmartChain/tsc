@@ -33,28 +33,28 @@ func (msg *MsgMint) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{addr}
 }
 
-func (msg *MsgMint) ValidateBasic() error {
+func (msg *MsgMint) Validate() (math.Int, error) {
 	amount, ok := math.NewIntFromString(msg.Amount)
 	if !ok {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "amount cannot be converted to int")
+		return math.ZeroInt(), errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "amount cannot be converted to int")
 	}
 
 	if amount.IsZero() {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "amount cannot be zero")
+		return math.ZeroInt(), errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "amount cannot be zero")
 	}
 
 	if amount.IsNegative() {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "amount cannot be negative")
+		return math.ZeroInt(), errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "amount cannot be negative")
 	}
 
 	if msg.Minter == "" {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "minter cannot be empty")
+		return math.ZeroInt(), errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "minter cannot be empty")
 	}
 
 	_, err := sdk.AccAddressFromBech32(msg.Minter)
 	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "minter is not a valid address")
+		return math.ZeroInt(), errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "minter is not a valid address")
 	}
 
-	return nil
+	return amount, nil
 }

@@ -14,6 +14,11 @@ import (
 func (ms msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMintResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
+	amount, err := msg.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	signers := msg.GetSigners()
 
 	if len(signers) == 0 {
@@ -27,11 +32,6 @@ func (ms msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgM
 
 	if !ms.IsAuthorized(ctx, params, signers[0].String()) {
 		return nil, errorsmod.Wrap(sdkerrors.ErrUnauthorized, "unauthorized sender")
-	}
-
-	amount, ok := math.NewIntFromString(msg.Amount)
-	if !ok {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid amount")
 	}
 
 	// Get current supply with proper error handling
