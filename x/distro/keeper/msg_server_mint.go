@@ -139,6 +139,10 @@ func newHalvingSchedule(params types.Params) (*HalvingSchedule, error) {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid max supply")
 	}
 
+	if params.MonthsInHalvingPeriod == 0 {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "param MonthsInHalvingPeriod must be greater than zero")
+	}
+
 	return &HalvingSchedule{
 		StartDate:       startDate,
 		MonthsPerPeriod: params.MonthsInHalvingPeriod,
