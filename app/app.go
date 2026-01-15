@@ -977,6 +977,8 @@ func (app *ChainApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted uint6
 		Cdc:                    app.appCodec,
 		AccountKeeper:          app.AccountKeeper,
 		BankKeeper:             app.BankKeeper,
+		LockupKeeper:           app.LockupKeeper,
+		StakingKeeper:          *app.StakingKeeper,
 		ExtensionOptionChecker: antetypes.HasDynamicFeeExtensionOption,
 		EvmKeeper:              app.EVMKeeper,
 		FeegrantKeeper:         app.FeeGrantKeeper,
