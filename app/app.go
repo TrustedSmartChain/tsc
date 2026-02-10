@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -144,6 +145,11 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 
+	// CosmWasm imports
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	// Tracer imports - force-load the tracer engines
@@ -209,6 +215,7 @@ var maccPerms = map[string][]string{
 	erc20types.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	distrotypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
 	precisebanktypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+	wasmtypes.ModuleName:           {authtypes.Burner},
 }
 
 var (
@@ -260,6 +267,7 @@ type ChainApp struct {
 
 	// Custom keepers
 	DistroKeeper distrokeeper.Keeper
+	WasmKeeper   wasmkeeper.Keeper
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -333,6 +341,8 @@ func NewChainApp(
 		erc20types.StoreKey,
 		// Custom keys
 		distrotypes.StoreKey,
+		// CosmWasm keys
+		wasmtypes.StoreKey,
 	)
 	tkeys := storetypes.NewTransientStoreKeys(paramstypes.TStoreKey, evmtypes.TransientKey, feemarkettypes.TransientKey)
 
@@ -665,11 +675,48 @@ func NewChainApp(
 	icaControllerStack := icacontroller.NewIBCMiddleware(app.ICAControllerKeeper)
 	icaHostStack := icahost.NewIBCModule(app.ICAHostKeeper)
 
+	// Create Wasm Keeper
+	wasmDir := filepath.Join(homePath, "wasm")
+
+	// Configure wasm node config
+	wasmNodeConfig := wasmtypes.NodeConfig{
+		SmartQueryGasLimit: uint64(3_000_000),
+		MemoryCacheSize:    uint32(100),
+		ContractDebugMode:  false,
+	}
+
+	// The last arguments can contain custom message handlers, and custom query handlers,
+	// if we want to allow any custom callbacks
+	availableCapabilities := wasmkeeper.BuiltInCapabilities()
+	app.WasmKeeper = wasmkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[wasmtypes.StoreKey]),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.StakingKeeper,
+		distrkeeper.NewQuerier(app.DistrKeeper),
+		app.IBCKeeper.ChannelKeeper, // ICS4Wrapper
+		app.IBCKeeper.ChannelKeeper, // ChannelKeeper
+		app.TransferKeeper.Keeper,   // ICS20TransferPortSource - use embedded keeper which has GetPort
+		app.MsgServiceRouter(),      // MessageRouter
+		app.GRPCQueryRouter(),       // GRPCQueryRouter (unused but needed)
+		wasmDir,
+		wasmNodeConfig,
+		wasmtypes.VMConfig{},
+		availableCapabilities,
+		authAddr,
+	)
+
+	// Create wasm IBC stack
+	var wasmStack porttypes.IBCModule
+	wasmStack = wasm.NewIBCHandler(app.WasmKeeper, app.IBCKeeper.ChannelKeeper, app.IBCKeeper.ChannelKeeper)
+
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferStack)
 	ibcRouter.AddRoute(icacontrollertypes.SubModuleName, icaControllerStack)
 	ibcRouter.AddRoute(icahosttypes.SubModuleName, icaHostStack)
+	ibcRouter.AddRoute(wasmtypes.ModuleName, wasmStack)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	clientKeeper := app.IBCKeeper.ClientKeeper
@@ -717,6 +764,8 @@ func NewChainApp(
 		erc20.NewAppModule(app.Erc20Keeper, app.AccountKeeper),
 		// Custom modules
 		distro.NewAppModule(appCodec, app.DistroKeeper),
+		// CosmWasm module
+		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
 
 	// BasicModuleManager defines the module BasicManager which is in charge of setting up basic,
@@ -760,6 +809,8 @@ func NewChainApp(
 		consensusparamtypes.ModuleName,
 		precisebanktypes.ModuleName,
 		vestingtypes.ModuleName,
+		// CosmWasm
+		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
 	)
@@ -782,6 +833,8 @@ func NewChainApp(
 		epochstypes.ModuleName,
 		precisebanktypes.ModuleName,
 		vestingtypes.ModuleName,
+		// CosmWasm
+		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
 	)
@@ -819,6 +872,8 @@ func NewChainApp(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		epochstypes.ModuleName,
+		// CosmWasm - must be after ibc and bank
+		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
 	}
@@ -1179,6 +1234,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
 	paramsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
+	paramsKeeper.Subspace(wasmtypes.ModuleName)
 
 	return paramsKeeper
 }
@@ -1234,6 +1290,10 @@ func (app *ChainApp) GetCallbackKeeper() ibccallbackskeeper.ContractKeeper {
 
 func (app *ChainApp) GetTransferKeeper() transferKeeper.Keeper {
 	return app.TransferKeeper
+}
+
+func (app *ChainApp) GetWasmKeeper() wasmkeeper.Keeper {
+	return app.WasmKeeper
 }
 
 func (app *ChainApp) GetMempool() sdkmempool.ExtMempool {
