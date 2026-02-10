@@ -9,6 +9,7 @@ import (
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
@@ -65,6 +66,7 @@ func (app *ChainApp) RegisterUpgradeHandlers() {
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added: []string{
 				epochstypes.StoreKey,
+				wasmtypes.StoreKey,
 			},
 			Deleted: []string{
 				crisistypes.StoreKey,
@@ -73,7 +75,7 @@ func (app *ChainApp) RegisterUpgradeHandlers() {
 				"feeibc",
 				"capability",
 				"tokenfactory",
-				"packetfowardmiddleware",
+				"packetforwardmiddleware",
 				"08-wasm",
 				"ratelimit",
 			},
