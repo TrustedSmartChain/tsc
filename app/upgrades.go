@@ -8,8 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	lockupprecompile "github.com/TrustedSmartChain/tsc/precompiles/lockup"
 	lockuptypes "github.com/TrustedSmartChain/tsc/x/lockup/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
@@ -53,6 +55,13 @@ func (app *ChainApp) RegisterUpgradeHandlers() {
 				return nil, err
 			}
 			sdkCtx.Logger().Info("EVM coin info initialized successfully")
+
+			// Enable the lockup precompile for existing chains
+			sdkCtx.Logger().Info("Enabling lockup precompile", "address", lockupprecompile.LockupPrecompileAddress)
+			if err := app.EVMKeeper.EnableStaticPrecompiles(sdkCtx, common.HexToAddress(lockupprecompile.LockupPrecompileAddress)); err != nil {
+				return nil, err
+			}
+			sdkCtx.Logger().Info("Lockup precompile enabled successfully")
 
 			return app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
 		},
