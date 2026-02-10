@@ -35,3 +35,22 @@ func (k Keeper) GetTotalDelegatedAmount(ctx sdk.Context, addr sdk.AccAddress) (*
 
 	return &totalDelegatedAmount, nil
 }
+
+// GetDelegationAmount returns the token amount of a single delegation.
+// Used by BeforeDelegationRemoved to subtract the delegation being removed
+// (which is still in the KV store with original shares at that point).
+func (k Keeper) GetDelegationAmount(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) (math.Int, error) {
+	delegation, err := k.stakingKeeper.GetDelegation(ctx, delAddr, valAddr)
+	if err != nil {
+		// Delegation not found — nothing to subtract.
+		return math.ZeroInt(), nil
+	}
+
+	validator, err := k.stakingKeeper.GetValidator(ctx, valAddr)
+	if err != nil {
+		return math.ZeroInt(), err
+	}
+
+	tokens := validator.TokensFromShares(delegation.GetShares())
+	return tokens.Ceil().TruncateInt(), nil
+}
