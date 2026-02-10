@@ -451,12 +451,6 @@ func NewChainApp(
 		app.AccountKeeper,
 	)
 
-	// register the staking hooks
-	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
-	app.StakingKeeper.SetHooks(
-		stakingtypes.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks()),
-	)
-
 	app.AuthzKeeper = authzkeeper.NewKeeper(
 		runtime.NewKVStoreService(keys[authzkeeper.StoreKey]),
 		appCodec,
@@ -538,6 +532,23 @@ func NewChainApp(
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.StakingKeeper,
+	)
+
+	// Register the lockup send restriction on the bank keeper so that locked
+	// tokens cannot be transferred via *any* path (Cosmos SDK msgs, EVM
+	// native transfers, IBC, etc.).
+	app.BankKeeper.AppendSendRestriction(app.LockupKeeper.SendRestrictionFn)
+
+	// Register the staking hooks.
+	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks.
+	// The lockup hooks prevent undelegation below the locked amount via any path
+	// (Cosmos SDK msgs, EVM staking precompile, authz, etc.).
+	app.StakingKeeper.SetHooks(
+		stakingtypes.NewMultiStakingHooks(
+			app.DistrKeeper.Hooks(),
+			app.SlashingKeeper.Hooks(),
+			app.LockupKeeper.Hooks(),
+		),
 	)
 
 	// Create Epochs keeper
@@ -993,8 +1004,6 @@ func (app *ChainApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted uint6
 		Cdc:                    app.appCodec,
 		AccountKeeper:          app.AccountKeeper,
 		BankKeeper:             app.BankKeeper,
-		LockupKeeper:           app.LockupKeeper,
-		StakingKeeper:          *app.StakingKeeper,
 		ExtensionOptionChecker: antetypes.HasDynamicFeeExtensionOption,
 		EvmKeeper:              app.EVMKeeper,
 		FeegrantKeeper:         app.FeeGrantKeeper,
