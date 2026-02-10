@@ -10,6 +10,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	lockuptypes "github.com/TrustedSmartChain/tsc/x/lockup/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
@@ -67,6 +68,7 @@ func (app *ChainApp) RegisterUpgradeHandlers() {
 			Added: []string{
 				epochstypes.StoreKey,
 				wasmtypes.StoreKey,
+				lockuptypes.StoreKey,
 			},
 			Deleted: []string{
 				crisistypes.StoreKey,
