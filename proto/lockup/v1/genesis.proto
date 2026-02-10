@@ -1,0 +1,7 @@
+syntax = "proto3";
+package lockup.v1;
+
+option go_package = "github.com/TrustedSmartChain/tsc/x/lockup/types";
+
+// GenesisState defines the module genesis state
+message GenesisState {}

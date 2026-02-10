@@ -28,14 +28,14 @@ import (
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-
 	chainante "github.com/TrustedSmartChain/tsc/app/ante"
 	distro "github.com/TrustedSmartChain/tsc/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/x/distro/keeper"
 	distrotypes "github.com/TrustedSmartChain/tsc/x/distro/types"
-
+	lockup "github.com/TrustedSmartChain/tsc/x/lockup"
+	lockupkeeper "github.com/TrustedSmartChain/tsc/x/lockup/keeper"
+	lockuptypes "github.com/TrustedSmartChain/tsc/x/lockup/types"
 	abci "github.com/cometbft/cometbft/abci/types"
-
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -97,8 +97,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
-	// Cosmos EVM imports
 	evmante "github.com/cosmos/evm/ante"
 	antetypes "github.com/cosmos/evm/ante/types"
 	evmencoding "github.com/cosmos/evm/encoding"
@@ -120,12 +118,7 @@ import (
 	"github.com/cosmos/evm/x/vm"
 	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
-
 	"github.com/cosmos/gogoproto/proto"
-
-	"google.golang.org/protobuf/reflect/protoregistry"
-
-	// IBC imports
 	ica "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
 	icacontroller "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/keeper"
@@ -144,6 +137,7 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
+	"google.golang.org/protobuf/reflect/protoregistry"
 
 	// CosmWasm imports
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -151,11 +145,8 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	"github.com/ethereum/go-ethereum/common"
-
-	// Tracer imports - force-load the tracer engines
 	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
-
 	"github.com/spf13/cast"
 )
 
@@ -267,7 +258,10 @@ type ChainApp struct {
 
 	// Custom keepers
 	DistroKeeper distrokeeper.Keeper
-	WasmKeeper   wasmkeeper.Keeper
+	LockupKeeper lockupkeeper.Keeper
+
+	// Wasm keeper
+	WasmKeeper wasmkeeper.Keeper
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -341,6 +335,7 @@ func NewChainApp(
 		erc20types.StoreKey,
 		// Custom keys
 		distrotypes.StoreKey,
+		lockuptypes.StoreKey,
 		// CosmWasm keys
 		wasmtypes.StoreKey,
 	)
@@ -532,6 +527,17 @@ func NewChainApp(
 	)
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
+
+	// Create the lockup Keeper
+	app.LockupKeeper = lockupkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[lockuptypes.StoreKey]),
+		logger,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.StakingKeeper,
+	)
 
 	// Create Epochs keeper
 	app.EpochsKeeper = epochskeeper.NewKeeper(
@@ -764,6 +770,7 @@ func NewChainApp(
 		erc20.NewAppModule(app.Erc20Keeper, app.AccountKeeper),
 		// Custom modules
 		distro.NewAppModule(appCodec, app.DistroKeeper),
+		lockup.NewAppModule(appCodec, app.LockupKeeper),
 		// CosmWasm module
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
@@ -813,6 +820,7 @@ func NewChainApp(
 		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
+		lockuptypes.ModuleName,
 	)
 
 	// NOTE: the feemarket module should go last in order of end blockers that are actually doing something,
@@ -837,6 +845,7 @@ func NewChainApp(
 		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
+		lockuptypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -876,6 +885,7 @@ func NewChainApp(
 		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
+		lockuptypes.ModuleName,
 	}
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)
@@ -967,6 +977,8 @@ func (app *ChainApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted uint6
 		Cdc:                    app.appCodec,
 		AccountKeeper:          app.AccountKeeper,
 		BankKeeper:             app.BankKeeper,
+		LockupKeeper:           app.LockupKeeper,
+		StakingKeeper:          *app.StakingKeeper,
 		ExtensionOptionChecker: antetypes.HasDynamicFeeExtensionOption,
 		EvmKeeper:              app.EVMKeeper,
 		FeegrantKeeper:         app.FeeGrantKeeper,
@@ -1235,6 +1247,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
 	paramsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
 	paramsKeeper.Subspace(wasmtypes.ModuleName)
+	paramsKeeper.Subspace(lockuptypes.ModuleName)
 
 	return paramsKeeper
 }
