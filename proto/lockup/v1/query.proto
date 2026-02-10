@@ -1,0 +1,92 @@
+syntax = "proto3";
+package lockup.v1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "lockup/v1/lock.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/x/lockup/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // ActiveLocks queries all active locks with an unlock date in the future.
+  rpc ActiveLocks(QueryActiveLocksRequest) returns (QueryActiveLocksResponse) {
+    option (google.api.http).get = "/tsc/lockup/active_locks";
+  }
+
+  // TotalLockedAmount queries the total amount of tokens locked across all accounts.
+  rpc TotalLockedAmount(QueryTotalLockedAmountRequest) returns (QueryTotalLockedAmountResponse) {
+    option (google.api.http).get = "/tsc/lockup/total_locked_amount";
+  }
+
+  // AccountLocks queries active locks for multiple addresses.
+  rpc AccountLocks(QueryAccountLocksRequest) returns (QueryAccountLocksResponse) {
+    option (google.api.http).get = "/tsc/lockup/account_locks";
+  }
+  
+  // Locks queries active locks for an address.
+  rpc Locks(QueryLocksRequest) returns (QueryLocksResponse) {
+    option (google.api.http).get = "/tsc/lockup/account_locks/{address}";
+  }
+}
+
+// QueryActiveLocksRequest is request type for the Query/ActiveLocks RPC method.
+message QueryActiveLocksRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryActiveLocksResponse is response type for the Query/ActiveLocks RPC method.
+message QueryActiveLocksResponse {
+  repeated ActiveLockResource                    locks      = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message ActiveLockResource {
+  string                   address     = 1;
+  string                   unlock_date = 2;
+  cosmos.base.v1beta1.Coin amount      = 3 [(gogoproto.nullable) = false];
+}
+
+// QueryTotalLockedAmountRequest is request type for the Query/TotalLockedAmount RPC method.
+message QueryTotalLockedAmountRequest {}
+
+// QueryTotalLockedAmountResponse is response type for the Query/TotalLockedAmount RPC method.
+message QueryTotalLockedAmountResponse {
+  cosmos.base.v1beta1.Coin total_locked = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryAccountLocksRequest is request type for the Query/AccountLocks RPC method.
+message QueryAccountLocksRequest {
+  string addresses = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryAccountLocksResponse is response type for the Query/AccountLocks RPC method.
+message QueryAccountLocksResponse {
+  repeated AccountLocksResource accounts = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message AccountLocksResource {
+  string        address = 1;
+  repeated LockResource locks   = 2 [(gogoproto.nullable) = false];
+}
+
+message LockResource {
+  string                   unlock_date = 1;
+  cosmos.base.v1beta1.Coin amount      = 3 [(gogoproto.nullable) = false];
+}
+
+// QueryLocksRequest is request type for the Query/Locks RPC method.
+message QueryLocksRequest {
+  string address = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryLocksResponse is response type for the Query/Locks RPC method.
+message QueryLocksResponse {
+  repeated LockResource locks = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

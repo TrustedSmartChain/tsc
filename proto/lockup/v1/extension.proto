@@ -1,0 +1,16 @@
+syntax = "proto3";
+package lockup.v1;
+
+import "cosmos/msg/v1/msg.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/x/lockup/types";
+
+message Extension {
+
+  string                   from_date = 1;
+  string                   to_date   = 2;
+  cosmos.base.v1beta1.Coin amount    = 3 [(gogoproto.nullable) = false];
+}

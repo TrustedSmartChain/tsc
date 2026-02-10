@@ -5,11 +5,15 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	txsigning "cosmossdk.io/x/tx/signing"
 
+	lockupkeeper "github.com/TrustedSmartChain/tsc/x/lockup/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	evmante "github.com/cosmos/evm/ante"
 	anteinterfaces "github.com/cosmos/evm/ante/interfaces"
@@ -21,8 +25,10 @@ import (
 // AnteHandler decorators.
 type HandlerOptions struct {
 	Cdc                    codec.BinaryCodec
-	AccountKeeper          anteinterfaces.AccountKeeper
-	BankKeeper             anteinterfaces.BankKeeper
+	AccountKeeper          authkeeper.AccountKeeper
+	BankKeeper             bankkeeper.Keeper
+	LockupKeeper           lockupkeeper.Keeper
+	StakingKeeper          stakingkeeper.Keeper
 	IBCKeeper              *ibckeeper.Keeper
 	FeeMarketKeeper        anteinterfaces.FeeMarketKeeper
 	EvmKeeper              anteinterfaces.EVMKeeper
@@ -40,9 +46,6 @@ type HandlerOptions struct {
 func (options HandlerOptions) Validate() error {
 	if options.Cdc == nil {
 		return errorsmod.Wrap(errortypes.ErrLogic, "codec is required for AnteHandler")
-	}
-	if options.AccountKeeper == nil {
-		return errorsmod.Wrap(errortypes.ErrLogic, "account keeper is required for AnteHandler")
 	}
 	if options.BankKeeper == nil {
 		return errorsmod.Wrap(errortypes.ErrLogic, "bank keeper is required for AnteHandler")

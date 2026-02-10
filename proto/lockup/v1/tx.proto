@@ -1,0 +1,64 @@
+syntax = "proto3";
+package lockup.v1;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "lockup/v1/extension.proto";
+import "lockup/v1/output.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/x/lockup/types";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // Lock locks tokens for a specific address.
+  rpc Lock                     (MsgLock                    ) returns (MsgLockResponse                    );
+  // Extend extends the lock duration for a specific address.
+  rpc Extend                   (MsgExtend                  ) returns (MsgExtendResponse                  );
+  // SendDelegateAndLock sends tokens to a specific address, delegates them to a validator, and locks them until a specified unlock date.
+  rpc SendDelegateAndLock      (MsgSendDelegateAndLock     ) returns (MsgSendDelegateAndLockResponse     );
+  // MultiSendDelegateAndLock sends tokens to multiple addresses, delegates them to a validator, and locks them until specified unlock dates.
+  rpc MultiSendDelegateAndLock (MsgMultiSendDelegateAndLock) returns (MsgMultiSendDelegateAndLockResponse);
+}
+
+message MsgLock {
+  option (cosmos.msg.v1.signer) = "address";
+  string                   address     = 1;
+  string                   unlock_date = 2;
+  cosmos.base.v1beta1.Coin amount      = 3 [(gogoproto.nullable) = false];
+}
+
+message MsgLockResponse {}
+
+message MsgExtend {
+  option (cosmos.msg.v1.signer) = "address";
+  string             address    = 1;
+  repeated Extension extensions = 2;
+}
+
+message MsgExtendResponse {}
+
+message MsgSendDelegateAndLock {
+  option (cosmos.msg.v1.signer) = "from_address";
+  string                   from_address      = 1;
+  string                   to_address        = 2;
+  string                   validator_address = 3;
+  string                   unlock_date       = 4;
+  cosmos.base.v1beta1.Coin amount            = 5 [(gogoproto.nullable) = false];
+}
+
+message MsgSendDelegateAndLockResponse {}
+
+message MsgMultiSendDelegateAndLock {
+  option (cosmos.msg.v1.signer) = "from_address";
+  string                                  from_address = 1;
+  cosmos.base.v1beta1.Coin                total_amount  = 2 [(gogoproto.nullable) = false];
+  repeated MultiSendDelegateAndLockOutput outputs      = 3;
+}
+
+message MsgMultiSendDelegateAndLockResponse {}
+
