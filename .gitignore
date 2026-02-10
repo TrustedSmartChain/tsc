@@ -7,3 +7,5 @@ web/
 
 .vscode
 build/
+
+lockup-test/

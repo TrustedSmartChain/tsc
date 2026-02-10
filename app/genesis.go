@@ -2,14 +2,20 @@ package app
 
 import (
 	"encoding/json"
+	"sort"
 
+	lockupprecompile "github.com/TrustedSmartChain/tsc/precompiles/lockup"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/x/mint"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	erc20types "github.com/cosmos/evm/x/erc20/types"
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
+	"github.com/cosmos/evm/x/vm"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
-
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 // GenesisState of the blockchain is represented here as a map of raw json
@@ -24,7 +30,15 @@ type GenesisState map[string]json.RawMessage
 // NewEVMGenesisState returns the default genesis state for the EVM module.
 func NewEVMGenesisState() *evmtypes.GenesisState {
 	evmGenState := evmtypes.DefaultGenesisState()
-	evmGenState.Params.ActiveStaticPrecompiles = evmtypes.AvailableStaticPrecompiles
+
+	// Set the EVM denom to the chain's base denomination
+	evmGenState.Params.EvmDenom = BaseDenom
+	evmGenState.Params.ExtendedDenomOptions = &evmtypes.ExtendedDenomOptions{ExtendedDenom: BaseDenom}
+
+	// Include the default precompiles plus the custom lockup precompile
+	activePrecompiles := append(evmtypes.AvailableStaticPrecompiles, lockupprecompile.LockupPrecompileAddress) //nolint:gocritic // append to new slice
+	sort.Strings(activePrecompiles)
+	evmGenState.Params.ActiveStaticPrecompiles = activePrecompiles
 	evmGenState.Preinstalls = evmtypes.DefaultPreinstalls
 
 	return evmGenState
@@ -78,4 +92,40 @@ func NewBankGenesisState() *banktypes.GenesisState {
 	}
 
 	return bankGenState
+}
+
+// ---------------------------------------------------------------------------
+// Custom AppModuleBasic wrappers
+// ---------------------------------------------------------------------------
+// These embed the upstream AppModuleBasic and override only DefaultGenesis
+// so that `tscd init` produces a genesis with the chain's custom defaults
+// (e.g. the lockup precompile in ActiveStaticPrecompiles, correct bond denom,
+// denom metadata, etc.) without relying on shell-script jq overrides.
+
+// evmAppModuleBasic wraps the EVM module's AppModuleBasic.
+type evmAppModuleBasic struct{ vm.AppModuleBasic }
+
+func (evmAppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
+	return cdc.MustMarshalJSON(NewEVMGenesisState())
+}
+
+// stakingAppModuleBasic wraps the staking module's AppModuleBasic.
+type stakingAppModuleBasic struct{ staking.AppModuleBasic }
+
+func (stakingAppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
+	return cdc.MustMarshalJSON(NewStakingGenesisState())
+}
+
+// bankAppModuleBasic wraps the bank module's AppModuleBasic.
+type bankAppModuleBasic struct{ bank.AppModuleBasic }
+
+func (bankAppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
+	return cdc.MustMarshalJSON(NewBankGenesisState())
+}
+
+// mintAppModuleBasic wraps the mint module's AppModuleBasic.
+type mintAppModuleBasic struct{ mint.AppModuleBasic }
+
+func (mintAppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
+	return cdc.MustMarshalJSON(NewMintGenesisState())
 }

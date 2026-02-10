@@ -29,6 +29,7 @@ import (
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	chainante "github.com/TrustedSmartChain/tsc/app/ante"
+	lockupprecompile "github.com/TrustedSmartChain/tsc/precompiles/lockup"
 	distro "github.com/TrustedSmartChain/tsc/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/x/distro/keeper"
 	distrotypes "github.com/TrustedSmartChain/tsc/x/distro/types"
@@ -595,6 +596,16 @@ func NewChainApp(
 		),
 	)
 
+	// Register the lockup precompile
+	lockupPrecompile := lockupprecompile.NewPrecompile(
+		app.LockupKeeper,
+		lockupkeeper.NewMsgServerImpl(app.LockupKeeper),
+		lockupkeeper.NewQuerier(app.LockupKeeper),
+		app.StakingKeeper,
+		app.BankKeeper,
+	)
+	app.EVMKeeper.RegisterStaticPrecompile(lockupPrecompile.Address(), lockupPrecompile)
+
 	app.Erc20Keeper = erc20keeper.NewKeeper(
 		keys[erc20types.StoreKey],
 		appCodec,
@@ -777,13 +788,18 @@ func NewChainApp(
 
 	// BasicModuleManager defines the module BasicManager which is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration and genesis verification.
+	// By overriding certain modules' AppModuleBasic, we can customize the default genesis
+	// that is generated during `tscd init`.
 	app.BasicModuleManager = module.NewBasicManagerFromManager(
 		app.ModuleManager,
 		map[string]module.AppModuleBasic{
 			genutiltypes.ModuleName:     genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
-			stakingtypes.ModuleName:     staking.AppModuleBasic{},
+			stakingtypes.ModuleName:     stakingAppModuleBasic{},
 			govtypes.ModuleName:         gov.NewAppModuleBasic(nil),
 			ibctransfertypes.ModuleName: transfer.AppModuleBasic{AppModuleBasic: &ibctransfer.AppModuleBasic{}},
+			evmtypes.ModuleName:         evmAppModuleBasic{},
+			banktypes.ModuleName:        bankAppModuleBasic{},
+			minttypes.ModuleName:        mintAppModuleBasic{},
 		},
 	)
 	app.BasicModuleManager.RegisterLegacyAminoCodec(legacyAmino)
@@ -1227,7 +1243,7 @@ func BlockedAddresses() map[string]bool {
 	// allow the following addresses to receive funds
 	delete(blockedAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
-	blockedPrecompilesHex := evmtypes.AvailableStaticPrecompiles
+	blockedPrecompilesHex := append(evmtypes.AvailableStaticPrecompiles, lockupprecompile.LockupPrecompileAddress) //nolint:gocritic
 	for _, precompile := range blockedPrecompilesHex {
 		blockedAddrs[utils.EthHexToCosmosAddr(precompile).String()] = true
 	}
