@@ -20,7 +20,7 @@ import (
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 )
 
-const UpgradeName = "v2"
+const UpgradeName = "v2-lockup"
 
 func (app *ChainApp) RegisterUpgradeHandlers() {
 	app.UpgradeKeeper.SetUpgradeHandler(
