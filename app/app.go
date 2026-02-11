@@ -156,8 +156,8 @@ const (
 	NodeDir      = ".tsc"
 	Bech32Prefix = "tsc"
 
-	ChainID    = "tsc_87878-1"
-	EVMChainID = uint64(87878)
+	ChainID    = "tsc_8878788-1"
+	EVMChainID = uint64(8878788)
 )
 
 func init() {
