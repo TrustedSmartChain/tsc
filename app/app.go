@@ -301,7 +301,7 @@ func NewChainApp(
 		appName,
 		logger,
 		db,
-		encodingConfig.TxConfig.TxDecoder(),
+		LegacyAwareTxDecoder(encodingConfig.TxConfig.TxDecoder(), encodingConfig.TxConfig),
 		baseAppOptions...,
 	)
 	bApp.SetCommitMultiStoreTracer(traceStore)
@@ -405,7 +405,7 @@ func NewChainApp(
 	if err != nil {
 		panic(err)
 	}
-	app.txConfig = txConfig
+	app.txConfig = NewLegacyAwareTxConfig(txConfig)
 
 	app.StakingKeeper = stakingkeeper.NewKeeper(
 		appCodec,
