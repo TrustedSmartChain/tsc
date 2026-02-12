@@ -90,7 +90,7 @@ func NewRootCmd() *cobra.Command {
 					return err
 				}
 
-				initClientCtx = initClientCtx.WithTxConfig(txConfig)
+				initClientCtx = initClientCtx.WithTxConfig(app.NewLegacyAwareTxConfig(txConfig))
 			}
 
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
