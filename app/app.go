@@ -289,7 +289,11 @@ func NewChainApp(
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *ChainApp {
 
-	evmChainID := cast.ToUint64(appOpts.Get(srvflags.EVMChainID))
+	// Always use our hardcoded EVM chain ID. The app.toml evm-chain-id field
+	// may contain the cosmos/evm default (262144) from an older config or from
+	// first init, which is wrong for this chain. The canonical EVM chain ID is
+	// derived from the Cosmos chain ID (tsc_87878-1 → 87878).
+	evmChainID := EVMChainID
 	encodingConfig := evmencoding.MakeConfig(evmChainID)
 
 	appCodec := encodingConfig.Codec
