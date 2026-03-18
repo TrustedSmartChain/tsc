@@ -1,0 +1,176 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Trusted Smart Chain - gRPC Gateway docs",
+    "description": "A REST interface for state queries and transactions.",
+    "version": "1.0.0"
+  },
+  "apis": [
+    {
+      "url": "./tmp-swagger-gen/cosmos/auth/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "AuthParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/bank/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "BankParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/base/tendermint/v1beta1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/base/node/v1beta1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/distribution/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "DistributionParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/evidence/v1beta1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/gov/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "GovParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/gov/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "GovV1Params",
+          "Query_Proposal": "GovV1Proposal",
+          "Query_Proposals": "GovV1Proposals",
+          "Query_Vote": "GovV1Vote",
+          "Query_Votes": "GovV1Votes",
+          "Query_Deposit": "GovV1Deposit",
+          "Query_Deposits": "GovV1Deposits",
+          "Query_TallyResult": "GovV1TallyResult"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/mint/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "MintParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/params/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "ParamsParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/slashing/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "SlashingParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/staking/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "StakingParams",
+          "Query_DelegatorValidators": "StakingDelegatorValidators"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/tx/v1beta1/service.swagger.json",
+      "dereference": {
+        "circular": "ignore"
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/upgrade/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "UpgradeParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/authz/v1beta1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/feegrant/v1beta1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/nft/v1beta1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "NftParams",
+          "Query_Balance": "NftBalance"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/group/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "GroupParams",
+          "Query_Proposal": "GroupProposal",
+          "Query_TallyResult": "GroupTallyResult"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/circuit/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Accounts": "CircuitAccounts",
+          "Query_Account": "CircuitAccount",
+          "Query_Params": "CircuitParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/consensus/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Query_Params": "ConsensusParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/cosmos/app/v1alpha1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/distro/v1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/distro/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Msg_UpdateParams": "DistroUpdateParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/lockup/v1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/lockup/v1/tx.swagger.json"
+    }
+  ]
+}

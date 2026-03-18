@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -29,6 +31,7 @@ import (
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	chainante "github.com/TrustedSmartChain/tsc/app/ante"
+	"github.com/TrustedSmartChain/tsc/client/docs"
 	lockupprecompile "github.com/TrustedSmartChain/tsc/precompiles/lockup"
 	distro "github.com/TrustedSmartChain/tsc/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/x/distro/keeper"
@@ -289,11 +292,7 @@ func NewChainApp(
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *ChainApp {
 
-	// Always use our hardcoded EVM chain ID. The app.toml evm-chain-id field
-	// may contain the cosmos/evm default (262144) from an older config or from
-	// first init, which is wrong for this chain. The canonical EVM chain ID is
-	// derived from the Cosmos chain ID (tsc_87878-1 → 87878).
-	evmChainID := EVMChainID
+	evmChainID := cast.ToUint64(appOpts.Get(srvflags.EVMChainID))
 	encodingConfig := evmencoding.MakeConfig(evmChainID)
 
 	appCodec := encodingConfig.Codec
@@ -1210,9 +1209,14 @@ func (app *ChainApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIC
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// register swagger API from root so that other applications can override easily
-	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
-		panic(err)
+	// register swagger API with custom module docs included
+	if apiConfig.Swagger {
+		root, err := fs.Sub(docs.SwaggerUI, "swagger-ui")
+		if err != nil {
+			panic(err)
+		}
+		staticServer := http.FileServer(http.FS(root))
+		apiSvr.Router.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
 	}
 }
 
