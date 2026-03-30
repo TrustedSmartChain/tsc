@@ -12,7 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	lockuptypes "github.com/TrustedSmartChain/tsc/x/lockup/types"
+	lockuptypes "github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
-	"github.com/TrustedSmartChain/tsc/x/distro/types"
+	"github.com/TrustedSmartChain/tsc/v2/x/distro/types"
 )
 
 // !NOTE: Must enable in module.go (disabled in favor of autocli.go)

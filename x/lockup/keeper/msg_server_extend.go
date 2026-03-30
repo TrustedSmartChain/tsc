@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/TrustedSmartChain/tsc/x/lockup/types"
+	"github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
-	"github.com/TrustedSmartChain/tsc/x/lockup/types"
+	"github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 

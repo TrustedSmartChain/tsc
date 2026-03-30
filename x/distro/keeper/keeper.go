@@ -12,7 +12,7 @@ import (
 	storetypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 
-	"github.com/TrustedSmartChain/tsc/x/distro/types"
+	"github.com/TrustedSmartChain/tsc/v2/x/distro/types"
 )
 
 type Keeper struct {

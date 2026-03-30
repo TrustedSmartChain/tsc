@@ -3,7 +3,7 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/TrustedSmartChain/tsc/x/lockup/types"
+	"github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
 	"github.com/stretchr/testify/require"
 )
 
