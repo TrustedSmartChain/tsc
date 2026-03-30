@@ -18,8 +18,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/TrustedSmartChain/tsc/x/distro/keeper"
-	"github.com/TrustedSmartChain/tsc/x/distro/types"
+	"github.com/TrustedSmartChain/tsc/v2/x/distro/keeper"
+	"github.com/TrustedSmartChain/tsc/v2/x/distro/types"
 )
 
 const (

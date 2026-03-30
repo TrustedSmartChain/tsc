@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	lockupprecompile "github.com/TrustedSmartChain/tsc/precompiles/lockup"
+	lockupprecompile "github.com/TrustedSmartChain/tsc/v2/precompiles/lockup"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"

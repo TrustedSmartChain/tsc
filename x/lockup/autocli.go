@@ -2,7 +2,7 @@ package module
 
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
-	modulev1 "github.com/TrustedSmartChain/tsc/api/lockup/v1"
+	modulev1 "github.com/TrustedSmartChain/tsc/v2/api/lockup/v1"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.

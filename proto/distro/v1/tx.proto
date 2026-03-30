@@ -6,7 +6,7 @@ import "distro/v1/genesis.proto";
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 
-option go_package = "github.com/TrustedSmartChain/tsc/x/distro/types";
+option go_package = "github.com/TrustedSmartChain/tsc/v2/x/distro/types";
 
 // Msg defines the Msg service.
 service Msg {

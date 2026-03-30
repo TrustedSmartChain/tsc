@@ -7,7 +7,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "lockup/v1/lock.proto";
 
-option go_package = "github.com/TrustedSmartChain/tsc/x/lockup/types";
+option go_package = "github.com/TrustedSmartChain/tsc/v2/x/lockup/types";
 
 // Query defines the gRPC querier service.
 service Query {

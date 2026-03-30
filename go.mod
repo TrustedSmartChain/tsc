@@ -1,4 +1,4 @@
-module github.com/TrustedSmartChain/tsc
+module github.com/TrustedSmartChain/tsc/v2
 
 go 1.24.0
 
