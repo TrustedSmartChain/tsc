@@ -80,7 +80,16 @@ func (h Hooks) BeforeDelegationSharesModified(_ context.Context, _ sdk.AccAddres
 // AfterDelegationModified fires after a delegation's shares have been changed
 // but the delegation record still exists (partial undelegation or re-delegation).
 // We re-check the lockup invariant: totalDelegated >= totalLocked.
-func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddress, _ sdk.ValAddress) error {
+//
+// If this modification is part of a MsgBeginRedelegate, the ante handler will
+// have marked the context via WithRedelegating. In that case we skip the check:
+// the SDK unbonds from the source validator before delegating to the destination,
+// so the total delegated amount is temporarily reduced. The invariant will be
+// enforced once the destination delegation is created.
+func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
+	if isRedelegating(ctx, delAddr, valAddr) {
+		return nil
+	}
 	return h.checkLockupInvariant(ctx, delAddr)
 }
 
