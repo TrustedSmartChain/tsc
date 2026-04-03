@@ -9,3 +9,5 @@ web/
 build/
 
 lockup-test/
+
+.claude/
