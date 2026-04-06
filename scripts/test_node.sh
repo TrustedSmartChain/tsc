@@ -121,6 +121,9 @@ from_scratch () {
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_fee"]=[]'
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_gas_consume"]=100000'
 
+  # licenses
+  update_test_genesis '.app_state["licenses"]["params"]["owner"]="tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"'
+
 
   BASE_GENESIS_ALLOCATIONS="1000000000000000000000$DENOM"
 
