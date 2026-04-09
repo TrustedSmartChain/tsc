@@ -15,7 +15,12 @@
       }
     },
     {
-      "url": "./tmp-swagger-gen/distro/v1/tx.swagger.json"
+      "url": "./tmp-swagger-gen/distro/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "DistroUpdateParams"
+        }
+      }
     },
     {
       "url": "./tmp-swagger-gen/lockup/v1/query.swagger.json",
@@ -26,7 +31,12 @@
       }
     },
     {
-      "url": "./tmp-swagger-gen/lockup/v1/tx.swagger.json"
+      "url": "./tmp-swagger-gen/lockup/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "LockupUpdateParams"
+        }
+      }
     },
     {
       "url": "./tmp-swagger-gen/licenses/v1/query.swagger.json",
@@ -37,7 +47,12 @@
       }
     },
     {
-      "url": "./tmp-swagger-gen/licenses/v1/tx.swagger.json"
+      "url": "./tmp-swagger-gen/licenses/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "LicensesUpdateParams"
+        }
+      }
     }
   ]
 }

@@ -5,6 +5,7 @@ import "cosmos/msg/v1/msg.proto";
 import "distro/v1/genesis.proto";
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/TrustedSmartChain/tsc/v2/x/distro/types";
 
@@ -15,8 +16,12 @@ service Msg {
   // UpdateParams defines a governance operation for updating the parameters.
   //
   // Since: cosmos-sdk 0.47
-  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
-  rpc Mint       (MsgMint        ) returns (MsgMintResponse        );
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {
+    option (google.api.http).post = "/tsc/distro/v1/tx/update_params";
+  }
+  rpc Mint(MsgMint) returns (MsgMintResponse) {
+    option (google.api.http).post = "/tsc/distro/v1/tx/mint";
+  }
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
