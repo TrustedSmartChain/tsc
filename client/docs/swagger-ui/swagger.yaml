@@ -4,7 +4,7 @@ info:
   description: A REST interface for state queries and transactions.
   version: 1.0.0
 paths:
-  /distro/v1/params:
+  /tsc/distro/v1/params:
     get:
       summary: Params queries all parameters of the module.
       operationId: DistroParams
@@ -58,6 +58,80 @@ paths:
                       format: byte
       tags:
         - Query
+  /tsc/distro/v1/tx/mint:
+    post:
+      operationId: Mint
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/distro/v1/tx/update_params:
+    post:
+      summary: UpdateParams defines a governance operation for updating the parameters.
+      description: 'Since: cosmos-sdk 0.47'
+      operationId: DistroUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgUpdateParamsResponse defines the response structure for
+              executing a
+
+              MsgUpdateParams message.
+
+
+              Since: cosmos-sdk 0.47
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
   /tsc/lockup/account_locks:
     get:
       summary: AccountLocks queries active locks for multiple addresses.
@@ -553,6 +627,142 @@ paths:
                       format: byte
       tags:
         - Query
+  /tsc/lockup/v1/tx/extend:
+    post:
+      summary: Extend extends the lock duration for a specific address.
+      operationId: Extend
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/lockup/v1/tx/lock:
+    post:
+      summary: Lock locks tokens for a specific address.
+      operationId: Lock
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/lockup/v1/tx/multi_send_delegate_and_lock:
+    post:
+      summary: >-
+        MultiSendDelegateAndLock sends tokens to multiple addresses, delegates
+        them to a validator, and locks them until specified unlock dates.
+      operationId: MultiSendDelegateAndLock
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/lockup/v1/tx/send_delegate_and_lock:
+    post:
+      summary: >-
+        SendDelegateAndLock sends tokens to a specific address, delegates them
+        to a validator, and locks them until a specified unlock date.
+      operationId: SendDelegateAndLock
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
   /webstack/licenses/admin_key/{address}:
     get:
       summary: AdminKey queries the admin key grants for a given address.
@@ -2252,7 +2462,7 @@ paths:
       summary: >-
         UpdateParams defines a governance operation for updating the module
         parameters.
-      operationId: UpdateParams
+      operationId: LicensesUpdateParams
       responses:
         '200':
           description: A successful response.
