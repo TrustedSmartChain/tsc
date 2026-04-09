@@ -6,6 +6,7 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
 import "lockup/v1/extension.proto";
 import "lockup/v1/output.proto";
 
@@ -16,13 +17,21 @@ service Msg {
   option (cosmos.msg.v1.service) = true;
 
   // Lock locks tokens for a specific address.
-  rpc Lock                     (MsgLock                    ) returns (MsgLockResponse                    );
+  rpc Lock(MsgLock) returns (MsgLockResponse) {
+    option (google.api.http).post = "/tsc/lockup/v1/tx/lock";
+  }
   // Extend extends the lock duration for a specific address.
-  rpc Extend                   (MsgExtend                  ) returns (MsgExtendResponse                  );
+  rpc Extend(MsgExtend) returns (MsgExtendResponse) {
+    option (google.api.http).post = "/tsc/lockup/v1/tx/extend";
+  }
   // SendDelegateAndLock sends tokens to a specific address, delegates them to a validator, and locks them until a specified unlock date.
-  rpc SendDelegateAndLock      (MsgSendDelegateAndLock     ) returns (MsgSendDelegateAndLockResponse     );
+  rpc SendDelegateAndLock(MsgSendDelegateAndLock) returns (MsgSendDelegateAndLockResponse) {
+    option (google.api.http).post = "/tsc/lockup/v1/tx/send_delegate_and_lock";
+  }
   // MultiSendDelegateAndLock sends tokens to multiple addresses, delegates them to a validator, and locks them until specified unlock dates.
-  rpc MultiSendDelegateAndLock (MsgMultiSendDelegateAndLock) returns (MsgMultiSendDelegateAndLockResponse);
+  rpc MultiSendDelegateAndLock(MsgMultiSendDelegateAndLock) returns (MsgMultiSendDelegateAndLockResponse) {
+    option (google.api.http).post = "/tsc/lockup/v1/tx/multi_send_delegate_and_lock";
+  }
 }
 
 message MsgLock {

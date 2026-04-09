@@ -10,7 +10,7 @@ option go_package = "github.com/TrustedSmartChain/tsc/v2/x/distro/types";
 service Query {
   // Params queries all parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/distro/v1/params";
+    option (google.api.http).get = "/tsc/distro/v1/params";
   }
 }
 
