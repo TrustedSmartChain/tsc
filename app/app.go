@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -29,6 +31,7 @@ import (
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	chainante "github.com/TrustedSmartChain/tsc/v2/app/ante"
+	docs "github.com/TrustedSmartChain/tsc/v2/client/docs"
 	lockupprecompile "github.com/TrustedSmartChain/tsc/v2/precompiles/lockup"
 	distro "github.com/TrustedSmartChain/tsc/v2/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/v2/x/distro/keeper"
@@ -1236,9 +1239,19 @@ func (app *ChainApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIC
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// register swagger API from root so that other applications can override easily
+	// register cosmos SDK swagger at /swagger/
 	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
 		panic(err)
+	}
+
+	// register custom modules swagger at /
+	if apiConfig.Swagger {
+		root, err := fs.Sub(docs.SwaggerUI, "swagger-ui")
+		if err != nil {
+			panic(err)
+		}
+		staticServer := http.FileServer(http.FS(root))
+		apiSvr.Router.PathPrefix("/").Handler(staticServer)
 	}
 }
 
