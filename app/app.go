@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -30,13 +32,11 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	chainante "github.com/TrustedSmartChain/tsc/v2/app/ante"
 	"github.com/TrustedSmartChain/tsc/v2/app/hooks"
+	docs "github.com/TrustedSmartChain/tsc/v2/client/docs"
 	lockupprecompile "github.com/TrustedSmartChain/tsc/v2/precompiles/lockup"
 	distro "github.com/TrustedSmartChain/tsc/v2/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/v2/x/distro/keeper"
 	distrotypes "github.com/TrustedSmartChain/tsc/v2/x/distro/types"
-	licenses "github.com/webstack-sdk/webstack/x/licenses"
-	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
-	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
 	lockup "github.com/TrustedSmartChain/tsc/v2/x/lockup"
 	lockupkeeper "github.com/TrustedSmartChain/tsc/v2/x/lockup/keeper"
 	lockuptypes "github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
@@ -142,6 +142,9 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
+	licenses "github.com/webstack-sdk/webstack/x/licenses"
+	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
+	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	// CosmWasm imports
@@ -1249,9 +1252,19 @@ func (app *ChainApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIC
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// register swagger API from root so that other applications can override easily
+	// register cosmos SDK swagger at /swagger/
 	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
 		panic(err)
+	}
+
+	// register custom modules swagger at /
+	if apiConfig.Swagger {
+		root, err := fs.Sub(docs.SwaggerUI, "swagger-ui")
+		if err != nil {
+			panic(err)
+		}
+		staticServer := http.FileServer(http.FS(root))
+		apiSvr.Router.PathPrefix("/").Handler(staticServer)
 	}
 }
 
