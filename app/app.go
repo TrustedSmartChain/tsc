@@ -1244,14 +1244,14 @@ func (app *ChainApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIC
 		panic(err)
 	}
 
-	// register custom modules swagger at /
+	// register custom modules swagger at /docs/
 	if apiConfig.Swagger {
 		root, err := fs.Sub(docs.SwaggerUI, "swagger-ui")
 		if err != nil {
 			panic(err)
 		}
-		staticServer := http.FileServer(http.FS(root))
-		apiSvr.Router.PathPrefix("/").Handler(staticServer)
+		staticServer := http.StripPrefix("/docs/", http.FileServer(http.FS(root)))
+		apiSvr.Router.PathPrefix("/docs/").Handler(staticServer)
 	}
 }
 
