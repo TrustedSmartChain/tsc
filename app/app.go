@@ -1363,7 +1363,7 @@ func (app *ChainApp) GetTxConfig() client.TxConfig {
 	return app.txConfig
 }
 
-// Close unsubscribes from the CometBFT event bus and closes the mempool.
+// Close unsubscribes from the CometBFT event bus  and closes the mempool.
 func (app *ChainApp) Close() error {
 	var err error
 	if m := app.EVMMempool; m != nil {
