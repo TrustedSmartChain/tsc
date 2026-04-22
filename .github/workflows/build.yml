@@ -84,6 +84,7 @@ jobs:
       with:
         tag_name: v${{ github.event.inputs.version || '1.0.0' }}
         name: v${{ github.event.inputs.version || '1.0.0' }}
+        target_commitish: ${{ github.sha }}
         body: |
           ## v${{ github.event.inputs.version || '1.0.0' }}
           
