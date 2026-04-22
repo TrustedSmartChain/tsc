@@ -315,7 +315,10 @@ testnet: setup-testnet
 sh-testnet: mod-tidy
 	CHAIN_ID="tsc_8878788-1" BLOCK_TIME="1000ms" CLEAN=true sh scripts/test_node.sh
 
-.PHONY: setup-testnet set-testnet-configs testnet testnet-basic sh-testnet
+sh-testnet-multi-node: mod-tidy
+	CHAIN_ID="tsc_8878788-1" BLOCK_TIME="1000ms" CLEAN=true sh scripts/test_2node.sh
+
+.PHONY: setup-testnet set-testnet-configs testnet testnet-basic sh-testnet sh-testnet-multi-node
 
 ###############################################################################
 ###                                     help                                ###
@@ -338,7 +341,8 @@ help:
 	@echo "  local-image         : Install the docker image"
 	@echo "  proto-gen           : Generate code from proto files"
 	@echo "  testnet             : Local devnet with IBC"
-	@echo "  sh-testnet          : Shell local devnet"
+	@echo "  sh-testnet          : Shell local devnet (1 validator)"
+	@echo "  sh-testnet-multi-node     : Shell local devnet (2 validators)"
 	@echo "  ictest-basic        : Basic end-to-end test"
 	@echo "  ictest-ibc          : IBC end-to-end test"
 	@echo "  generate-webapp     : Create a new webapp template"

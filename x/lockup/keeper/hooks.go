@@ -10,6 +10,39 @@ import (
 	"github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
 )
 
+// redelegatingKey is the context key used to mark move-delegation operations.
+type redelegatingKey struct{}
+
+// redelegatingSet is an immutable set of "delAddr+valSrcAddr" pairs that are
+// being actively moved via MsgBeginRedelegate.
+type redelegatingSet map[string]struct{}
+
+func redelegateMapKey(delAddr sdk.AccAddress, valAddr sdk.ValAddress) string {
+	return string(delAddr) + "\x00" + string(valAddr)
+}
+
+// WithRedelegating returns a context annotated with the (delegator, srcValidator)
+// pair that is being moved. Called by the ante handler for MsgBeginRedelegate so
+// that BeforeDelegationRemoved can skip the invariant check for the source
+// delegation, which will be immediately re-delegated to another validator.
+func WithRedelegating(ctx context.Context, delAddr sdk.AccAddress, valSrcAddr sdk.ValAddress) context.Context {
+	existing, _ := ctx.Value(redelegatingKey{}).(redelegatingSet)
+	next := make(redelegatingSet, len(existing)+1)
+	for k := range existing {
+		next[k] = struct{}{}
+	}
+	next[redelegateMapKey(delAddr, valSrcAddr)] = struct{}{}
+	return context.WithValue(ctx, redelegatingKey{}, next)
+}
+
+// isRedelegating reports whether the (delAddr, valAddr) pair is currently being
+// moved by a MsgBeginRedelegate.
+func isRedelegating(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) bool {
+	set, _ := ctx.Value(redelegatingKey{}).(redelegatingSet)
+	_, ok := set[redelegateMapKey(delAddr, valAddr)]
+	return ok
+}
+
 // Hooks wraps the lockup keeper to implement the staking StakingHooks interface.
 // This allows the lockup module to reject undelegations that would cause the
 // total delegated amount to drop below the total locked amount — regardless of
@@ -47,7 +80,16 @@ func (h Hooks) BeforeDelegationSharesModified(_ context.Context, _ sdk.AccAddres
 // AfterDelegationModified fires after a delegation's shares have been changed
 // but the delegation record still exists (partial undelegation or re-delegation).
 // We re-check the lockup invariant: totalDelegated >= totalLocked.
-func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddress, _ sdk.ValAddress) error {
+//
+// If this modification is part of a MsgBeginRedelegate, the ante handler will
+// have marked the context via WithRedelegating. In that case we skip the check:
+// the SDK unbonds from the source validator before delegating to the destination,
+// so the total delegated amount is temporarily reduced. The invariant will be
+// enforced once the destination delegation is created.
+func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
+	if isRedelegating(ctx, delAddr, valAddr) {
+		return nil
+	}
 	return h.checkLockupInvariant(ctx, delAddr)
 }
 
@@ -56,7 +98,16 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 // this point with its ORIGINAL shares (the SDK does not call SetDelegation
 // before RemoveDelegation). We must subtract this delegation's value from the
 // total before checking the invariant.
+//
+// If this removal is part of a MsgBeginRedelegate (move-delegation), the ante
+// handler will have marked the context via WithRedelegating. In that case we
+// skip the check here: the full amount is being re-delegated to another
+// validator and AfterDelegationModified will enforce the invariant once the
+// destination delegation exists.
 func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
+	if isRedelegating(ctx, delAddr, valAddr) {
+		return nil
+	}
 	return h.checkLockupInvariantExcluding(ctx, delAddr, valAddr)
 }
 

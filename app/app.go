@@ -294,6 +294,11 @@ func NewChainApp(
 	// first init, which is wrong for this chain. The canonical EVM chain ID is
 	// derived from the Cosmos chain ID (tsc_87878-1 → 87878).
 	evmChainID := EVMChainID
+	if !loadLatest {
+		// Temp app for encoding config — use the cosmos/evm default so
+		// SetChainConfig does not lock the global to our custom chain ID.
+		evmChainID = 262144
+	}
 	encodingConfig := evmencoding.MakeConfig(evmChainID)
 
 	appCodec := encodingConfig.Codec
