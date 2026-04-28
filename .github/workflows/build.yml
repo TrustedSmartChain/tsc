@@ -27,24 +27,19 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history for git describe
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: go.mod
-        cache: true
-
-    - name: Install dependencies
-      run: |
-        go mod download
-        go mod verify
-
-    - name: Build Linux binary
+    - name: Build static binary via Docker
       env:
         VERSION: ${{ github.event.inputs.version || '1.0.0' }}
-        CGO_ENABLED: 1
       run: |
-        make build-linux VERSION=$VERSION
+        docker build --build-arg VERSION="$VERSION" -t tscd-build .
+        mkdir -p build
+        cid=$(docker create tscd-build)
+        docker cp "$cid":/usr/bin/tscd build/tscd-linux
+        docker rm "$cid"
         ls -la build/
+        file build/tscd-linux
+        echo "Verifying static linking..."
+        file build/tscd-linux | grep -q "statically linked"
 
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4

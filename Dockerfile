@@ -26,10 +26,12 @@ RUN set -eux; \
 # Copy over code
 COPY . /code
 
+ARG VERSION=""
+
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
 # then log output of file /code/bin/tscd
 # then ensure static linking
-RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build \
+RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build VERSION="${VERSION}" \
   && file /code/build/tscd \
   && echo "Ensuring binary is statically linked ..." \
   && (file /code/build/tscd | grep "statically linked")
