@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/TrustedSmartChain/tsc/v2/app"
+	"github.com/TrustedSmartChain/tsc/v3/app"
 	cmtcfg "github.com/cometbft/cometbft/config"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cast"

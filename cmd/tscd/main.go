@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TrustedSmartChain/tsc/v2/app"
+	"github.com/TrustedSmartChain/tsc/v3/app"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
