@@ -1,4 +1,4 @@
-FROM golang:1.23.6-alpine3.20 AS build-env
+FROM golang:1.24-alpine3.21 AS build-env
 
 SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 
