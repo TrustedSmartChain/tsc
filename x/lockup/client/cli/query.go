@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 
-	"github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
+	"github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
 )
 
 // !NOTE: Must enable in module.go (disabled in favor of autocli.go)

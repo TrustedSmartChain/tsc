@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/TrustedSmartChain/tsc/v2/x/distro/types"
+	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
 
 var _ types.QueryServer = Querier{}

@@ -4,7 +4,7 @@ package distro.v1;
 import "google/api/annotations.proto";
 import "distro/v1/genesis.proto";
 
-option go_package = "github.com/TrustedSmartChain/tsc/v2/x/distro/types";
+option go_package = "github.com/TrustedSmartChain/tsc/v3/x/distro/types";
 
 // Query provides defines the gRPC querier service.
 service Query {
