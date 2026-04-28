@@ -14,14 +14,17 @@ WORKDIR /code
 
 ADD go.mod go.sum ./
 RUN set -eux; \
-    export ARCH=$(uname -m); \
+    go mod download; \
+    ARCH=$(uname -m); \
     WASM_VERSION=$(go list -m all | grep github.com/CosmWasm/wasmvm || true); \
     if [ ! -z "${WASM_VERSION}" ]; then \
       WASMVM_REPO=$(echo $WASM_VERSION | awk '{print $1}');\
       WASMVM_VERS=$(echo $WASM_VERSION | awk '{print $2}');\
-      wget -O /lib/libwasmvm_muslc.a https://${WASMVM_REPO}/releases/download/${WASMVM_VERS}/libwasmvm_muslc.$(uname -m).a;\
-    fi; \
-    go mod download;
+      WASMVM_RELEASE_REPO=$(echo $WASMVM_REPO | sed 's#/v[0-9]\+$##');\
+      WASMVM_DIR=$(go list -m -f '{{.Dir}}' ${WASMVM_REPO});\
+      chmod -R u+w "${WASMVM_DIR}/internal/api";\
+      wget -O "${WASMVM_DIR}/internal/api/libwasmvm_muslc.${ARCH}.a" https://${WASMVM_RELEASE_REPO}/releases/download/${WASMVM_VERS}/libwasmvm_muslc.${ARCH}.a;\
+    fi;
 
 # Copy over code
 COPY . /code
