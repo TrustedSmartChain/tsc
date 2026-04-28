@@ -20,7 +20,7 @@ import (
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/TrustedSmartChain/tsc/v2/app"
+	"github.com/TrustedSmartChain/tsc/v3/app"
 	"github.com/cosmos/evm/crypto/hd"
 )
 

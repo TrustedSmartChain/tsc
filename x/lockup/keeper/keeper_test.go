@@ -26,10 +26,10 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/TrustedSmartChain/tsc/v2/app"
-	module "github.com/TrustedSmartChain/tsc/v2/x/lockup"
-	"github.com/TrustedSmartChain/tsc/v2/x/lockup/keeper"
-	"github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
+	"github.com/TrustedSmartChain/tsc/v3/app"
+	module "github.com/TrustedSmartChain/tsc/v3/x/lockup"
+	"github.com/TrustedSmartChain/tsc/v3/x/lockup/keeper"
+	"github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
 )
 
 var maccPerms = map[string][]string{

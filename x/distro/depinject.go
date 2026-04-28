@@ -16,8 +16,8 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 
-	modulev1 "github.com/TrustedSmartChain/tsc/v2/api/distro/module/v1"
-	"github.com/TrustedSmartChain/tsc/v2/x/distro/keeper"
+	modulev1 "github.com/TrustedSmartChain/tsc/v3/api/distro/module/v1"
+	"github.com/TrustedSmartChain/tsc/v3/x/distro/keeper"
 )
 
 var _ appmodule.AppModule = AppModule{}
