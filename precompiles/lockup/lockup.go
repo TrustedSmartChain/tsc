@@ -17,8 +17,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	lockupkeeper "github.com/TrustedSmartChain/tsc/v2/x/lockup/keeper"
-	lockuptypes "github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
+	lockupkeeper "github.com/TrustedSmartChain/tsc/v3/x/lockup/keeper"
+	lockuptypes "github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
 )
 
 var _ vm.PrecompiledContract = &Precompile{}
