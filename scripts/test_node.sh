@@ -121,6 +121,9 @@ from_scratch () {
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_fee"]=[]'
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_gas_consume"]=100000'
 
+  # licenses
+  update_test_genesis '.app_state["licenses"]["params"]["owner"]="tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"'
+
 
   BASE_GENESIS_ALLOCATIONS="1000000000000000000000$DENOM"
 
@@ -158,6 +161,7 @@ sed -i -e 's/cors_allowed_origins = \[\]/cors_allowed_origins = \["\*"\]/g' $HOM
 sed -i -e 's/address = "tcp:\/\/localhost:1317"/address = "tcp:\/\/0.0.0.0:'$REST'"/g' $HOME_DIR/config/app.toml
 sed -i -e 's/enable = false/enable = true/g' $HOME_DIR/config/app.toml
 sed -i -e 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' $HOME_DIR/config/app.toml
+sed -i -e 's/swagger = false/swagger = true/g' $HOME_DIR/config/app.toml
 
 # peer exchange
 sed -i -e 's/pprof_laddr = "localhost:6060"/pprof_laddr = "localhost:'$PROFF'"/g' $HOME_DIR/config/config.toml

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -29,6 +31,7 @@ import (
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	chainante "github.com/TrustedSmartChain/tsc/v3/app/ante"
+	"github.com/TrustedSmartChain/tsc/v3/client/docs"
 	lockupprecompile "github.com/TrustedSmartChain/tsc/v3/precompiles/lockup"
 	distro "github.com/TrustedSmartChain/tsc/v3/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/v3/x/distro/keeper"
@@ -138,6 +141,9 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
+	licenses "github.com/webstack-sdk/webstack/x/licenses"
+	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
+	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	// CosmWasm imports
@@ -258,8 +264,9 @@ type ChainApp struct {
 	EVMMempool      *evmmempool.ExperimentalEVMMempool
 
 	// Custom keepers
-	DistroKeeper distrokeeper.Keeper
-	LockupKeeper lockupkeeper.Keeper
+	DistroKeeper   distrokeeper.Keeper
+	LockupKeeper   lockupkeeper.Keeper
+	LicensesKeeper licenseskeeper.Keeper
 
 	// Wasm keeper
 	WasmKeeper wasmkeeper.Keeper
@@ -289,10 +296,14 @@ func NewChainApp(
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *ChainApp {
 
-	// Always use our hardcoded EVM chain ID. The app.toml evm-chain-id field
-	// may contain the cosmos/evm default (262144) from an older config or from
-	// first init, which is wrong for this chain. The canonical EVM chain ID is
-	// derived from the Cosmos chain ID (tsc_87878-1 → 87878).
+	// Use the EVM chain ID from app options if explicitly set to our chain's
+	// value, otherwise fall back to our hardcoded ID. The cosmos/evm global
+	// SetChainConfig panics if a non-default chain ID is set twice per
+	// process. The temp ChainApp created in root.go for encoding config has
+	// no EVM flags set (resolves to 0), so it will use EVMChainID here once,
+	// and the real start call also uses EVMChainID — both hit the same value,
+	// so we guard with loadLatest to distinguish the temp app (false) from
+	// the real app (true).
 	evmChainID := EVMChainID
 	if !loadLatest {
 		// Temp app for encoding config — use the cosmos/evm default so
@@ -346,6 +357,7 @@ func NewChainApp(
 		// Custom keys
 		distrotypes.StoreKey,
 		lockuptypes.StoreKey,
+		licensestypes.StoreKey,
 		// CosmWasm keys
 		wasmtypes.StoreKey,
 	)
@@ -576,6 +588,14 @@ func NewChainApp(
 		app.BankKeeper,
 	)
 
+	// Create the licenses Keeper
+	app.LicensesKeeper = licenseskeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[licensestypes.StoreKey]),
+		logger,
+		authAddr,
+	)
+
 	// Cosmos EVM keepers
 	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(
 		appCodec,
@@ -802,6 +822,7 @@ func NewChainApp(
 		// Custom modules
 		distro.NewAppModule(appCodec, app.DistroKeeper),
 		lockup.NewAppModule(appCodec, app.LockupKeeper),
+		licenses.NewAppModule(appCodec, app.LicensesKeeper),
 		// CosmWasm module
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
@@ -857,6 +878,7 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
+		licensestypes.ModuleName,
 	)
 
 	// NOTE: the feemarket module should go last in order of end blockers that are actually doing something,
@@ -882,6 +904,7 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
+		licensestypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -922,6 +945,7 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
+		licensestypes.ModuleName,
 	}
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)
@@ -1215,9 +1239,19 @@ func (app *ChainApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIC
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// register swagger API from root so that other applications can override easily
+	// register cosmos SDK swagger at /swagger/
 	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
 		panic(err)
+	}
+
+	// register custom modules swagger at /docs/
+	if apiConfig.Swagger {
+		root, err := fs.Sub(docs.SwaggerUI, "swagger-ui")
+		if err != nil {
+			panic(err)
+		}
+		staticServer := http.StripPrefix("/docs/", http.FileServer(http.FS(root)))
+		apiSvr.Router.PathPrefix("/docs/").Handler(staticServer)
 	}
 }
 

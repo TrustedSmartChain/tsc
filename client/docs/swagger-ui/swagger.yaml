@@ -1,0 +1,3706 @@
+swagger: '2.0'
+info:
+  title: TSC - gRPC Gateway docs
+  description: A REST interface for state queries and transactions.
+  version: 1.0.0
+paths:
+  /tsc/distro/v1/params:
+    get:
+      summary: Params queries all parameters of the module.
+      operationId: DistroParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params defines the parameters of the module.
+                type: object
+                properties:
+                  minting_address:
+                    type: string
+                  receiving_address:
+                    type: string
+                  denom:
+                    type: string
+                  max_supply:
+                    type: string
+                  distribution_start_date:
+                    type: string
+                  months_in_halving_period:
+                    type: string
+                    format: uint64
+            description: >-
+              QueryParamsResponse is the response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /tsc/distro/v1/tx/mint:
+    post:
+      operationId: Mint
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/distro/v1/tx/update_params:
+    post:
+      summary: UpdateParams defines a governance operation for updating the parameters.
+      description: 'Since: cosmos-sdk 0.47'
+      operationId: DistroUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgUpdateParamsResponse defines the response structure for
+              executing a
+
+              MsgUpdateParams message.
+
+
+              Since: cosmos-sdk 0.47
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/lockup/account_locks:
+    get:
+      summary: AccountLocks queries active locks for multiple addresses.
+      operationId: AccountLocks
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              accounts:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                    locks:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          unlock_date:
+                            type: string
+                          amount:
+                            type: object
+                            properties:
+                              denom:
+                                type: string
+                              amount:
+                                type: string
+                            description: >-
+                              Coin defines a token with a denomination and an
+                              amount.
+
+
+                              NOTE: The amount field is an Int which implements
+                              the custom method
+
+                              signatures required by gogoproto.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryAccountLocksResponse is response type for the
+              Query/AccountLocks RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: addresses
+          in: query
+          required: false
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /tsc/lockup/account_locks/{address}:
+    get:
+      summary: Locks queries active locks for an address.
+      operationId: Locks
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              locks:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    unlock_date:
+                      type: string
+                    amount:
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryLocksResponse is response type for the Query/Locks RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: address
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /tsc/lockup/active_locks:
+    get:
+      summary: ActiveLocks queries all active locks with an unlock date in the future.
+      operationId: ActiveLocks
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              locks:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                    unlock_date:
+                      type: string
+                    amount:
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryActiveLocksResponse is response type for the
+              Query/ActiveLocks RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /tsc/lockup/total_locked_amount:
+    get:
+      summary: >-
+        TotalLockedAmount queries the total amount of tokens locked across all
+        accounts.
+      operationId: TotalLockedAmount
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              total_locked:
+                type: object
+                properties:
+                  denom:
+                    type: string
+                  amount:
+                    type: string
+                description: >-
+                  Coin defines a token with a denomination and an amount.
+
+
+                  NOTE: The amount field is an Int which implements the custom
+                  method
+
+                  signatures required by gogoproto.
+            description: >-
+              QueryTotalLockedAmountResponse is response type for the
+              Query/TotalLockedAmount RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /tsc/lockup/v1/tx/extend:
+    post:
+      summary: Extend extends the lock duration for a specific address.
+      operationId: Extend
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/lockup/v1/tx/lock:
+    post:
+      summary: Lock locks tokens for a specific address.
+      operationId: Lock
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/lockup/v1/tx/multi_send_delegate_and_lock:
+    post:
+      summary: >-
+        MultiSendDelegateAndLock sends tokens to multiple addresses, delegates
+        them to a validator, and locks them until specified unlock dates.
+      operationId: MultiSendDelegateAndLock
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/lockup/v1/tx/send_delegate_and_lock:
+    post:
+      summary: >-
+        SendDelegateAndLock sends tokens to a specific address, delegates them
+        to a validator, and locks them until a specified unlock date.
+      operationId: SendDelegateAndLock
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /webstack/licenses/admin_key/{address}:
+    get:
+      summary: AdminKey queries the admin key grants for a given address.
+      operationId: AdminKey
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              admin_key:
+                type: object
+                properties:
+                  address:
+                    type: string
+                  grants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        permission:
+                          type: string
+                        license_types:
+                          type: array
+                          items:
+                            type: string
+                      description: >-
+                        AdminKeyGrant defines a permission grant for a specific
+                        set of license types.
+                description: AdminKey defines the set of grants for an address.
+            description: >-
+              QueryAdminKeyResponse is the response type for the Query/AdminKey
+              RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: address
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /webstack/licenses/admin_keys:
+    get:
+      summary: AdminKeys queries all admin keys.
+      operationId: AdminKeys
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              admin_keys:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                    grants:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          permission:
+                            type: string
+                          license_types:
+                            type: array
+                            items:
+                              type: string
+                        description: >-
+                          AdminKeyGrant defines a permission grant for a
+                          specific set of license types.
+                  description: AdminKey defines the set of grants for an address.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryAdminKeysResponse is the response type for the
+              Query/AdminKeys RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/licenses/admin_keys_by_license_type/{license_type_id}:
+    get:
+      summary: >-
+        AdminKeysByLicenseType queries admin keys that have grants for a given
+        license type.
+      operationId: AdminKeysByLicenseType
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              admin_keys:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                    grants:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          permission:
+                            type: string
+                          license_types:
+                            type: array
+                            items:
+                              type: string
+                        description: >-
+                          AdminKeyGrant defines a permission grant for a
+                          specific set of license types.
+                  description: AdminKey defines the set of grants for an address.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryAdminKeysByLicenseTypeResponse is the response type for the
+              Query/AdminKeysByLicenseType RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: license_type_id
+          in: path
+          required: true
+          type: string
+        - name: permission
+          in: query
+          required: false
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/licenses/license/{type_id}/{id}:
+    get:
+      summary: License queries a license by type id and license id.
+      operationId: License
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              license:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uint64
+                    description: >-
+                      id is the auto-incremented identifier, unique within the
+                      license type.
+                  type:
+                    type: string
+                    description: type is the LicenseType.id this license was issued from.
+                  holder:
+                    type: string
+                    description: holder is the address that owns this license.
+                  start_date:
+                    type: string
+                    description: start_date is the date from which the license is valid.
+                  end_date:
+                    type: string
+                    description: end_date is the expiry date. Empty string means no expiry.
+                  status:
+                    type: string
+                    description: status is "active" or "revoked".
+                description: License represents an issued license instance.
+            description: >-
+              QueryLicenseResponse is the response type for the Query/License
+              RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: type_id
+          in: path
+          required: true
+          type: string
+        - name: id
+          in: path
+          required: true
+          type: string
+          format: uint64
+      tags:
+        - Query
+  /webstack/licenses/license_type/{id}:
+    get:
+      summary: LicenseType queries a license type by id.
+      operationId: LicenseType
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              license_type:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: id is the owner-supplied identifier, e.g. "webstack.node".
+                  transferrable:
+                    type: boolean
+                    description: >-
+                      transferrable indicates whether holders may transfer this
+                      license type.
+                  max_supply:
+                    type: string
+                    description: >-
+                      max_supply is the maximum number of licenses that can be
+                      issued. 0 = unlimited.
+                  issued_count:
+                    type: string
+                    description: >-
+                      issued_count tracks the number of currently active
+                      licenses issued.
+                description: LicenseType defines a template for issuing licenses.
+            description: >-
+              QueryLicenseTypeResponse is the response type for the
+              Query/LicenseType RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /webstack/licenses/license_types:
+    get:
+      summary: LicenseTypes queries all license types.
+      operationId: LicenseTypes
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              license_types:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: >-
+                        id is the owner-supplied identifier, e.g.
+                        "webstack.node".
+                    transferrable:
+                      type: boolean
+                      description: >-
+                        transferrable indicates whether holders may transfer
+                        this license type.
+                    max_supply:
+                      type: string
+                      description: >-
+                        max_supply is the maximum number of licenses that can be
+                        issued. 0 = unlimited.
+                    issued_count:
+                      type: string
+                      description: >-
+                        issued_count tracks the number of currently active
+                        licenses issued.
+                  description: LicenseType defines a template for issuing licenses.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryLicenseTypesResponse is the response type for the
+              Query/LicenseTypes RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/licenses/licenses_by_holder/{holder}:
+    get:
+      summary: LicensesByHolder queries all licenses held by a given address.
+      operationId: LicensesByHolder
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              licenses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uint64
+                      description: >-
+                        id is the auto-incremented identifier, unique within the
+                        license type.
+                    type:
+                      type: string
+                      description: type is the LicenseType.id this license was issued from.
+                    holder:
+                      type: string
+                      description: holder is the address that owns this license.
+                    start_date:
+                      type: string
+                      description: start_date is the date from which the license is valid.
+                    end_date:
+                      type: string
+                      description: >-
+                        end_date is the expiry date. Empty string means no
+                        expiry.
+                    status:
+                      type: string
+                      description: status is "active" or "revoked".
+                  description: License represents an issued license instance.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryLicensesByHolderResponse is the response type for the
+              Query/LicensesByHolder RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: holder
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/licenses/licenses_by_holder/{holder}/{type_id}:
+    get:
+      summary: >-
+        LicensesByHolderAndType queries all licenses held by a given address for
+        a specific type.
+      operationId: LicensesByHolderAndType
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              licenses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uint64
+                      description: >-
+                        id is the auto-incremented identifier, unique within the
+                        license type.
+                    type:
+                      type: string
+                      description: type is the LicenseType.id this license was issued from.
+                    holder:
+                      type: string
+                      description: holder is the address that owns this license.
+                    start_date:
+                      type: string
+                      description: start_date is the date from which the license is valid.
+                    end_date:
+                      type: string
+                      description: >-
+                        end_date is the expiry date. Empty string means no
+                        expiry.
+                    status:
+                      type: string
+                      description: status is "active" or "revoked".
+                  description: License represents an issued license instance.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryLicensesByHolderAndTypeResponse is the response type for the
+              Query/LicensesByHolderAndType RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: holder
+          in: path
+          required: true
+          type: string
+        - name: type_id
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/licenses/licenses_by_type/{type_id}:
+    get:
+      summary: LicensesByType queries all licenses for a given license type.
+      operationId: LicensesByType
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              licenses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uint64
+                      description: >-
+                        id is the auto-incremented identifier, unique within the
+                        license type.
+                    type:
+                      type: string
+                      description: type is the LicenseType.id this license was issued from.
+                    holder:
+                      type: string
+                      description: holder is the address that owns this license.
+                    start_date:
+                      type: string
+                      description: start_date is the date from which the license is valid.
+                    end_date:
+                      type: string
+                      description: >-
+                        end_date is the expiry date. Empty string means no
+                        expiry.
+                    status:
+                      type: string
+                      description: status is "active" or "revoked".
+                  description: License represents an issued license instance.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryLicensesByTypeResponse is the response type for the
+              Query/LicensesByType RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: type_id
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/licenses/params:
+    get:
+      summary: Params queries the module parameters.
+      operationId: LicensesParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                type: object
+                properties:
+                  owner:
+                    type: string
+                    description: >-
+                      owner is the address that controls license type creation
+                      and admin key management.
+                description: Params defines the parameters for the licenses module.
+            description: >-
+              QueryParamsResponse is the response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /webstack/licenses/permissions:
+    get:
+      summary: Permissions returns the list of valid admin key permissions.
+      operationId: Permissions
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              permissions:
+                type: array
+                items:
+                  type: string
+            description: >-
+              QueryPermissionsResponse is the response type for the
+              Query/Permissions RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /webstack/licenses/tx/batch_issue_license:
+    post:
+      summary: >-
+        BatchIssueLicense issues multiple licenses in a single transaction.
+        Signer must have the "issue" grant for the license type.
+      operationId: BatchIssueLicense
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              ids:
+                type: array
+                items:
+                  type: string
+                  format: uint64
+            description: >-
+              MsgBatchIssueLicenseResponse is the Msg/BatchIssueLicense response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              issuer:
+                type: string
+              license_type_id:
+                type: string
+              entries:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    holder:
+                      type: string
+                    start_date:
+                      type: string
+                    end_date:
+                      type: string
+                  description: >-
+                    BatchIssueLicenseEntry defines a single entry in a batch
+                    issue request.
+            description: MsgBatchIssueLicense is the Msg/BatchIssueLicense request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/create_license_type:
+    post:
+      summary: >-
+        CreateLicenseType creates a new license type. Signer must be the module
+        owner.
+      operationId: CreateLicenseType
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgCreateLicenseTypeResponse is the Msg/CreateLicenseType response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+              id:
+                type: string
+              transferrable:
+                type: boolean
+              max_supply:
+                type: string
+            description: MsgCreateLicenseType is the Msg/CreateLicenseType request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/issue_license:
+    post:
+      summary: >-
+        IssueLicense issues a new license. Signer must have the "issue" grant
+        for the license type.
+      operationId: IssueLicense
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              ids:
+                type: array
+                items:
+                  type: string
+                  format: uint64
+            description: MsgIssueLicenseResponse is the Msg/IssueLicense response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              issuer:
+                type: string
+              license_type_id:
+                type: string
+              holder:
+                type: string
+              start_date:
+                type: string
+              end_date:
+                type: string
+              count:
+                type: string
+                format: uint64
+            description: MsgIssueLicense is the Msg/IssueLicense request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/remove_admin_key:
+    post:
+      summary: >-
+        RemoveAdminKey removes all admin key grants for an address. Signer must
+        be the module owner.
+      operationId: RemoveAdminKey
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgRemoveAdminKeyResponse is the Msg/RemoveAdminKey response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+              address:
+                type: string
+            description: MsgRemoveAdminKey is the Msg/RemoveAdminKey request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/revoke_license:
+    post:
+      summary: >-
+        RevokeLicense deletes a license. Signer must have the "revoke" grant for
+        the license type.
+      operationId: RevokeLicense
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgRevokeLicenseResponse is the Msg/RevokeLicense response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              revoker:
+                type: string
+              license_type_id:
+                type: string
+              id:
+                type: string
+                format: uint64
+            description: MsgRevokeLicense is the Msg/RevokeLicense request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/set_admin_key:
+    post:
+      summary: >-
+        SetAdminKey adds or updates admin key grants for an address. Signer must
+        be the module owner.
+      operationId: SetAdminKey
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgSetAdminKeyResponse is the Msg/SetAdminKey response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+              address:
+                type: string
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    permission:
+                      type: string
+                    license_types:
+                      type: array
+                      items:
+                        type: string
+                  description: >-
+                    AdminKeyGrant defines a permission grant for a specific set
+                    of license types.
+            description: MsgSetAdminKey is the Msg/SetAdminKey request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/transfer_license:
+    post:
+      summary: >-
+        TransferLicense transfers a license to a new holder. Signer must be the
+        current holder and the type must be transferrable.
+      operationId: TransferLicense
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgTransferLicenseResponse is the Msg/TransferLicense response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              holder:
+                type: string
+              license_type_id:
+                type: string
+              id:
+                type: string
+                format: uint64
+              recipient:
+                type: string
+            description: MsgTransferLicense is the Msg/TransferLicense request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/update_license:
+    post:
+      summary: >-
+        UpdateLicense updates the status of a license. Signer must have the
+        "update" grant for the license type.
+      operationId: UpdateLicense
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgUpdateLicenseResponse is the Msg/UpdateLicense response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              updater:
+                type: string
+              license_type_id:
+                type: string
+              id:
+                type: string
+                format: uint64
+              status:
+                type: string
+            description: MsgUpdateLicense is the Msg/UpdateLicense request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/update_license_type:
+    post:
+      summary: >-
+        UpdateLicenseType updates an existing license type. Signer must be the
+        module owner.
+      operationId: UpdateLicenseType
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgUpdateLicenseTypeResponse is the Msg/UpdateLicenseType response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+              id:
+                type: string
+              transferrable:
+                type: boolean
+              max_supply:
+                type: string
+            description: MsgUpdateLicenseType is the Msg/UpdateLicenseType request type.
+      tags:
+        - Msg
+  /webstack/licenses/tx/update_params:
+    post:
+      summary: >-
+        UpdateParams defines a governance operation for updating the module
+        parameters.
+      operationId: LicensesUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgUpdateParamsResponse is the Msg/UpdateParams response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  owner:
+                    type: string
+                    description: >-
+                      owner is the address that controls license type creation
+                      and admin key management.
+                description: Params defines the parameters for the licenses module.
+            description: MsgUpdateParams is the Msg/UpdateParams request type.
+      tags:
+        - Msg
+definitions:
+  distro.v1.Params:
+    type: object
+    properties:
+      minting_address:
+        type: string
+      receiving_address:
+        type: string
+      denom:
+        type: string
+      max_supply:
+        type: string
+      distribution_start_date:
+        type: string
+      months_in_halving_period:
+        type: string
+        format: uint64
+    description: Params defines the set of module parameters.
+  distro.v1.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        description: params defines the parameters of the module.
+        type: object
+        properties:
+          minting_address:
+            type: string
+          receiving_address:
+            type: string
+          denom:
+            type: string
+          max_supply:
+            type: string
+          distribution_start_date:
+            type: string
+          months_in_halving_period:
+            type: string
+            format: uint64
+    description: QueryParamsResponse is the response type for the Query/Params RPC method.
+  google.protobuf.Any:
+    type: object
+    properties:
+      type_url:
+        type: string
+      value:
+        type: string
+        format: byte
+  grpc.gateway.runtime.Error:
+    type: object
+    properties:
+      error:
+        type: string
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      details:
+        type: array
+        items:
+          type: object
+          properties:
+            type_url:
+              type: string
+            value:
+              type: string
+              format: byte
+  distro.v1.MsgMintResponse:
+    type: object
+  distro.v1.MsgUpdateParamsResponse:
+    type: object
+    description: |-
+      MsgUpdateParamsResponse defines the response structure for executing a
+      MsgUpdateParams message.
+
+      Since: cosmos-sdk 0.47
+  cosmos.base.query.v1beta1.PageRequest:
+    type: object
+    properties:
+      key:
+        type: string
+        format: byte
+        description: |-
+          key is a value returned in PageResponse.next_key to begin
+          querying the next page most efficiently. Only one of offset or key
+          should be set.
+      offset:
+        type: string
+        format: uint64
+        description: |-
+          offset is a numeric offset that can be used when key is unavailable.
+          It is less efficient than using key. Only one of offset or key should
+          be set.
+      limit:
+        type: string
+        format: uint64
+        description: >-
+          limit is the total number of results to be returned in the result
+          page.
+
+          If left empty it will default to a value to be set by each app.
+      count_total:
+        type: boolean
+        description: >-
+          count_total is set to true  to indicate that the result set should
+          include
+
+          a count of the total number of items available for pagination in UIs.
+
+          count_total is only respected when offset is used. It is ignored when
+          key
+
+          is set.
+      reverse:
+        type: boolean
+        description: >-
+          reverse is set to true if results are to be returned in the descending
+          order.
+    description: |-
+      message SomeRequest {
+               Foo some_parameter = 1;
+               PageRequest pagination = 2;
+       }
+    title: |-
+      PageRequest is to be embedded in gRPC request messages for efficient
+      pagination. Ex:
+  cosmos.base.query.v1beta1.PageResponse:
+    type: object
+    properties:
+      next_key:
+        type: string
+        format: byte
+        description: |-
+          next_key is the key to be passed to PageRequest.key to
+          query the next page most efficiently. It will be empty if
+          there are no more results.
+      total:
+        type: string
+        format: uint64
+        title: |-
+          total is total number of results available if PageRequest.count_total
+          was set, its value is undefined otherwise
+    description: |-
+      PageResponse is to be embedded in gRPC response messages where the
+      corresponding request message has used PageRequest.
+
+       message SomeResponse {
+               repeated Bar results = 1;
+               PageResponse page = 2;
+       }
+  cosmos.base.v1beta1.Coin:
+    type: object
+    properties:
+      denom:
+        type: string
+      amount:
+        type: string
+    description: |-
+      Coin defines a token with a denomination and an amount.
+
+      NOTE: The amount field is an Int which implements the custom method
+      signatures required by gogoproto.
+  lockup.v1.AccountLocksResource:
+    type: object
+    properties:
+      address:
+        type: string
+      locks:
+        type: array
+        items:
+          type: object
+          properties:
+            unlock_date:
+              type: string
+            amount:
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+  lockup.v1.ActiveLockResource:
+    type: object
+    properties:
+      address:
+        type: string
+      unlock_date:
+        type: string
+      amount:
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+  lockup.v1.LockResource:
+    type: object
+    properties:
+      unlock_date:
+        type: string
+      amount:
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+  lockup.v1.QueryAccountLocksResponse:
+    type: object
+    properties:
+      accounts:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+            locks:
+              type: array
+              items:
+                type: object
+                properties:
+                  unlock_date:
+                    type: string
+                  amount:
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryAccountLocksResponse is response type for the Query/AccountLocks RPC
+      method.
+  lockup.v1.QueryActiveLocksResponse:
+    type: object
+    properties:
+      locks:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+            unlock_date:
+              type: string
+            amount:
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryActiveLocksResponse is response type for the Query/ActiveLocks RPC
+      method.
+  lockup.v1.QueryLocksResponse:
+    type: object
+    properties:
+      locks:
+        type: array
+        items:
+          type: object
+          properties:
+            unlock_date:
+              type: string
+            amount:
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: QueryLocksResponse is response type for the Query/Locks RPC method.
+  lockup.v1.QueryTotalLockedAmountResponse:
+    type: object
+    properties:
+      total_locked:
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+    description: >-
+      QueryTotalLockedAmountResponse is response type for the
+      Query/TotalLockedAmount RPC method.
+  lockup.v1.Extension:
+    type: object
+    properties:
+      from_date:
+        type: string
+      to_date:
+        type: string
+      amount:
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+  lockup.v1.MsgExtendResponse:
+    type: object
+  lockup.v1.MsgLockResponse:
+    type: object
+  lockup.v1.MsgMultiSendDelegateAndLockResponse:
+    type: object
+  lockup.v1.MsgSendDelegateAndLockResponse:
+    type: object
+  lockup.v1.MultiSendDelegateAndLockOutput:
+    type: object
+    properties:
+      from_address:
+        type: string
+      to_address:
+        type: string
+      validator_address:
+        type: string
+      unlock_date:
+        type: string
+      amount:
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+  licenses.v1.AdminKey:
+    type: object
+    properties:
+      address:
+        type: string
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            permission:
+              type: string
+            license_types:
+              type: array
+              items:
+                type: string
+          description: >-
+            AdminKeyGrant defines a permission grant for a specific set of
+            license types.
+    description: AdminKey defines the set of grants for an address.
+  licenses.v1.AdminKeyGrant:
+    type: object
+    properties:
+      permission:
+        type: string
+      license_types:
+        type: array
+        items:
+          type: string
+    description: >-
+      AdminKeyGrant defines a permission grant for a specific set of license
+      types.
+  licenses.v1.License:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uint64
+        description: id is the auto-incremented identifier, unique within the license type.
+      type:
+        type: string
+        description: type is the LicenseType.id this license was issued from.
+      holder:
+        type: string
+        description: holder is the address that owns this license.
+      start_date:
+        type: string
+        description: start_date is the date from which the license is valid.
+      end_date:
+        type: string
+        description: end_date is the expiry date. Empty string means no expiry.
+      status:
+        type: string
+        description: status is "active" or "revoked".
+    description: License represents an issued license instance.
+  licenses.v1.LicenseType:
+    type: object
+    properties:
+      id:
+        type: string
+        description: id is the owner-supplied identifier, e.g. "webstack.node".
+      transferrable:
+        type: boolean
+        description: >-
+          transferrable indicates whether holders may transfer this license
+          type.
+      max_supply:
+        type: string
+        description: >-
+          max_supply is the maximum number of licenses that can be issued. 0 =
+          unlimited.
+      issued_count:
+        type: string
+        description: issued_count tracks the number of currently active licenses issued.
+    description: LicenseType defines a template for issuing licenses.
+  licenses.v1.Params:
+    type: object
+    properties:
+      owner:
+        type: string
+        description: >-
+          owner is the address that controls license type creation and admin key
+          management.
+    description: Params defines the parameters for the licenses module.
+  licenses.v1.QueryAdminKeyResponse:
+    type: object
+    properties:
+      admin_key:
+        type: object
+        properties:
+          address:
+            type: string
+          grants:
+            type: array
+            items:
+              type: object
+              properties:
+                permission:
+                  type: string
+                license_types:
+                  type: array
+                  items:
+                    type: string
+              description: >-
+                AdminKeyGrant defines a permission grant for a specific set of
+                license types.
+        description: AdminKey defines the set of grants for an address.
+    description: >-
+      QueryAdminKeyResponse is the response type for the Query/AdminKey RPC
+      method.
+  licenses.v1.QueryAdminKeysByLicenseTypeResponse:
+    type: object
+    properties:
+      admin_keys:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+            grants:
+              type: array
+              items:
+                type: object
+                properties:
+                  permission:
+                    type: string
+                  license_types:
+                    type: array
+                    items:
+                      type: string
+                description: >-
+                  AdminKeyGrant defines a permission grant for a specific set of
+                  license types.
+          description: AdminKey defines the set of grants for an address.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryAdminKeysByLicenseTypeResponse is the response type for the
+      Query/AdminKeysByLicenseType RPC method.
+  licenses.v1.QueryAdminKeysResponse:
+    type: object
+    properties:
+      admin_keys:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+            grants:
+              type: array
+              items:
+                type: object
+                properties:
+                  permission:
+                    type: string
+                  license_types:
+                    type: array
+                    items:
+                      type: string
+                description: >-
+                  AdminKeyGrant defines a permission grant for a specific set of
+                  license types.
+          description: AdminKey defines the set of grants for an address.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryAdminKeysResponse is the response type for the Query/AdminKeys RPC
+      method.
+  licenses.v1.QueryLicenseResponse:
+    type: object
+    properties:
+      license:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uint64
+            description: >-
+              id is the auto-incremented identifier, unique within the license
+              type.
+          type:
+            type: string
+            description: type is the LicenseType.id this license was issued from.
+          holder:
+            type: string
+            description: holder is the address that owns this license.
+          start_date:
+            type: string
+            description: start_date is the date from which the license is valid.
+          end_date:
+            type: string
+            description: end_date is the expiry date. Empty string means no expiry.
+          status:
+            type: string
+            description: status is "active" or "revoked".
+        description: License represents an issued license instance.
+    description: >-
+      QueryLicenseResponse is the response type for the Query/License RPC
+      method.
+  licenses.v1.QueryLicenseTypeResponse:
+    type: object
+    properties:
+      license_type:
+        type: object
+        properties:
+          id:
+            type: string
+            description: id is the owner-supplied identifier, e.g. "webstack.node".
+          transferrable:
+            type: boolean
+            description: >-
+              transferrable indicates whether holders may transfer this license
+              type.
+          max_supply:
+            type: string
+            description: >-
+              max_supply is the maximum number of licenses that can be issued. 0
+              = unlimited.
+          issued_count:
+            type: string
+            description: >-
+              issued_count tracks the number of currently active licenses
+              issued.
+        description: LicenseType defines a template for issuing licenses.
+    description: >-
+      QueryLicenseTypeResponse is the response type for the Query/LicenseType
+      RPC method.
+  licenses.v1.QueryLicenseTypesResponse:
+    type: object
+    properties:
+      license_types:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              description: id is the owner-supplied identifier, e.g. "webstack.node".
+            transferrable:
+              type: boolean
+              description: >-
+                transferrable indicates whether holders may transfer this
+                license type.
+            max_supply:
+              type: string
+              description: >-
+                max_supply is the maximum number of licenses that can be issued.
+                0 = unlimited.
+            issued_count:
+              type: string
+              description: >-
+                issued_count tracks the number of currently active licenses
+                issued.
+          description: LicenseType defines a template for issuing licenses.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryLicenseTypesResponse is the response type for the Query/LicenseTypes
+      RPC method.
+  licenses.v1.QueryLicensesByHolderAndTypeResponse:
+    type: object
+    properties:
+      licenses:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uint64
+              description: >-
+                id is the auto-incremented identifier, unique within the license
+                type.
+            type:
+              type: string
+              description: type is the LicenseType.id this license was issued from.
+            holder:
+              type: string
+              description: holder is the address that owns this license.
+            start_date:
+              type: string
+              description: start_date is the date from which the license is valid.
+            end_date:
+              type: string
+              description: end_date is the expiry date. Empty string means no expiry.
+            status:
+              type: string
+              description: status is "active" or "revoked".
+          description: License represents an issued license instance.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryLicensesByHolderAndTypeResponse is the response type for the
+      Query/LicensesByHolderAndType RPC method.
+  licenses.v1.QueryLicensesByHolderResponse:
+    type: object
+    properties:
+      licenses:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uint64
+              description: >-
+                id is the auto-incremented identifier, unique within the license
+                type.
+            type:
+              type: string
+              description: type is the LicenseType.id this license was issued from.
+            holder:
+              type: string
+              description: holder is the address that owns this license.
+            start_date:
+              type: string
+              description: start_date is the date from which the license is valid.
+            end_date:
+              type: string
+              description: end_date is the expiry date. Empty string means no expiry.
+            status:
+              type: string
+              description: status is "active" or "revoked".
+          description: License represents an issued license instance.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryLicensesByHolderResponse is the response type for the
+      Query/LicensesByHolder RPC method.
+  licenses.v1.QueryLicensesByTypeResponse:
+    type: object
+    properties:
+      licenses:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uint64
+              description: >-
+                id is the auto-incremented identifier, unique within the license
+                type.
+            type:
+              type: string
+              description: type is the LicenseType.id this license was issued from.
+            holder:
+              type: string
+              description: holder is the address that owns this license.
+            start_date:
+              type: string
+              description: start_date is the date from which the license is valid.
+            end_date:
+              type: string
+              description: end_date is the expiry date. Empty string means no expiry.
+            status:
+              type: string
+              description: status is "active" or "revoked".
+          description: License represents an issued license instance.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryLicensesByTypeResponse is the response type for the
+      Query/LicensesByType RPC method.
+  licenses.v1.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        type: object
+        properties:
+          owner:
+            type: string
+            description: >-
+              owner is the address that controls license type creation and admin
+              key management.
+        description: Params defines the parameters for the licenses module.
+    description: QueryParamsResponse is the response type for the Query/Params RPC method.
+  licenses.v1.QueryPermissionsResponse:
+    type: object
+    properties:
+      permissions:
+        type: array
+        items:
+          type: string
+    description: >-
+      QueryPermissionsResponse is the response type for the Query/Permissions
+      RPC method.
+  licenses.v1.BatchIssueLicenseEntry:
+    type: object
+    properties:
+      holder:
+        type: string
+      start_date:
+        type: string
+      end_date:
+        type: string
+    description: BatchIssueLicenseEntry defines a single entry in a batch issue request.
+  licenses.v1.MsgBatchIssueLicense:
+    type: object
+    properties:
+      issuer:
+        type: string
+      license_type_id:
+        type: string
+      entries:
+        type: array
+        items:
+          type: object
+          properties:
+            holder:
+              type: string
+            start_date:
+              type: string
+            end_date:
+              type: string
+          description: >-
+            BatchIssueLicenseEntry defines a single entry in a batch issue
+            request.
+    description: MsgBatchIssueLicense is the Msg/BatchIssueLicense request type.
+  licenses.v1.MsgBatchIssueLicenseResponse:
+    type: object
+    properties:
+      ids:
+        type: array
+        items:
+          type: string
+          format: uint64
+    description: MsgBatchIssueLicenseResponse is the Msg/BatchIssueLicense response type.
+  licenses.v1.MsgCreateLicenseType:
+    type: object
+    properties:
+      owner:
+        type: string
+      id:
+        type: string
+      transferrable:
+        type: boolean
+      max_supply:
+        type: string
+    description: MsgCreateLicenseType is the Msg/CreateLicenseType request type.
+  licenses.v1.MsgCreateLicenseTypeResponse:
+    type: object
+    description: MsgCreateLicenseTypeResponse is the Msg/CreateLicenseType response type.
+  licenses.v1.MsgIssueLicense:
+    type: object
+    properties:
+      issuer:
+        type: string
+      license_type_id:
+        type: string
+      holder:
+        type: string
+      start_date:
+        type: string
+      end_date:
+        type: string
+      count:
+        type: string
+        format: uint64
+    description: MsgIssueLicense is the Msg/IssueLicense request type.
+  licenses.v1.MsgIssueLicenseResponse:
+    type: object
+    properties:
+      ids:
+        type: array
+        items:
+          type: string
+          format: uint64
+    description: MsgIssueLicenseResponse is the Msg/IssueLicense response type.
+  licenses.v1.MsgRemoveAdminKey:
+    type: object
+    properties:
+      owner:
+        type: string
+      address:
+        type: string
+    description: MsgRemoveAdminKey is the Msg/RemoveAdminKey request type.
+  licenses.v1.MsgRemoveAdminKeyResponse:
+    type: object
+    description: MsgRemoveAdminKeyResponse is the Msg/RemoveAdminKey response type.
+  licenses.v1.MsgRevokeLicense:
+    type: object
+    properties:
+      revoker:
+        type: string
+      license_type_id:
+        type: string
+      id:
+        type: string
+        format: uint64
+    description: MsgRevokeLicense is the Msg/RevokeLicense request type.
+  licenses.v1.MsgRevokeLicenseResponse:
+    type: object
+    description: MsgRevokeLicenseResponse is the Msg/RevokeLicense response type.
+  licenses.v1.MsgSetAdminKey:
+    type: object
+    properties:
+      owner:
+        type: string
+      address:
+        type: string
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            permission:
+              type: string
+            license_types:
+              type: array
+              items:
+                type: string
+          description: >-
+            AdminKeyGrant defines a permission grant for a specific set of
+            license types.
+    description: MsgSetAdminKey is the Msg/SetAdminKey request type.
+  licenses.v1.MsgSetAdminKeyResponse:
+    type: object
+    description: MsgSetAdminKeyResponse is the Msg/SetAdminKey response type.
+  licenses.v1.MsgTransferLicense:
+    type: object
+    properties:
+      holder:
+        type: string
+      license_type_id:
+        type: string
+      id:
+        type: string
+        format: uint64
+      recipient:
+        type: string
+    description: MsgTransferLicense is the Msg/TransferLicense request type.
+  licenses.v1.MsgTransferLicenseResponse:
+    type: object
+    description: MsgTransferLicenseResponse is the Msg/TransferLicense response type.
+  licenses.v1.MsgUpdateLicense:
+    type: object
+    properties:
+      updater:
+        type: string
+      license_type_id:
+        type: string
+      id:
+        type: string
+        format: uint64
+      status:
+        type: string
+    description: MsgUpdateLicense is the Msg/UpdateLicense request type.
+  licenses.v1.MsgUpdateLicenseResponse:
+    type: object
+    description: MsgUpdateLicenseResponse is the Msg/UpdateLicense response type.
+  licenses.v1.MsgUpdateLicenseType:
+    type: object
+    properties:
+      owner:
+        type: string
+      id:
+        type: string
+      transferrable:
+        type: boolean
+      max_supply:
+        type: string
+    description: MsgUpdateLicenseType is the Msg/UpdateLicenseType request type.
+  licenses.v1.MsgUpdateLicenseTypeResponse:
+    type: object
+    description: MsgUpdateLicenseTypeResponse is the Msg/UpdateLicenseType response type.
+  licenses.v1.MsgUpdateParams:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          owner:
+            type: string
+            description: >-
+              owner is the address that controls license type creation and admin
+              key management.
+        description: Params defines the parameters for the licenses module.
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
+  licenses.v1.MsgUpdateParamsResponse:
+    type: object
+    description: MsgUpdateParamsResponse is the Msg/UpdateParams response type.
