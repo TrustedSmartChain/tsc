@@ -89,7 +89,7 @@ include contrib/devtools/Makefile
 
 all: install lint test
 
-build: go.sum
+build:
 ifeq ($(OS),Windows_NT)
 	$(error wasmd server not supported. Use "make build-windows-client" for client)
 	exit 1
