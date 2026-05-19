@@ -148,13 +148,16 @@ from_scratch() {
 
   # --- Gentx from both validators ---
   STAKE="500000000000000000000$DENOM"
+  # min-self-delegation must be >= 500 TSC (500e18 aTSC) to satisfy the
+  # min_self_delegation floor enforced by app/hooks.
+  MIN_SELF="500000000000000000000"
 
   # Node1 gentx
-  $BINARY genesis gentx $KEY1 $STAKE --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $NODE1_HOME
+  $BINARY genesis gentx $KEY1 $STAKE --min-self-delegation $MIN_SELF --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $NODE1_HOME
 
   # Node2 gentx: copy genesis to node2, generate gentx there, copy back
   cp $NODE1_HOME/config/genesis.json $NODE2_HOME/config/genesis.json
-  $BINARY genesis gentx $KEY2 $STAKE --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $NODE2_HOME
+  $BINARY genesis gentx $KEY2 $STAKE --min-self-delegation $MIN_SELF --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $NODE2_HOME
   cp $NODE2_HOME/config/gentx/*.json $NODE1_HOME/config/gentx/
 
   # Collect all gentxs on node1

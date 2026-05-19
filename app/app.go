@@ -29,6 +29,7 @@ import (
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	chainante "github.com/TrustedSmartChain/tsc/v2/app/ante"
+	"github.com/TrustedSmartChain/tsc/v2/app/hooks"
 	lockupprecompile "github.com/TrustedSmartChain/tsc/v2/precompiles/lockup"
 	distro "github.com/TrustedSmartChain/tsc/v2/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/v2/x/distro/keeper"
@@ -557,6 +558,7 @@ func NewChainApp(
 			app.DistrKeeper.Hooks(),
 			app.SlashingKeeper.Hooks(),
 			app.LockupKeeper.Hooks(),
+			hooks.NewMinSelfDelegationHook(app.StakingKeeper),
 		),
 	)
 
@@ -1093,6 +1095,17 @@ func (app *ChainApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*
 	var genesisState GenesisState
 	if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
+	}
+
+	// Reject any genesis that seeds validators below the chain-wide
+	// min_self_delegation floor. The runtime hook does not fire on genesis
+	// import, so this is the only enforcement point for that path.
+	if rawStaking, ok := genesisState[stakingtypes.ModuleName]; ok {
+		var stakingGen stakingtypes.GenesisState
+		app.appCodec.MustUnmarshalJSON(rawStaking, &stakingGen)
+		if err := hooks.ValidateStakingGenesis(&stakingGen); err != nil {
+			panic(err)
+		}
 	}
 
 	if err := app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap()); err != nil {
