@@ -119,7 +119,7 @@ from_scratch() {
 
   # EVM
   update_genesis "$(printf '.app_state["evm"]["params"]["evm_denom"]="%s"' $DENOM)"
-  update_genesis '.app_state["evm"]["params"]["active_static_precompiles"]=["0x0000000000000000000000000000000000000100","0x0000000000000000000000000000000000000400","0x0000000000000000000000000000000000000800","0x0000000000000000000000000000000000000801","0x0000000000000000000000000000000000000802","0x0000000000000000000000000000000000000803","0x0000000000000000000000000000000000000804","0x0000000000000000000000000000000000000805","0x0000000000000000000000000000000000000900"]'
+  update_genesis '.app_state["evm"]["params"]["active_static_precompiles"]=["0x0000000000000000000000000000000000000100","0x0000000000000000000000000000000000000400","0x0000000000000000000000000000000000000800","0x0000000000000000000000000000000000000801","0x0000000000000000000000000000000000000802","0x0000000000000000000000000000000000000803","0x0000000000000000000000000000000000000804","0x0000000000000000000000000000000000000805","0x0000000000000000000000000000000000000900","0x776562737461636B000000000000000000000001"]'
   update_genesis '.app_state["feemarket"]["params"]["no_base_fee"]=true'
   update_genesis '.app_state["feemarket"]["params"]["base_fee"]="0.000000000000000000"'
 
@@ -139,6 +139,17 @@ from_scratch() {
   # Tokenfactory
   update_genesis '.app_state["tokenfactory"]["params"]["denom_creation_fee"]=[]'
   update_genesis '.app_state["tokenfactory"]["params"]["denom_creation_gas_consume"]=100000'
+
+  # licenses
+  update_genesis '.app_state["licenses"]["params"]["owner"]="tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"'
+  update_genesis '.app_state["licenses"]["license_types"]=[{
+    "id": "webstack.node",
+    "transferrable": false,
+    "max_supply": "0",
+    "issued_count": "0",
+    "active_count": "0",
+    "revoked_count": "0"
+  }]'
 
   # --- Genesis accounts ---
   BASE_ALLOC="1000000000000000000000$DENOM"

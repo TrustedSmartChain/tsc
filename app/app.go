@@ -36,9 +36,6 @@ import (
 	distro "github.com/TrustedSmartChain/tsc/v3/x/distro"
 	distrokeeper "github.com/TrustedSmartChain/tsc/v3/x/distro/keeper"
 	distrotypes "github.com/TrustedSmartChain/tsc/v3/x/distro/types"
-	licenses "github.com/webstack-sdk/webstack/x/licenses"
-	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
-	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
 	lockup "github.com/TrustedSmartChain/tsc/v3/x/lockup"
 	lockupkeeper "github.com/TrustedSmartChain/tsc/v3/x/lockup/keeper"
 	lockuptypes "github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
@@ -144,6 +141,10 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
+	licenses "github.com/webstack-sdk/webstack/x/licenses"
+	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
+	licensesprecompile "github.com/webstack-sdk/webstack/x/licenses/precompile"
+	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	// CosmWasm imports
@@ -645,6 +646,14 @@ func NewChainApp(
 		app.BankKeeper,
 	)
 	app.EVMKeeper.RegisterStaticPrecompile(lockupPrecompile.Address(), lockupPrecompile)
+
+	evmAddrCodec := evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix())
+	licensesPrecompile := licensesprecompile.NewPrecompile(
+		app.LicensesKeeper,
+		evmAddrCodec,
+		common.HexToAddress(licensestypes.PrecompileAddress),
+	)
+	app.EVMKeeper.RegisterStaticPrecompile(licensesPrecompile.Address(), licensesPrecompile)
 
 	app.Erc20Keeper = erc20keeper.NewKeeper(
 		keys[erc20types.StoreKey],
