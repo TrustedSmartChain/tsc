@@ -130,7 +130,9 @@ from_scratch () {
   $BINARY genesis add-genesis-account $KEY3 $BASE_GENESIS_ALLOCATIONS --keyring-backend $KEYRING --home $HOME_DIR --append
 
   # Sign genesis transaction
-  $BINARY genesis gentx $KEY 500000000000000000000$DENOM --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $HOME_DIR
+  # min-self-delegation must be >= 500 TSC (500e18 aTSC) to satisfy the
+  # min_self_delegation floor enforced by app/hooks.
+  $BINARY genesis gentx $KEY 500000000000000000000$DENOM --min-self-delegation 500000000000000000000 --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $HOME_DIR
 
   $BINARY genesis collect-gentxs --home $HOME_DIR
 
