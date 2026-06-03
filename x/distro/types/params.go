@@ -16,18 +16,18 @@ const DefaultDistributionStartDate string = "2025-07-22"
 const DefaultMonthsInHalvingPeriod uint64 = 48
 
 // Decentralized distribution defaults.
-const DefaultDistributionLicenseTypeID string = "distribution"
+const DefaultDistributionLicenseTypeID string = "tsc.node"
 const DefaultLicenseTallyThreshold string = "0.667"
 const DefaultStakeTallyThreshold string = "0.667"
 const DefaultEpochIdentifier string = "day"
 
 // DefaultDistributionReviewDelay keeps a distribution PENDING (challengeable) for
-// one epoch after consensus before it auto-promotes to LIVE.
-const DefaultDistributionReviewDelay uint64 = 1
+// three epochs after consensus before it auto-promotes to LIVE.
+const DefaultDistributionReviewDelay uint64 = 3
 
 // DefaultChallengeBond is the bond escrowed to challenge a pending distribution
-// (1 token at 18 decimals). Tune per economic policy.
-const DefaultChallengeBond string = "1000000000000000000"
+// (10 tokens at 18 decimals). Tune per economic policy.
+const DefaultChallengeBond string = "10000000000000000000"
 
 // NewParams creates a new Params instance.
 func NewParams(
