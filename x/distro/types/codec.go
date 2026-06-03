@@ -23,6 +23,9 @@ func init() {
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgUpdateParams{}, ModuleName+"/MsgUpdateParams", nil)
 	cdc.RegisterConcrete(&MsgMint{}, ModuleName+"/MsgMint", nil)
+	cdc.RegisterConcrete(&MsgSubmitDistributionRoot{}, ModuleName+"/MsgSubmitDistributionRoot", nil)
+	cdc.RegisterConcrete(&MsgClaim{}, ModuleName+"/MsgClaim", nil)
+	cdc.RegisterConcrete(&MsgChallengeDistribution{}, ModuleName+"/MsgChallengeDistribution", nil)
 }
 
 func RegisterInterfaces(registry types.InterfaceRegistry) {
@@ -31,6 +34,9 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		(*sdk.Msg)(nil),
 		&MsgUpdateParams{},
 		&MsgMint{},
+		&MsgSubmitDistributionRoot{},
+		&MsgClaim{},
+		&MsgChallengeDistribution{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

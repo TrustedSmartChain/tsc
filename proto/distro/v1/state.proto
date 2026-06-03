@@ -1,0 +1,62 @@
+syntax = "proto3";
+package distro.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/v3/x/distro/types";
+
+// DistributionStatus is the lifecycle state of an epoch's distribution.
+//
+// VOTING -> PENDING -> LIVE is the happy path. A licensed holder may challenge a
+// PENDING distribution within the review-delay window, moving it to
+// UNDER_REVIEW, which reopens voting; the re-tally resolves the challenge.
+enum DistributionStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  // DISTRIBUTION_STATUS_VOTING means votes are accumulating; no consensus yet.
+  DISTRIBUTION_STATUS_VOTING = 0;
+  // DISTRIBUTION_STATUS_LIVE means the canonical root is claimable.
+  DISTRIBUTION_STATUS_LIVE = 1;
+  // DISTRIBUTION_STATUS_PENDING means consensus was reached and the distribution
+  // is in the review-delay window, auto-promoting to LIVE if unchallenged.
+  DISTRIBUTION_STATUS_PENDING = 2;
+  // DISTRIBUTION_STATUS_UNDER_REVIEW means a licensed holder challenged the
+  // pending root; voting has reopened and the re-tally will resolve it.
+  DISTRIBUTION_STATUS_UNDER_REVIEW = 3;
+}
+
+// DistributionVote is a single node's submitted merkle root for an epoch.
+// Stored (and retained) keyed by (epoch, signer).
+message DistributionVote {
+  int64 epoch = 1;
+  string signer = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  bytes merkle_root = 3;
+}
+
+// EpochDistribution is the canonical/finalized result for an epoch (day).
+message EpochDistribution {
+  int64 epoch = 1;
+  bytes merkle_root = 2;
+  DistributionStatus status = 3;
+  // license_tally / stake_tally record the winning root's fractions at finalization.
+  string license_tally = 4;
+  string stake_tally = 5;
+  // finalized_height is the block height at which the epoch went LIVE.
+  int64 finalized_height = 6;
+  // pending_since_epoch is the epoch number at which this distribution entered
+  // PENDING; used to measure the review-delay window.
+  int64 pending_since_epoch = 7;
+  // challenger is the address that placed this distribution UNDER_REVIEW (empty
+  // otherwise). Set while UNDER_REVIEW so the bond can be refunded or burned.
+  string challenger = 8 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // challenge_bond is the amount (in the module denom) escrowed by the
+  // challenger while UNDER_REVIEW.
+  string challenge_bond = 9;
+}
+
+// ClaimedReward is the genesis representation of the claimed nonces for an epoch.
+message ClaimedReward {
+  int64 epoch = 1;
+  repeated uint64 nonces = 2;
+}

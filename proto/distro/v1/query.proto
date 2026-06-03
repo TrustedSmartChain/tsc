@@ -1,8 +1,10 @@
 syntax = "proto3";
 package distro.v1;
 
+import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "distro/v1/genesis.proto";
+import "distro/v1/state.proto";
 
 option go_package = "github.com/TrustedSmartChain/tsc/v3/x/distro/types";
 
@@ -11,6 +13,18 @@ service Query {
   // Params queries all parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/tsc/distro/v1/params";
+  }
+  // EpochDistribution queries the canonical distribution for an epoch.
+  rpc EpochDistribution(QueryEpochDistributionRequest) returns (QueryEpochDistributionResponse) {
+    option (google.api.http).get = "/tsc/distro/v1/epoch_distribution/{epoch}";
+  }
+  // DistributionVotes queries all submitted votes for an epoch.
+  rpc DistributionVotes(QueryDistributionVotesRequest) returns (QueryDistributionVotesResponse) {
+    option (google.api.http).get = "/tsc/distro/v1/distribution_votes/{epoch}";
+  }
+  // Claimed reports whether a (epoch, nonce) reward has been claimed.
+  rpc Claimed(QueryClaimedRequest) returns (QueryClaimedResponse) {
+    option (google.api.http).get = "/tsc/distro/v1/claimed/{epoch}/{nonce}";
   }
 }
 
@@ -21,4 +35,29 @@ message QueryParamsRequest {}
 message QueryParamsResponse {
   // params defines the parameters of the module.
   Params params = 1;
+}
+
+message QueryEpochDistributionRequest {
+  int64 epoch = 1;
+}
+
+message QueryEpochDistributionResponse {
+  EpochDistribution epoch_distribution = 1;
+}
+
+message QueryDistributionVotesRequest {
+  int64 epoch = 1;
+}
+
+message QueryDistributionVotesResponse {
+  repeated DistributionVote votes = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryClaimedRequest {
+  int64 epoch = 1;
+  uint64 nonce = 2;
+}
+
+message QueryClaimedResponse {
+  bool claimed = 1;
 }

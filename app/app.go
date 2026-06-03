@@ -580,6 +580,15 @@ func NewChainApp(
 		appCodec,
 	)
 
+	// Create the licenses Keeper (before distro, which depends on it for the
+	// license-gated distribution vote).
+	app.LicensesKeeper = licenseskeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[licensestypes.StoreKey]),
+		logger,
+		authAddr,
+	)
+
 	// Create the distro Keeper
 	app.DistroKeeper = distrokeeper.NewKeeper(
 		appCodec,
@@ -588,14 +597,16 @@ func NewChainApp(
 		authAddr,
 		app.AccountKeeper,
 		app.BankKeeper,
+		app.StakingKeeper,
+		licenseskeeper.NewQuerier(app.LicensesKeeper),
+		&app.EpochsKeeper,
 	)
 
-	// Create the licenses Keeper
-	app.LicensesKeeper = licenseskeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[licensestypes.StoreKey]),
-		logger,
-		authAddr,
+	// Register the distro module's epoch hook so the daily tally runs at epoch end.
+	app.EpochsKeeper.SetHooks(
+		epochstypes.NewMultiEpochHooks(
+			app.DistroKeeper.EpochHooks(),
+		),
 	)
 
 	// Cosmos EVM keepers

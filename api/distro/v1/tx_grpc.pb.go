@@ -19,8 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Msg_UpdateParams_FullMethodName = "/distro.v1.Msg/UpdateParams"
-	Msg_Mint_FullMethodName         = "/distro.v1.Msg/Mint"
+	Msg_UpdateParams_FullMethodName           = "/distro.v1.Msg/UpdateParams"
+	Msg_Mint_FullMethodName                   = "/distro.v1.Msg/Mint"
+	Msg_SubmitDistributionRoot_FullMethodName = "/distro.v1.Msg/SubmitDistributionRoot"
+	Msg_Claim_FullMethodName                  = "/distro.v1.Msg/Claim"
+	Msg_ChallengeDistribution_FullMethodName  = "/distro.v1.Msg/ChallengeDistribution"
 )
 
 // MsgClient is the client API for Msg service.
@@ -32,6 +35,14 @@ type MsgClient interface {
 	// Since: cosmos-sdk 0.47
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	Mint(ctx context.Context, in *MsgMint, opts ...grpc.CallOption) (*MsgMintResponse, error)
+	// SubmitDistributionRoot records a node's merkle root for an epoch (day).
+	SubmitDistributionRoot(ctx context.Context, in *MsgSubmitDistributionRoot, opts ...grpc.CallOption) (*MsgSubmitDistributionRootResponse, error)
+	// Claim claims a reward from a finalized (live) epoch via a merkle proof.
+	Claim(ctx context.Context, in *MsgClaim, opts ...grpc.CallOption) (*MsgClaimResponse, error)
+	// ChallengeDistribution places a PENDING epoch distribution UNDER_REVIEW,
+	// reopening voting. The challenger must hold an active license and escrows a
+	// bond that is refunded if the re-vote changes the root, or burned otherwise.
+	ChallengeDistribution(ctx context.Context, in *MsgChallengeDistribution, opts ...grpc.CallOption) (*MsgChallengeDistributionResponse, error)
 }
 
 type msgClient struct {
@@ -60,6 +71,33 @@ func (c *msgClient) Mint(ctx context.Context, in *MsgMint, opts ...grpc.CallOpti
 	return out, nil
 }
 
+func (c *msgClient) SubmitDistributionRoot(ctx context.Context, in *MsgSubmitDistributionRoot, opts ...grpc.CallOption) (*MsgSubmitDistributionRootResponse, error) {
+	out := new(MsgSubmitDistributionRootResponse)
+	err := c.cc.Invoke(ctx, Msg_SubmitDistributionRoot_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) Claim(ctx context.Context, in *MsgClaim, opts ...grpc.CallOption) (*MsgClaimResponse, error) {
+	out := new(MsgClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_Claim_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) ChallengeDistribution(ctx context.Context, in *MsgChallengeDistribution, opts ...grpc.CallOption) (*MsgChallengeDistributionResponse, error) {
+	out := new(MsgChallengeDistributionResponse)
+	err := c.cc.Invoke(ctx, Msg_ChallengeDistribution_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -69,6 +107,14 @@ type MsgServer interface {
 	// Since: cosmos-sdk 0.47
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	Mint(context.Context, *MsgMint) (*MsgMintResponse, error)
+	// SubmitDistributionRoot records a node's merkle root for an epoch (day).
+	SubmitDistributionRoot(context.Context, *MsgSubmitDistributionRoot) (*MsgSubmitDistributionRootResponse, error)
+	// Claim claims a reward from a finalized (live) epoch via a merkle proof.
+	Claim(context.Context, *MsgClaim) (*MsgClaimResponse, error)
+	// ChallengeDistribution places a PENDING epoch distribution UNDER_REVIEW,
+	// reopening voting. The challenger must hold an active license and escrows a
+	// bond that is refunded if the re-vote changes the root, or burned otherwise.
+	ChallengeDistribution(context.Context, *MsgChallengeDistribution) (*MsgChallengeDistributionResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -81,6 +127,15 @@ func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*
 }
 func (UnimplementedMsgServer) Mint(context.Context, *MsgMint) (*MsgMintResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Mint not implemented")
+}
+func (UnimplementedMsgServer) SubmitDistributionRoot(context.Context, *MsgSubmitDistributionRoot) (*MsgSubmitDistributionRootResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitDistributionRoot not implemented")
+}
+func (UnimplementedMsgServer) Claim(context.Context, *MsgClaim) (*MsgClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Claim not implemented")
+}
+func (UnimplementedMsgServer) ChallengeDistribution(context.Context, *MsgChallengeDistribution) (*MsgChallengeDistributionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChallengeDistribution not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -131,6 +186,60 @@ func _Msg_Mint_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_SubmitDistributionRoot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSubmitDistributionRoot)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SubmitDistributionRoot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SubmitDistributionRoot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SubmitDistributionRoot(ctx, req.(*MsgSubmitDistributionRoot))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_Claim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).Claim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_Claim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).Claim(ctx, req.(*MsgClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_ChallengeDistribution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgChallengeDistribution)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ChallengeDistribution(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ChallengeDistribution_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ChallengeDistribution(ctx, req.(*MsgChallengeDistribution))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -145,6 +254,18 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Mint",
 			Handler:    _Msg_Mint_Handler,
+		},
+		{
+			MethodName: "SubmitDistributionRoot",
+			Handler:    _Msg_SubmitDistributionRoot_Handler,
+		},
+		{
+			MethodName: "Claim",
+			Handler:    _Msg_Claim_Handler,
+		},
+		{
+			MethodName: "ChallengeDistribution",
+			Handler:    _Msg_ChallengeDistribution_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

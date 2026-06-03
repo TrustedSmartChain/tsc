@@ -5,11 +5,12 @@ package types
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
-
-	proto "github.com/cosmos/gogoproto/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -23,23 +24,68 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type ExampleData struct {
-	Account []byte `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
-	Amount  uint64 `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
+// DistributionStatus is the lifecycle state of an epoch's distribution.
+//
+// VOTING -> PENDING -> LIVE is the happy path. A licensed holder may challenge a
+// PENDING distribution within the review-delay window, moving it to
+// UNDER_REVIEW, which reopens voting; the re-tally resolves the challenge.
+type DistributionStatus int32
+
+const (
+	// DISTRIBUTION_STATUS_VOTING means votes are accumulating; no consensus yet.
+	DISTRIBUTION_STATUS_VOTING DistributionStatus = 0
+	// DISTRIBUTION_STATUS_LIVE means the canonical root is claimable.
+	DISTRIBUTION_STATUS_LIVE DistributionStatus = 1
+	// DISTRIBUTION_STATUS_PENDING means consensus was reached and the distribution
+	// is in the review-delay window, auto-promoting to LIVE if unchallenged.
+	DISTRIBUTION_STATUS_PENDING DistributionStatus = 2
+	// DISTRIBUTION_STATUS_UNDER_REVIEW means a licensed holder challenged the
+	// pending root; voting has reopened and the re-tally will resolve it.
+	DISTRIBUTION_STATUS_UNDER_REVIEW DistributionStatus = 3
+)
+
+var DistributionStatus_name = map[int32]string{
+	0: "DISTRIBUTION_STATUS_VOTING",
+	1: "DISTRIBUTION_STATUS_LIVE",
+	2: "DISTRIBUTION_STATUS_PENDING",
+	3: "DISTRIBUTION_STATUS_UNDER_REVIEW",
 }
 
-func (m *ExampleData) Reset()         { *m = ExampleData{} }
-func (m *ExampleData) String() string { return proto.CompactTextString(m) }
-func (*ExampleData) ProtoMessage()    {}
-func (*ExampleData) Descriptor() ([]byte, []int) {
+var DistributionStatus_value = map[string]int32{
+	"DISTRIBUTION_STATUS_VOTING":       0,
+	"DISTRIBUTION_STATUS_LIVE":         1,
+	"DISTRIBUTION_STATUS_PENDING":      2,
+	"DISTRIBUTION_STATUS_UNDER_REVIEW": 3,
+}
+
+func (x DistributionStatus) String() string {
+	return proto.EnumName(DistributionStatus_name, int32(x))
+}
+
+func (DistributionStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_263e8e2c78e904c8, []int{0}
 }
-func (m *ExampleData) XXX_Unmarshal(b []byte) error {
+
+// DistributionVote is a single node's submitted merkle root for an epoch.
+// Stored (and retained) keyed by (epoch, signer).
+type DistributionVote struct {
+	Epoch      int64  `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	Signer     string `protobuf:"bytes,2,opt,name=signer,proto3" json:"signer,omitempty"`
+	MerkleRoot []byte `protobuf:"bytes,3,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
+}
+
+func (m *DistributionVote) Reset()         { *m = DistributionVote{} }
+func (m *DistributionVote) String() string { return proto.CompactTextString(m) }
+func (*DistributionVote) ProtoMessage()    {}
+func (*DistributionVote) Descriptor() ([]byte, []int) {
+	return fileDescriptor_263e8e2c78e904c8, []int{0}
+}
+func (m *DistributionVote) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExampleData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DistributionVote) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ExampleData.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DistributionVote.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -49,57 +95,258 @@ func (m *ExampleData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return b[:n], nil
 	}
 }
-func (m *ExampleData) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ExampleData.Merge(m, src)
+func (m *DistributionVote) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DistributionVote.Merge(m, src)
 }
-func (m *ExampleData) XXX_Size() int {
+func (m *DistributionVote) XXX_Size() int {
 	return m.Size()
 }
-func (m *ExampleData) XXX_DiscardUnknown() {
-	xxx_messageInfo_ExampleData.DiscardUnknown(m)
+func (m *DistributionVote) XXX_DiscardUnknown() {
+	xxx_messageInfo_DistributionVote.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ExampleData proto.InternalMessageInfo
+var xxx_messageInfo_DistributionVote proto.InternalMessageInfo
 
-func (m *ExampleData) GetAccount() []byte {
+func (m *DistributionVote) GetEpoch() int64 {
 	if m != nil {
-		return m.Account
-	}
-	return nil
-}
-
-func (m *ExampleData) GetAmount() uint64 {
-	if m != nil {
-		return m.Amount
+		return m.Epoch
 	}
 	return 0
 }
 
+func (m *DistributionVote) GetSigner() string {
+	if m != nil {
+		return m.Signer
+	}
+	return ""
+}
+
+func (m *DistributionVote) GetMerkleRoot() []byte {
+	if m != nil {
+		return m.MerkleRoot
+	}
+	return nil
+}
+
+// EpochDistribution is the canonical/finalized result for an epoch (day).
+type EpochDistribution struct {
+	Epoch      int64              `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	MerkleRoot []byte             `protobuf:"bytes,2,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
+	Status     DistributionStatus `protobuf:"varint,3,opt,name=status,proto3,enum=distro.v1.DistributionStatus" json:"status,omitempty"`
+	// license_tally / stake_tally record the winning root's fractions at finalization.
+	LicenseTally string `protobuf:"bytes,4,opt,name=license_tally,json=licenseTally,proto3" json:"license_tally,omitempty"`
+	StakeTally   string `protobuf:"bytes,5,opt,name=stake_tally,json=stakeTally,proto3" json:"stake_tally,omitempty"`
+	// finalized_height is the block height at which the epoch went LIVE.
+	FinalizedHeight int64 `protobuf:"varint,6,opt,name=finalized_height,json=finalizedHeight,proto3" json:"finalized_height,omitempty"`
+	// pending_since_epoch is the epoch number at which this distribution entered
+	// PENDING; used to measure the review-delay window.
+	PendingSinceEpoch int64 `protobuf:"varint,7,opt,name=pending_since_epoch,json=pendingSinceEpoch,proto3" json:"pending_since_epoch,omitempty"`
+	// challenger is the address that placed this distribution UNDER_REVIEW (empty
+	// otherwise). Set while UNDER_REVIEW so the bond can be refunded or burned.
+	Challenger string `protobuf:"bytes,8,opt,name=challenger,proto3" json:"challenger,omitempty"`
+	// challenge_bond is the amount (in the module denom) escrowed by the
+	// challenger while UNDER_REVIEW.
+	ChallengeBond string `protobuf:"bytes,9,opt,name=challenge_bond,json=challengeBond,proto3" json:"challenge_bond,omitempty"`
+}
+
+func (m *EpochDistribution) Reset()         { *m = EpochDistribution{} }
+func (m *EpochDistribution) String() string { return proto.CompactTextString(m) }
+func (*EpochDistribution) ProtoMessage()    {}
+func (*EpochDistribution) Descriptor() ([]byte, []int) {
+	return fileDescriptor_263e8e2c78e904c8, []int{1}
+}
+func (m *EpochDistribution) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EpochDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EpochDistribution.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EpochDistribution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EpochDistribution.Merge(m, src)
+}
+func (m *EpochDistribution) XXX_Size() int {
+	return m.Size()
+}
+func (m *EpochDistribution) XXX_DiscardUnknown() {
+	xxx_messageInfo_EpochDistribution.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EpochDistribution proto.InternalMessageInfo
+
+func (m *EpochDistribution) GetEpoch() int64 {
+	if m != nil {
+		return m.Epoch
+	}
+	return 0
+}
+
+func (m *EpochDistribution) GetMerkleRoot() []byte {
+	if m != nil {
+		return m.MerkleRoot
+	}
+	return nil
+}
+
+func (m *EpochDistribution) GetStatus() DistributionStatus {
+	if m != nil {
+		return m.Status
+	}
+	return DISTRIBUTION_STATUS_VOTING
+}
+
+func (m *EpochDistribution) GetLicenseTally() string {
+	if m != nil {
+		return m.LicenseTally
+	}
+	return ""
+}
+
+func (m *EpochDistribution) GetStakeTally() string {
+	if m != nil {
+		return m.StakeTally
+	}
+	return ""
+}
+
+func (m *EpochDistribution) GetFinalizedHeight() int64 {
+	if m != nil {
+		return m.FinalizedHeight
+	}
+	return 0
+}
+
+func (m *EpochDistribution) GetPendingSinceEpoch() int64 {
+	if m != nil {
+		return m.PendingSinceEpoch
+	}
+	return 0
+}
+
+func (m *EpochDistribution) GetChallenger() string {
+	if m != nil {
+		return m.Challenger
+	}
+	return ""
+}
+
+func (m *EpochDistribution) GetChallengeBond() string {
+	if m != nil {
+		return m.ChallengeBond
+	}
+	return ""
+}
+
+// ClaimedReward is the genesis representation of the claimed nonces for an epoch.
+type ClaimedReward struct {
+	Epoch  int64    `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	Nonces []uint64 `protobuf:"varint,2,rep,packed,name=nonces,proto3" json:"nonces,omitempty"`
+}
+
+func (m *ClaimedReward) Reset()         { *m = ClaimedReward{} }
+func (m *ClaimedReward) String() string { return proto.CompactTextString(m) }
+func (*ClaimedReward) ProtoMessage()    {}
+func (*ClaimedReward) Descriptor() ([]byte, []int) {
+	return fileDescriptor_263e8e2c78e904c8, []int{2}
+}
+func (m *ClaimedReward) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ClaimedReward) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ClaimedReward.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ClaimedReward) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClaimedReward.Merge(m, src)
+}
+func (m *ClaimedReward) XXX_Size() int {
+	return m.Size()
+}
+func (m *ClaimedReward) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClaimedReward.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ClaimedReward proto.InternalMessageInfo
+
+func (m *ClaimedReward) GetEpoch() int64 {
+	if m != nil {
+		return m.Epoch
+	}
+	return 0
+}
+
+func (m *ClaimedReward) GetNonces() []uint64 {
+	if m != nil {
+		return m.Nonces
+	}
+	return nil
+}
+
 func init() {
-	proto.RegisterType((*ExampleData)(nil), "distro.v1.ExampleData")
+	proto.RegisterEnum("distro.v1.DistributionStatus", DistributionStatus_name, DistributionStatus_value)
+	proto.RegisterType((*DistributionVote)(nil), "distro.v1.DistributionVote")
+	proto.RegisterType((*EpochDistribution)(nil), "distro.v1.EpochDistribution")
+	proto.RegisterType((*ClaimedReward)(nil), "distro.v1.ClaimedReward")
 }
 
 func init() { proto.RegisterFile("distro/v1/state.proto", fileDescriptor_263e8e2c78e904c8) }
 
 var fileDescriptor_263e8e2c78e904c8 = []byte{
-	// 221 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x4d, 0xc9, 0x2c, 0x2e,
-	0x29, 0xca, 0xd7, 0x2f, 0x33, 0xd4, 0x2f, 0x2e, 0x49, 0x2c, 0x49, 0xd5, 0x2b, 0x28, 0xca, 0x2f,
-	0xc9, 0x17, 0xe2, 0x84, 0x08, 0xeb, 0x95, 0x19, 0x4a, 0x89, 0x27, 0xe7, 0x17, 0xe7, 0xe6, 0x17,
-	0xeb, 0xe7, 0x17, 0xe5, 0x82, 0x54, 0xe5, 0x17, 0xe5, 0x42, 0xd4, 0x28, 0x25, 0x70, 0x71, 0xbb,
-	0x56, 0x24, 0xe6, 0x16, 0xe4, 0xa4, 0xba, 0x24, 0x96, 0x24, 0x0a, 0x49, 0x70, 0xb1, 0x27, 0x26,
-	0x27, 0xe7, 0x97, 0xe6, 0x95, 0x48, 0x30, 0x2a, 0x30, 0x6a, 0xf0, 0x04, 0xc1, 0xb8, 0x42, 0x62,
-	0x5c, 0x6c, 0x89, 0xb9, 0x60, 0x09, 0x26, 0x05, 0x46, 0x0d, 0x96, 0x20, 0x28, 0xcf, 0x4a, 0xfe,
-	0xd3, 0xbc, 0xcb, 0x7d, 0xcc, 0x92, 0x5c, 0x9c, 0x70, 0x9d, 0x42, 0x5c, 0x30, 0xa5, 0x02, 0x8c,
-	0x12, 0x8c, 0x4e, 0x9e, 0x27, 0x1e, 0xc9, 0x31, 0x5e, 0x78, 0x24, 0xc7, 0xf8, 0xe0, 0x91, 0x1c,
-	0xe3, 0x84, 0xc7, 0x72, 0x0c, 0x17, 0x1e, 0xcb, 0x31, 0xdc, 0x78, 0x2c, 0xc7, 0x10, 0xa5, 0x9f,
-	0x9e, 0x59, 0x92, 0x51, 0x9a, 0xa4, 0x97, 0x9c, 0x9f, 0xab, 0x1f, 0x52, 0x54, 0x5a, 0x5c, 0x92,
-	0x9a, 0x12, 0x9c, 0x9b, 0x58, 0x54, 0xe2, 0x9c, 0x91, 0x98, 0x99, 0xa7, 0x5f, 0x52, 0x9c, 0xac,
-	0x5f, 0xa1, 0x0f, 0xf5, 0x59, 0x49, 0x65, 0x41, 0x6a, 0x71, 0x12, 0x1b, 0xd8, 0xcd, 0xc6, 0x80,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x14, 0x16, 0x2c, 0x34, 0xf0, 0x00, 0x00, 0x00,
+	// 555 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0xcf, 0x6e, 0xd3, 0x40,
+	0x10, 0xc6, 0xe3, 0x24, 0x0d, 0x64, 0x68, 0x4a, 0xba, 0x04, 0x64, 0x02, 0xb8, 0x51, 0x00, 0x29,
+	0x20, 0x61, 0xd3, 0x56, 0x48, 0x5c, 0x38, 0x34, 0x8d, 0x05, 0x96, 0xaa, 0x14, 0xd9, 0x4e, 0x90,
+	0xb8, 0x58, 0x8e, 0xbd, 0xd8, 0xab, 0x3a, 0xbb, 0x91, 0x77, 0x13, 0x28, 0x1c, 0xb9, 0x70, 0xe4,
+	0x0d, 0x38, 0xf0, 0x0a, 0x3c, 0x04, 0xc7, 0x8a, 0x13, 0x47, 0x94, 0xbc, 0x08, 0xf2, 0x1f, 0xa2,
+	0xa8, 0xa4, 0xea, 0xcd, 0xf3, 0x7d, 0xbf, 0x9d, 0x99, 0xfd, 0xac, 0x85, 0x9b, 0x3e, 0xe1, 0x22,
+	0x66, 0xda, 0x6c, 0x57, 0xe3, 0xc2, 0x15, 0x58, 0x9d, 0xc4, 0x4c, 0x30, 0x54, 0xcd, 0x64, 0x75,
+	0xb6, 0xdb, 0x6c, 0x04, 0x2c, 0x60, 0xa9, 0xaa, 0x25, 0x5f, 0x19, 0xd0, 0xbc, 0xed, 0x31, 0x3e,
+	0x66, 0xdc, 0xc9, 0x8c, 0xac, 0xc8, 0xac, 0xf6, 0x27, 0xa8, 0xf7, 0x92, 0xd3, 0x64, 0x34, 0x15,
+	0x84, 0xd1, 0x21, 0x13, 0x18, 0x35, 0x60, 0x03, 0x4f, 0x98, 0x17, 0xca, 0x52, 0x4b, 0xea, 0x94,
+	0xcc, 0xac, 0x40, 0x4f, 0xa1, 0xc2, 0x49, 0x40, 0x71, 0x2c, 0x17, 0x5b, 0x52, 0xa7, 0xda, 0x95,
+	0x7f, 0xfd, 0x78, 0xd2, 0xc8, 0x7b, 0x1d, 0xf8, 0x7e, 0x8c, 0x39, 0xb7, 0x44, 0x4c, 0x68, 0x60,
+	0xe6, 0x1c, 0xda, 0x81, 0x6b, 0x63, 0x1c, 0x9f, 0x44, 0xd8, 0x89, 0x19, 0x13, 0x72, 0xa9, 0x25,
+	0x75, 0x36, 0x4d, 0xc8, 0x24, 0x93, 0x31, 0xd1, 0xfe, 0x5c, 0x82, 0x6d, 0x3d, 0x69, 0xbe, 0xba,
+	0xc2, 0x05, 0xe3, 0xcf, 0x35, 0x2b, 0x9e, 0x6f, 0x86, 0x9e, 0x41, 0x25, 0x09, 0x65, 0xca, 0xd3,
+	0x41, 0x5b, 0x7b, 0xf7, 0xd4, 0x65, 0x2c, 0xea, 0x6a, 0x7f, 0x2b, 0x85, 0xcc, 0x1c, 0x46, 0xf7,
+	0xa1, 0x16, 0x11, 0x0f, 0x53, 0x8e, 0x1d, 0xe1, 0x46, 0xd1, 0xa9, 0x5c, 0x4e, 0x6e, 0x67, 0x6e,
+	0xe6, 0xa2, 0x9d, 0x68, 0xc9, 0x70, 0x2e, 0xdc, 0x93, 0x7f, 0xc8, 0x46, 0x8a, 0x40, 0x2a, 0x65,
+	0xc0, 0x23, 0xa8, 0xbf, 0x23, 0xd4, 0x8d, 0xc8, 0x47, 0xec, 0x3b, 0x21, 0x26, 0x41, 0x28, 0xe4,
+	0x4a, 0xba, 0xfe, 0xf5, 0xa5, 0xfe, 0x2a, 0x95, 0x91, 0x0a, 0x37, 0x26, 0x98, 0xfa, 0x84, 0x06,
+	0x0e, 0x27, 0xd4, 0xc3, 0x4e, 0x76, 0xd9, 0x2b, 0x29, 0xbd, 0x9d, 0x5b, 0x56, 0xe2, 0xa4, 0xd1,
+	0xa0, 0xe7, 0x00, 0x5e, 0xe8, 0x46, 0x11, 0xa6, 0x01, 0x8e, 0xe5, 0xab, 0x97, 0x64, 0xbf, 0xc2,
+	0xa2, 0x87, 0xb0, 0xb5, 0xac, 0x9c, 0x11, 0xa3, 0xbe, 0x5c, 0x4d, 0x17, 0xaf, 0x2d, 0xd5, 0x2e,
+	0xa3, 0x7e, 0xfb, 0x05, 0xd4, 0x0e, 0x23, 0x97, 0x8c, 0xb1, 0x6f, 0xe2, 0xf7, 0x6e, 0xec, 0x5f,
+	0xf0, 0x03, 0x6e, 0x41, 0x85, 0x32, 0xea, 0x61, 0x2e, 0x17, 0x5b, 0xa5, 0x4e, 0xd9, 0xcc, 0xab,
+	0xc7, 0xdf, 0x24, 0x40, 0xff, 0xe7, 0x8b, 0x14, 0x68, 0xf6, 0x0c, 0xcb, 0x36, 0x8d, 0xee, 0xc0,
+	0x36, 0x8e, 0xfb, 0x8e, 0x65, 0x1f, 0xd8, 0x03, 0xcb, 0x19, 0x1e, 0xdb, 0x46, 0xff, 0x65, 0xbd,
+	0x80, 0xee, 0x82, 0xbc, 0xce, 0x3f, 0x32, 0x86, 0x7a, 0x5d, 0x42, 0x3b, 0x70, 0x67, 0x9d, 0xfb,
+	0x5a, 0xef, 0xf7, 0x92, 0xe3, 0x45, 0xf4, 0x00, 0x5a, 0xeb, 0x80, 0x41, 0xbf, 0xa7, 0x9b, 0x8e,
+	0xa9, 0x0f, 0x0d, 0xfd, 0x4d, 0xbd, 0xd4, 0x2c, 0x7f, 0xf9, 0xae, 0x14, 0xba, 0x47, 0x3f, 0xe7,
+	0x8a, 0x74, 0x36, 0x57, 0xa4, 0x3f, 0x73, 0x45, 0xfa, 0xba, 0x50, 0x0a, 0x67, 0x0b, 0xa5, 0xf0,
+	0x7b, 0xa1, 0x14, 0xde, 0xee, 0x05, 0x44, 0x84, 0xd3, 0x91, 0xea, 0xb1, 0xb1, 0x66, 0xc7, 0x53,
+	0x2e, 0xb0, 0x6f, 0x8d, 0xdd, 0x58, 0x1c, 0x86, 0x2e, 0xa1, 0x9a, 0xe0, 0x9e, 0x36, 0xdb, 0xd7,
+	0x3e, 0x68, 0xf9, 0xb3, 0x13, 0xa7, 0x13, 0xcc, 0x47, 0x95, 0xf4, 0xe1, 0xec, 0xff, 0x0d, 0x00,
+	0x00, 0xff, 0xff, 0x1d, 0x26, 0x4c, 0xa7, 0x8d, 0x03, 0x00, 0x00,
 }
 
-func (m *ExampleData) Marshal() (dAtA []byte, err error) {
+func (m *DistributionVote) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -109,27 +356,158 @@ func (m *ExampleData) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExampleData) MarshalTo(dAtA []byte) (int, error) {
+func (m *DistributionVote) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ExampleData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DistributionVote) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Amount != 0 {
-		i = encodeVarintState(dAtA, i, uint64(m.Amount))
+	if len(m.MerkleRoot) > 0 {
+		i -= len(m.MerkleRoot)
+		copy(dAtA[i:], m.MerkleRoot)
+		i = encodeVarintState(dAtA, i, uint64(len(m.MerkleRoot)))
 		i--
-		dAtA[i] = 0x10
+		dAtA[i] = 0x1a
 	}
-	if len(m.Account) > 0 {
-		i -= len(m.Account)
-		copy(dAtA[i:], m.Account)
-		i = encodeVarintState(dAtA, i, uint64(len(m.Account)))
+	if len(m.Signer) > 0 {
+		i -= len(m.Signer)
+		copy(dAtA[i:], m.Signer)
+		i = encodeVarintState(dAtA, i, uint64(len(m.Signer)))
 		i--
-		dAtA[i] = 0xa
+		dAtA[i] = 0x12
+	}
+	if m.Epoch != 0 {
+		i = encodeVarintState(dAtA, i, uint64(m.Epoch))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EpochDistribution) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EpochDistribution) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EpochDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ChallengeBond) > 0 {
+		i -= len(m.ChallengeBond)
+		copy(dAtA[i:], m.ChallengeBond)
+		i = encodeVarintState(dAtA, i, uint64(len(m.ChallengeBond)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.Challenger) > 0 {
+		i -= len(m.Challenger)
+		copy(dAtA[i:], m.Challenger)
+		i = encodeVarintState(dAtA, i, uint64(len(m.Challenger)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.PendingSinceEpoch != 0 {
+		i = encodeVarintState(dAtA, i, uint64(m.PendingSinceEpoch))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.FinalizedHeight != 0 {
+		i = encodeVarintState(dAtA, i, uint64(m.FinalizedHeight))
+		i--
+		dAtA[i] = 0x30
+	}
+	if len(m.StakeTally) > 0 {
+		i -= len(m.StakeTally)
+		copy(dAtA[i:], m.StakeTally)
+		i = encodeVarintState(dAtA, i, uint64(len(m.StakeTally)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.LicenseTally) > 0 {
+		i -= len(m.LicenseTally)
+		copy(dAtA[i:], m.LicenseTally)
+		i = encodeVarintState(dAtA, i, uint64(len(m.LicenseTally)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.Status != 0 {
+		i = encodeVarintState(dAtA, i, uint64(m.Status))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.MerkleRoot) > 0 {
+		i -= len(m.MerkleRoot)
+		copy(dAtA[i:], m.MerkleRoot)
+		i = encodeVarintState(dAtA, i, uint64(len(m.MerkleRoot)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Epoch != 0 {
+		i = encodeVarintState(dAtA, i, uint64(m.Epoch))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClaimedReward) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClaimedReward) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClaimedReward) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Nonces) > 0 {
+		dAtA2 := make([]byte, len(m.Nonces)*10)
+		var j1 int
+		for _, num := range m.Nonces {
+			for num >= 1<<7 {
+				dAtA2[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA2[j1] = uint8(num)
+			j1++
+		}
+		i -= j1
+		copy(dAtA[i:], dAtA2[:j1])
+		i = encodeVarintState(dAtA, i, uint64(j1))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Epoch != 0 {
+		i = encodeVarintState(dAtA, i, uint64(m.Epoch))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -145,18 +523,82 @@ func encodeVarintState(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ExampleData) Size() (n int) {
+func (m *DistributionVote) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Account)
+	if m.Epoch != 0 {
+		n += 1 + sovState(uint64(m.Epoch))
+	}
+	l = len(m.Signer)
 	if l > 0 {
 		n += 1 + l + sovState(uint64(l))
 	}
-	if m.Amount != 0 {
-		n += 1 + sovState(uint64(m.Amount))
+	l = len(m.MerkleRoot)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
+	}
+	return n
+}
+
+func (m *EpochDistribution) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Epoch != 0 {
+		n += 1 + sovState(uint64(m.Epoch))
+	}
+	l = len(m.MerkleRoot)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
+	}
+	if m.Status != 0 {
+		n += 1 + sovState(uint64(m.Status))
+	}
+	l = len(m.LicenseTally)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
+	}
+	l = len(m.StakeTally)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
+	}
+	if m.FinalizedHeight != 0 {
+		n += 1 + sovState(uint64(m.FinalizedHeight))
+	}
+	if m.PendingSinceEpoch != 0 {
+		n += 1 + sovState(uint64(m.PendingSinceEpoch))
+	}
+	l = len(m.Challenger)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
+	}
+	l = len(m.ChallengeBond)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
+	}
+	return n
+}
+
+func (m *ClaimedReward) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Epoch != 0 {
+		n += 1 + sovState(uint64(m.Epoch))
+	}
+	if len(m.Nonces) > 0 {
+		l = 0
+		for _, e := range m.Nonces {
+			l += sovState(uint64(e))
+		}
+		n += 1 + sovState(uint64(l)) + l
 	}
 	return n
 }
@@ -167,7 +609,7 @@ func sovState(x uint64) (n int) {
 func sozState(x uint64) (n int) {
 	return sovState(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ExampleData) Unmarshal(dAtA []byte) error {
+func (m *DistributionVote) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -190,15 +632,66 @@ func (m *ExampleData) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExampleData: wiretype end group for non-group")
+			return fmt.Errorf("proto: DistributionVote: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExampleData: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DistributionVote: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			m.Epoch = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Epoch |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Account", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Signer = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MerkleRoot", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -225,16 +718,66 @@ func (m *ExampleData) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Account = append(m.Account[:0], dAtA[iNdEx:postIndex]...)
-			if m.Account == nil {
-				m.Account = []byte{}
+			m.MerkleRoot = append(m.MerkleRoot[:0], dAtA[iNdEx:postIndex]...)
+			if m.MerkleRoot == nil {
+				m.MerkleRoot = []byte{}
 			}
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipState(dAtA[iNdEx:])
+			if err != nil {
+				return err
 			}
-			m.Amount = 0
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthState
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EpochDistribution) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowState
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EpochDistribution: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EpochDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			m.Epoch = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowState
@@ -244,10 +787,374 @@ func (m *ExampleData) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Amount |= uint64(b&0x7F) << shift
+				m.Epoch |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MerkleRoot", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MerkleRoot = append(m.MerkleRoot[:0], dAtA[iNdEx:postIndex]...)
+			if m.MerkleRoot == nil {
+				m.MerkleRoot = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= DistributionStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LicenseTally", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LicenseTally = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StakeTally", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StakeTally = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FinalizedHeight", wireType)
+			}
+			m.FinalizedHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FinalizedHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PendingSinceEpoch", wireType)
+			}
+			m.PendingSinceEpoch = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PendingSinceEpoch |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Challenger", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Challenger = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChallengeBond", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChallengeBond = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipState(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthState
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClaimedReward) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowState
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClaimedReward: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClaimedReward: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			m.Epoch = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Epoch |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType == 0 {
+				var v uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowState
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Nonces = append(m.Nonces, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowState
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthState
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthState
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.Nonces) == 0 {
+					m.Nonces = make([]uint64, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowState
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Nonces = append(m.Nonces, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nonces", wireType)
 			}
 		default:
 			iNdEx = preIndex

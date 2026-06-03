@@ -19,7 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Query_Params_FullMethodName = "/distro.v1.Query/Params"
+	Query_Params_FullMethodName            = "/distro.v1.Query/Params"
+	Query_EpochDistribution_FullMethodName = "/distro.v1.Query/EpochDistribution"
+	Query_DistributionVotes_FullMethodName = "/distro.v1.Query/DistributionVotes"
+	Query_Claimed_FullMethodName           = "/distro.v1.Query/Claimed"
 )
 
 // QueryClient is the client API for Query service.
@@ -28,6 +31,12 @@ const (
 type QueryClient interface {
 	// Params queries all parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// EpochDistribution queries the canonical distribution for an epoch.
+	EpochDistribution(ctx context.Context, in *QueryEpochDistributionRequest, opts ...grpc.CallOption) (*QueryEpochDistributionResponse, error)
+	// DistributionVotes queries all submitted votes for an epoch.
+	DistributionVotes(ctx context.Context, in *QueryDistributionVotesRequest, opts ...grpc.CallOption) (*QueryDistributionVotesResponse, error)
+	// Claimed reports whether a (epoch, nonce) reward has been claimed.
+	Claimed(ctx context.Context, in *QueryClaimedRequest, opts ...grpc.CallOption) (*QueryClaimedResponse, error)
 }
 
 type queryClient struct {
@@ -47,12 +56,45 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
+func (c *queryClient) EpochDistribution(ctx context.Context, in *QueryEpochDistributionRequest, opts ...grpc.CallOption) (*QueryEpochDistributionResponse, error) {
+	out := new(QueryEpochDistributionResponse)
+	err := c.cc.Invoke(ctx, Query_EpochDistribution_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) DistributionVotes(ctx context.Context, in *QueryDistributionVotesRequest, opts ...grpc.CallOption) (*QueryDistributionVotesResponse, error) {
+	out := new(QueryDistributionVotesResponse)
+	err := c.cc.Invoke(ctx, Query_DistributionVotes_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Claimed(ctx context.Context, in *QueryClaimedRequest, opts ...grpc.CallOption) (*QueryClaimedResponse, error) {
+	out := new(QueryClaimedResponse)
+	err := c.cc.Invoke(ctx, Query_Claimed_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
 type QueryServer interface {
 	// Params queries all parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
+	// EpochDistribution queries the canonical distribution for an epoch.
+	EpochDistribution(context.Context, *QueryEpochDistributionRequest) (*QueryEpochDistributionResponse, error)
+	// DistributionVotes queries all submitted votes for an epoch.
+	DistributionVotes(context.Context, *QueryDistributionVotesRequest) (*QueryDistributionVotesResponse, error)
+	// Claimed reports whether a (epoch, nonce) reward has been claimed.
+	Claimed(context.Context, *QueryClaimedRequest) (*QueryClaimedResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -62,6 +104,15 @@ type UnimplementedQueryServer struct {
 
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
+}
+func (UnimplementedQueryServer) EpochDistribution(context.Context, *QueryEpochDistributionRequest) (*QueryEpochDistributionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EpochDistribution not implemented")
+}
+func (UnimplementedQueryServer) DistributionVotes(context.Context, *QueryDistributionVotesRequest) (*QueryDistributionVotesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DistributionVotes not implemented")
+}
+func (UnimplementedQueryServer) Claimed(context.Context, *QueryClaimedRequest) (*QueryClaimedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Claimed not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -94,6 +145,60 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_EpochDistribution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryEpochDistributionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).EpochDistribution(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_EpochDistribution_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).EpochDistribution(ctx, req.(*QueryEpochDistributionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_DistributionVotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryDistributionVotesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).DistributionVotes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_DistributionVotes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).DistributionVotes(ctx, req.(*QueryDistributionVotesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Claimed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryClaimedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Claimed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Claimed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Claimed(ctx, req.(*QueryClaimedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -104,6 +209,18 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Params",
 			Handler:    _Query_Params_Handler,
+		},
+		{
+			MethodName: "EpochDistribution",
+			Handler:    _Query_EpochDistribution_Handler,
+		},
+		{
+			MethodName: "DistributionVotes",
+			Handler:    _Query_DistributionVotes_Handler,
+		},
+		{
+			MethodName: "Claimed",
+			Handler:    _Query_Claimed_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

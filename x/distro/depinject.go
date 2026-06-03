@@ -7,8 +7,11 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	epochskeeper "github.com/cosmos/cosmos-sdk/x/epochs/keeper"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
 
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/appmodule"
@@ -42,8 +45,11 @@ type ModuleInputs struct {
 	StoreService store.KVStoreService
 	AddressCodec address.Codec
 
-	BankKeeper    bankkeeper.Keeper
-	AccountKeeper authkeeper.AccountKeeper
+	BankKeeper     bankkeeper.Keeper
+	AccountKeeper  authkeeper.AccountKeeper
+	StakingKeeper  *stakingkeeper.Keeper
+	LicensesKeeper licenseskeeper.Keeper
+	EpochsKeeper   *epochskeeper.Keeper
 }
 
 type ModuleOutputs struct {
@@ -56,7 +62,7 @@ type ModuleOutputs struct {
 func ProvideModule(in ModuleInputs) ModuleOutputs {
 	govAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	k := keeper.NewKeeper(in.Cdc, in.StoreService, log.NewLogger(os.Stderr), govAddr, in.AccountKeeper, in.BankKeeper)
+	k := keeper.NewKeeper(in.Cdc, in.StoreService, log.NewLogger(os.Stderr), govAddr, in.AccountKeeper, in.BankKeeper, in.StakingKeeper, licenseskeeper.NewQuerier(in.LicensesKeeper), in.EpochsKeeper)
 	m := NewAppModule(in.Cdc, k)
 
 	return ModuleOutputs{Module: m, Keeper: k, Out: depinject.Out{}}

@@ -20,11 +20,15 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	epochskeeper "github.com/cosmos/cosmos-sdk/x/epochs/keeper"
+	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
+	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
 
 	"github.com/TrustedSmartChain/tsc/v3/app"
 	module "github.com/TrustedSmartChain/tsc/v3/x/distro"
@@ -49,10 +53,12 @@ type testFixture struct {
 	queryServer types.QueryServer
 	appModule   *module.AppModule
 
-	accountkeeper authkeeper.AccountKeeper
-	bankkeeper    bankkeeper.BaseKeeper
-	stakingKeeper *stakingkeeper.Keeper
-	mintkeeper    mintkeeper.Keeper
+	accountkeeper  authkeeper.AccountKeeper
+	bankkeeper     bankkeeper.BaseKeeper
+	stakingKeeper  *stakingkeeper.Keeper
+	mintkeeper     mintkeeper.Keeper
+	licensesKeeper licenseskeeper.Keeper
+	epochsKeeper   epochskeeper.Keeper
 
 	addrs      []sdk.AccAddress
 	govModAddr string
@@ -79,14 +85,24 @@ func SetupTest(t *testing.T) *testFixture {
 	f.govModAddr = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	f.addrs = simtestutil.CreateIncrementalAccounts(3)
 
-	keys := storetypes.NewKVStoreKeys(authtypes.ModuleName, banktypes.ModuleName, stakingtypes.ModuleName, minttypes.ModuleName, types.ModuleName)
+	keys := storetypes.NewKVStoreKeys(authtypes.ModuleName, banktypes.ModuleName, stakingtypes.ModuleName, minttypes.ModuleName, epochstypes.StoreKey, licensestypes.StoreKey, types.ModuleName)
 	f.ctx = sdk.NewContext(integration.CreateMultiStore(keys, logger), cmtproto.Header{}, false, logger)
 
 	// Register SDK modules.
 	registerBaseSDKModules(logger, f, encCfg, keys, accountAddressCodec, validatorAddressCodec, consensusAddressCodec)
 
 	// Setup Keeper.
-	f.k = keeper.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(keys[types.ModuleName]), logger, f.govModAddr, f.accountkeeper, f.bankkeeper)
+	f.k = keeper.NewKeeper(
+		encCfg.Codec,
+		runtime.NewKVStoreService(keys[types.ModuleName]),
+		logger,
+		f.govModAddr,
+		f.accountkeeper,
+		f.bankkeeper,
+		f.stakingKeeper,
+		licenseskeeper.NewQuerier(f.licensesKeeper),
+		&f.epochsKeeper,
+	)
 	f.msgServer = keeper.NewMsgServerImpl(f.k)
 	f.queryServer = keeper.NewQuerier(f.k)
 	f.appModule = module.NewAppModule(encCfg.Codec, f.k)
@@ -99,6 +115,7 @@ func registerModuleInterfaces(encCfg moduletestutil.TestEncodingConfig) {
 	stakingtypes.RegisterInterfaces(encCfg.InterfaceRegistry)
 	banktypes.RegisterInterfaces(encCfg.InterfaceRegistry)
 	minttypes.RegisterInterfaces(encCfg.InterfaceRegistry)
+	licensestypes.RegisterInterfaces(encCfg.InterfaceRegistry)
 
 	types.RegisterInterfaces(encCfg.InterfaceRegistry)
 }
@@ -113,6 +130,19 @@ func registerBaseSDKModules(
 	consensus address.Codec,
 ) {
 	registerModuleInterfaces(encCfg)
+
+	// Epochs Keeper.
+	f.epochsKeeper = epochskeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[epochstypes.StoreKey]),
+		encCfg.Codec,
+	)
+
+	// Licenses Keeper.
+	f.licensesKeeper = licenseskeeper.NewKeeper(
+		encCfg.Codec, runtime.NewKVStoreService(keys[licensestypes.StoreKey]),
+		logger,
+		f.govModAddr,
+	)
 
 	// Auth Keeper.
 	f.accountkeeper = authkeeper.NewAccountKeeper(

@@ -18,17 +18,29 @@ func NewMsgUpdateParams(
 	maxSupply string,
 	distroStartDate string,
 	monthsInHalvingPeriod uint64,
+	distributionLicenseTypeID string,
+	licenseTallyThreshold string,
+	stakeTallyThreshold string,
+	epochIdentifier string,
+	distributionReviewDelay uint64,
+	challengeBond string,
 ) *MsgUpdateParams {
 	return &MsgUpdateParams{
 		Authority: sender.String(),
-		Params: Params{
-			MintingAddress:        mintingAddress,
-			ReceivingAddress:      receivingAddress,
-			Denom:                 denom,
-			MaxSupply:             maxSupply,
-			DistributionStartDate: distroStartDate,
-			MonthsInHalvingPeriod: monthsInHalvingPeriod,
-		},
+		Params: NewParams(
+			mintingAddress,
+			receivingAddress,
+			denom,
+			maxSupply,
+			distroStartDate,
+			monthsInHalvingPeriod,
+			distributionLicenseTypeID,
+			licenseTallyThreshold,
+			stakeTallyThreshold,
+			epochIdentifier,
+			distributionReviewDelay,
+			challengeBond,
+		),
 	}
 }
 
