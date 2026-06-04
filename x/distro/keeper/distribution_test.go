@@ -189,7 +189,8 @@ func setupDistribution(t *testing.T, staking mockStakingKeeper, licenses mockLic
 	params := types.DefaultParams()
 	params.Denom = testDenom
 	params.DistributionLicenseTypeId = testLicenseType
-	params.ChallengeBond = testBond // small, test-friendly bond
+	params.ChallengeBond = testBond    // small, test-friendly bond
+	params.DistributionReviewDelay = 1 // deterministic: one epoch pending -> live
 	require.NoError(t, k.Params.Set(ctx, params))
 
 	return &distFixture{
