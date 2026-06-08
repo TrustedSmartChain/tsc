@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"sort"
 )
 
 // Merkle scheme for the decentralized distribution.
@@ -27,12 +28,24 @@ const (
 //
 // The leaf preimage is:
 //
-//	0x00 || uint64BE(nonce) || uint32BE(len(addr)) || addr || uint32BE(len(amount)) || amount
+//	0x00 || uint64BE(nonce)
+//	     || uint32BE(len(addr))  || addr
+//	     || uint32BE(len(total)) || total
+//	     || uint32BE(numCategories)
+//	     || for each (key,value) sorted ascending by key:
+//	          uint32BE(len(key)) || key || uint32BE(len(value)) || value
 //
-// Length-prefixing addr and amount makes the boundary between the two
-// variable-length fields unambiguous.
-func LeafHash(nonce uint64, addr, amount string) []byte {
-	buf := make([]byte, 0, 1+8+4+len(addr)+4+len(amount))
+// Length-prefixing every variable-length field makes the boundaries between
+// them unambiguous. Categories are emitted in ascending key order so the leaf
+// is independent of the map's iteration order. The leaf commits to the full
+// category breakdown, so a claimer cannot present a different breakdown than the
+// one the canonical root was built from.
+//
+// IMPORTANT: the off-chain node that builds the distribution roots MUST encode
+// the categories in this exact (sorted, length-prefixed) form or every on-chain
+// proof will fail.
+func LeafHash(nonce uint64, addr, total string, categories map[string]string) []byte {
+	buf := make([]byte, 0, 1+8+4+len(addr)+4+len(total)+4)
 	buf = append(buf, leafPrefix)
 
 	var n [8]byte
@@ -40,7 +53,22 @@ func LeafHash(nonce uint64, addr, amount string) []byte {
 	buf = append(buf, n[:]...)
 
 	buf = appendLenPrefixed(buf, []byte(addr))
-	buf = appendLenPrefixed(buf, []byte(amount))
+	buf = appendLenPrefixed(buf, []byte(total))
+
+	keys := make([]string, 0, len(categories))
+	for k := range categories {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var count [4]byte
+	binary.BigEndian.PutUint32(count[:], uint32(len(keys)))
+	buf = append(buf, count[:]...)
+
+	for _, k := range keys {
+		buf = appendLenPrefixed(buf, []byte(k))
+		buf = appendLenPrefixed(buf, []byte(categories[k]))
+	}
 
 	sum := sha256.Sum256(buf)
 	return sum[:]

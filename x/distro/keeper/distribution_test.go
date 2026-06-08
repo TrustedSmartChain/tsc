@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -189,8 +190,8 @@ func setupDistribution(t *testing.T, staking mockStakingKeeper, licenses mockLic
 	params := types.DefaultParams()
 	params.Denom = testDenom
 	params.DistributionLicenseTypeId = testLicenseType
-	params.ChallengeBond = testBond    // small, test-friendly bond
-	params.DistributionReviewDelay = 1 // deterministic: one epoch pending -> live
+	params.ChallengeBond = testBond // small, test-friendly bond
+	params.ReviewDelayDays = 1      // deterministic: one day pending -> live
 	require.NoError(t, k.Params.Set(ctx, params))
 
 	return &distFixture{
@@ -218,7 +219,7 @@ func TestSubmitRequiresActiveLicense(t *testing.T) {
 
 	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
 		Signer:     signer.String(),
-		Epoch:      1,
+		Date:       dateOf(1),
 		MerkleRoot: []byte("root"),
 	})
 	require.ErrorContains(t, err, "no active license")
@@ -235,7 +236,7 @@ func TestSubmitRejectsFutureEpoch(t *testing.T) {
 
 	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
 		Signer:     signer.String(),
-		Epoch:      9, // future
+		Date:       dateOf(9), // future
 		MerkleRoot: []byte("root"),
 	})
 	require.ErrorContains(t, err, "future")
@@ -249,8 +250,8 @@ func TestDistributionFlow(t *testing.T) {
 	valOwner := accs[5]
 
 	// Build the merkle tree the voting nodes would have produced for root A.
-	leaf0 := types.LeafHash(0, recipient.String(), "1000")
-	leaf1 := types.LeafHash(1, voters[0].String(), "2000")
+	leaf0 := types.LeafHash(0, recipient.String(), "1000", map[string]string{"type1": "1000"})
+	leaf1 := types.LeafHash(1, voters[0].String(), "2000", map[string]string{"type1": "2000"})
 	rootA := types.HashPair(leaf0, leaf1)
 	rootB := []byte("a-different-but-losing-root-3232")
 
@@ -280,59 +281,59 @@ func TestDistributionFlow(t *testing.T) {
 	// voters 0,1,2 vote root A (license 3/4 = 0.75, stake 70/100 = 0.70).
 	for _, v := range []sdk.AccAddress{voters[0], voters[1], voters[2]} {
 		_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
-			Signer: v.String(), Epoch: epoch, MerkleRoot: rootA,
+			Signer: v.String(), Date: dateOf(epoch), MerkleRoot: rootA,
 		})
 		require.NoError(t, err)
 	}
 	// voter 3 votes root B.
 	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
-		Signer: voters[3].String(), Epoch: epoch, MerkleRoot: rootB,
+		Signer: voters[3].String(), Date: dateOf(epoch), MerkleRoot: rootB,
 	})
 	require.NoError(t, err)
 
 	// Before finalization, claims are rejected.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Epoch: epoch, Nonce: 0, Address: recipient.String(), Amount: "1000", Proof: [][]byte{leaf1},
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: [][]byte{leaf1},
 	})
 	require.ErrorContains(t, err, "not live")
 
 	// First epoch end: root A wins and the epoch enters PENDING (review delay).
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))
-	ed, err := f.k.EpochDistributions.Get(f.ctx, epoch)
+	ed, err := f.k.Distributions.Get(f.ctx, dateOf(epoch))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status)
 	require.Equal(t, rootA, ed.MerkleRoot)
 
 	// Claims are still rejected while pending.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Epoch: epoch, Nonce: 0, Address: recipient.String(), Amount: "1000", Proof: [][]byte{leaf1},
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: [][]byte{leaf1},
 	})
 	require.ErrorContains(t, err, "not live")
 
 	// Next epoch end: the review delay (1) has elapsed, so it auto-promotes to LIVE.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1))
-	ed, err = f.k.EpochDistributions.Get(f.ctx, epoch)
+	ed, err = f.k.Distributions.Get(f.ctx, dateOf(epoch))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_LIVE, ed.Status)
 	require.Equal(t, rootA, ed.MerkleRoot)
 
 	// Claim reward nonce 0 for the recipient.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Epoch: epoch, Nonce: 0, Address: recipient.String(), Amount: "1000", Proof: [][]byte{leaf1},
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: [][]byte{leaf1},
 	})
 	require.NoError(t, err)
 	require.Equal(t, math.NewInt(1000), f.bank.balances[recipient.String()].AmountOf(testDenom))
 
 	// Double claim of the same nonce is rejected.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Epoch: epoch, Nonce: 0, Address: recipient.String(), Amount: "1000", Proof: [][]byte{leaf1},
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: [][]byte{leaf1},
 	})
 	require.ErrorContains(t, err, "already claimed")
 
 	// A claim with a tampered amount (for the still-unclaimed nonce 1) fails
 	// proof verification.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: voters[0].String(), Epoch: epoch, Nonce: 1, Address: voters[0].String(), Amount: "9999", Proof: [][]byte{leaf0},
+		Claimer: voters[0].String(), Date: dateOf(epoch), Nonce: 1, Address: voters[0].String(), Total: "9999", Categories: map[string]string{"type1": "9999"}, Proof: [][]byte{leaf0},
 	})
 	require.ErrorContains(t, err, "invalid merkle proof")
 }
@@ -357,13 +358,13 @@ func TestTallyBelowThresholdStaysVoting(t *testing.T) {
 
 	f := setupDistribution(t, staking, licenses, 1)
 	for _, v := range []sdk.AccAddress{voters[0], voters[1]} {
-		_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{Signer: v.String(), Epoch: 1, MerkleRoot: root})
+		_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{Signer: v.String(), Date: dateOf(1), MerkleRoot: root})
 		require.NoError(t, err)
 	}
 
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1))
 
-	ed, err := f.k.EpochDistributions.Get(f.ctx, 1)
+	ed, err := f.k.Distributions.Get(f.ctx, dateOf(1))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_VOTING, ed.Status)
 }
@@ -375,8 +376,8 @@ func TestClaimRespectsEpochBudget(t *testing.T) {
 	// leaf0 claims more than a single day's halving allocation; leaf1 is small.
 	const epoch = int64(1)
 	overBudget := "1000000000000000000000000" // 1e24, far above one day's budget but below MaxSupply
-	leafBig := types.LeafHash(0, recipient.String(), overBudget)
-	leafSmall := types.LeafHash(1, recipient.String(), "1000")
+	leafBig := types.LeafHash(0, recipient.String(), overBudget, map[string]string{"type1": overBudget})
+	leafSmall := types.LeafHash(1, recipient.String(), "1000", map[string]string{"type1": "1000"})
 	root := types.HashPair(leafBig, leafSmall)
 
 	for _, v := range voters {
@@ -387,20 +388,100 @@ func TestClaimRespectsEpochBudget(t *testing.T) {
 
 	// A within-budget claim succeeds.
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Epoch: epoch, Nonce: 1, Address: recipient.String(), Amount: "1000", Proof: [][]byte{leafBig},
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 1, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: [][]byte{leafBig},
 	})
 	require.NoError(t, err)
 
 	// A claim exceeding the epoch's halving budget is rejected (before max supply).
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Epoch: epoch, Nonce: 0, Address: recipient.String(), Amount: overBudget, Proof: [][]byte{leafSmall},
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(), Total: overBudget, Categories: map[string]string{"type1": overBudget}, Proof: [][]byte{leafSmall},
 	})
 	require.ErrorContains(t, err, "budget")
 
 	// The cumulative claimed amount reflects only the successful claim.
-	ed, err := f.k.EpochDistributions.Get(f.ctx, epoch)
+	ed, err := f.k.Distributions.Get(f.ctx, dateOf(epoch))
 	require.NoError(t, err)
 	require.Equal(t, "1000", ed.ClaimedAmount)
+}
+
+func TestClaimCategoryTotals(t *testing.T) {
+	f, voters := fourVoterConsensus(t)
+	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
+
+	const epoch = int64(1)
+	// leaf0 splits across two categories; leaf1 adds to one of them.
+	cats0 := map[string]string{"type1": "1000", "type2": "2000"}
+	cats1 := map[string]string{"type1": "1500"}
+	leaf0 := types.LeafHash(0, recipient.String(), "3000", cats0)
+	leaf1 := types.LeafHash(1, recipient.String(), "1500", cats1)
+	root := types.HashPair(leaf0, leaf1)
+
+	for _, v := range voters {
+		f.submit(t, v, epoch, root)
+	}
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))   // -> PENDING
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1)) // -> LIVE
+
+	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(),
+		Total: "3000", Categories: cats0, Proof: [][]byte{leaf1},
+	})
+	require.NoError(t, err)
+	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 1, Address: recipient.String(),
+		Total: "1500", Categories: cats1, Proof: [][]byte{leaf0},
+	})
+	require.NoError(t, err)
+
+	querier := keeper.NewQuerier(f.k)
+
+	// type1 accumulates across both claims, type2 from the first only.
+	byDate, err := querier.ClaimTotalByCategory(f.ctx, &types.QueryClaimTotalByCategoryRequest{Date: dateOf(epoch)})
+	require.NoError(t, err)
+	require.Equal(t, dateOf(epoch), byDate.Date)
+	require.Equal(t, map[string]string{"type1": "2500", "type2": "2000"}, byDate.Totals)
+
+	// dateOf(1) is exactly the default start date.
+	require.Equal(t, types.DefaultDistributionStartDate, dateOf(epoch))
+}
+
+func TestClaimRejectsInconsistentCategories(t *testing.T) {
+	f, voters := fourVoterConsensus(t)
+	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
+
+	const epoch = int64(1)
+	cats := map[string]string{"type1": "1000", "type2": "2000"}
+	leaf := types.LeafHash(0, recipient.String(), "3000", cats)
+	// A second leaf so the tree (and proof) is non-trivial.
+	sibling := types.LeafHash(1, recipient.String(), "5", map[string]string{"type1": "5"})
+	root := types.HashPair(leaf, sibling)
+
+	for _, v := range voters {
+		f.submit(t, v, epoch, root)
+	}
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1))
+
+	// total != sum(categories) is rejected before proof verification.
+	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(),
+		Total: "9999", Categories: cats, Proof: [][]byte{sibling},
+	})
+	require.ErrorContains(t, err, "does not equal total")
+
+	// A tampered breakdown (correct total) fails the merkle proof.
+	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(),
+		Total: "3000", Categories: map[string]string{"type1": "2000", "type2": "1000"}, Proof: [][]byte{sibling},
+	})
+	require.ErrorContains(t, err, "invalid merkle proof")
+
+	// Empty categories are rejected.
+	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(),
+		Total: "3000", Categories: nil, Proof: [][]byte{sibling},
+	})
+	require.ErrorContains(t, err, "categories must not be empty")
 }
 
 func TestVotingExpiresAfterWindow(t *testing.T) {
@@ -416,13 +497,13 @@ func TestVotingExpiresAfterWindow(t *testing.T) {
 
 	// Within the voting window it stays VOTING.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1))
-	ed, err := f.k.EpochDistributions.Get(f.ctx, 1)
+	ed, err := f.k.Distributions.Get(f.ctx, dateOf(1))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_VOTING, ed.Status)
 
 	// Once the window (default 7) has elapsed it expires and is no longer tallied.
-	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1+int64(types.DefaultVoteWindowEpochs)))
-	ed, err = f.k.EpochDistributions.Get(f.ctx, 1)
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1+int64(types.DefaultVoteWindowDays)))
+	ed, err = f.k.Distributions.Get(f.ctx, dateOf(1))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_EXPIRED, ed.Status)
 }
@@ -431,7 +512,7 @@ func TestChallengeDoesNotResetReviewDelay(t *testing.T) {
 	f, voters := fourVoterConsensus(t)
 	params, err := f.k.Params.Get(f.ctx)
 	require.NoError(t, err)
-	params.DistributionReviewDelay = 2 // longer delay so a reset would be observable
+	params.ReviewDelayDays = 2 // longer delay so a reset would be observable
 	require.NoError(t, f.k.Params.Set(f.ctx, params))
 
 	const epoch = int64(1)
@@ -445,20 +526,20 @@ func TestChallengeDoesNotResetReviewDelay(t *testing.T) {
 
 	// Challenge during the window; the retained votes re-confirm the same root.
 	f.bank.balances[voters[0].String()] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
-	_, err = f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Epoch: epoch})
+	_, err = f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(epoch)})
 	require.NoError(t, err)
 
 	// Re-tally resolves back to PENDING but must NOT restart the review timer.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 3))
-	ed, err := f.k.EpochDistributions.Get(f.ctx, epoch)
+	ed, err := f.k.Distributions.Get(f.ctx, dateOf(epoch))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status)
-	require.Equal(t, int64(1), ed.PendingSinceEpoch, "review timer must resume, not reset")
+	require.Equal(t, dateOf(1), ed.PendingSinceDate, "review timer must resume, not reset")
 
 	// With the original timer (since=1, delay=2) it promotes at epoch 4; a reset
 	// (since=3) would leave it PENDING here.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 4))
-	ed, err = f.k.EpochDistributions.Get(f.ctx, epoch)
+	ed, err = f.k.Distributions.Get(f.ctx, dateOf(epoch))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_LIVE, ed.Status)
 }
@@ -487,8 +568,19 @@ func fourVoterConsensus(t *testing.T) (*distFixture, []sdk.AccAddress) {
 
 func (f *distFixture) submit(t *testing.T, signer sdk.AccAddress, epoch int64, root []byte) {
 	t.Helper()
-	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{Signer: signer.String(), Epoch: epoch, MerkleRoot: root})
+	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{Signer: signer.String(), Date: dateOf(epoch), MerkleRoot: root})
 	require.NoError(t, err)
+}
+
+// dateOf maps an epoch number to its distribution day (YYYY-MM-DD) using the
+// default start date, mirroring how the keeper translates the x/epochs hook.
+// Epoch 1 is the start date; epoch N is startDate+(N-1) days.
+func dateOf(epoch int64) string {
+	start, err := time.Parse("2006-01-02", types.DefaultDistributionStartDate)
+	if err != nil {
+		panic(err)
+	}
+	return start.AddDate(0, 0, int(epoch-1)).Format("2006-01-02")
 }
 
 func TestChallengeFrivolousBurnsBond(t *testing.T) {
@@ -502,10 +594,10 @@ func TestChallengeFrivolousBurnsBond(t *testing.T) {
 
 	// Fund and challenge.
 	f.bank.balances[voters[0].String()] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
-	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Epoch: 1})
+	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(1)})
 	require.NoError(t, err)
 
-	ed, err := f.k.EpochDistributions.Get(f.ctx, 1)
+	ed, err := f.k.Distributions.Get(f.ctx, dateOf(1))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_UNDER_REVIEW, ed.Status)
 	require.Equal(t, math.NewInt(100), f.bank.balances[types.ModuleName].AmountOf(testDenom)) // escrowed
@@ -513,7 +605,7 @@ func TestChallengeFrivolousBurnsBond(t *testing.T) {
 
 	// No re-vote: retained votes still produce root A => frivolous => bond burned.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2))
-	ed, err = f.k.EpochDistributions.Get(f.ctx, 1)
+	ed, err = f.k.Distributions.Get(f.ctx, dateOf(1))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status)
 	require.Equal(t, rootA, ed.MerkleRoot)
@@ -532,7 +624,7 @@ func TestChallengeUpheldRefundsBondAndAdoptsNewRoot(t *testing.T) {
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1)) // -> PENDING (rootA)
 
 	f.bank.balances[voters[0].String()] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
-	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Epoch: 1})
+	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(1)})
 	require.NoError(t, err)
 
 	// Re-vote: a supermajority now submits the corrected root B.
@@ -542,7 +634,7 @@ func TestChallengeUpheldRefundsBondAndAdoptsNewRoot(t *testing.T) {
 
 	// Re-tally adopts root B (!= challenged root) => challenge upheld => bond refunded.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2))
-	ed, err := f.k.EpochDistributions.Get(f.ctx, 1)
+	ed, err := f.k.Distributions.Get(f.ctx, dateOf(1))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status)
 	require.Equal(t, rootB, ed.MerkleRoot)
@@ -551,7 +643,7 @@ func TestChallengeUpheldRefundsBondAndAdoptsNewRoot(t *testing.T) {
 
 	// And after the delay it promotes to LIVE with the corrected root.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 3))
-	ed, err = f.k.EpochDistributions.Get(f.ctx, 1)
+	ed, err = f.k.Distributions.Get(f.ctx, dateOf(1))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_LIVE, ed.Status)
 	require.Equal(t, rootB, ed.MerkleRoot)

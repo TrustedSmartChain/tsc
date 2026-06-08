@@ -68,7 +68,7 @@ func (x *_GenesisState_2_list) IsValid() bool {
 var _ protoreflect.List = (*_GenesisState_3_list)(nil)
 
 type _GenesisState_3_list struct {
-	list *[]*EpochDistribution
+	list *[]*Distribution
 }
 
 func (x *_GenesisState_3_list) Len() int {
@@ -84,18 +84,18 @@ func (x *_GenesisState_3_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_3_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*EpochDistribution)
+	concreteValue := valueUnwrapped.Interface().(*Distribution)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_3_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*EpochDistribution)
+	concreteValue := valueUnwrapped.Interface().(*Distribution)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_3_list) AppendMutable() protoreflect.Value {
-	v := new(EpochDistribution)
+	v := new(Distribution)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -108,7 +108,7 @@ func (x *_GenesisState_3_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_3_list) NewElement() protoreflect.Value {
-	v := new(EpochDistribution)
+	v := new(Distribution)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -167,12 +167,64 @@ func (x *_GenesisState_4_list) IsValid() bool {
 	return x.list != nil
 }
 
+var _ protoreflect.List = (*_GenesisState_5_list)(nil)
+
+type _GenesisState_5_list struct {
+	list *[]*CategoryClaimTotal
+}
+
+func (x *_GenesisState_5_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_GenesisState_5_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_GenesisState_5_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*CategoryClaimTotal)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_GenesisState_5_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*CategoryClaimTotal)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_GenesisState_5_list) AppendMutable() protoreflect.Value {
+	v := new(CategoryClaimTotal)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_5_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_GenesisState_5_list) NewElement() protoreflect.Value {
+	v := new(CategoryClaimTotal)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_5_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
-	md_GenesisState                     protoreflect.MessageDescriptor
-	fd_GenesisState_params              protoreflect.FieldDescriptor
-	fd_GenesisState_votes               protoreflect.FieldDescriptor
-	fd_GenesisState_epoch_distributions protoreflect.FieldDescriptor
-	fd_GenesisState_claimed_rewards     protoreflect.FieldDescriptor
+	md_GenesisState                       protoreflect.MessageDescriptor
+	fd_GenesisState_params                protoreflect.FieldDescriptor
+	fd_GenesisState_votes                 protoreflect.FieldDescriptor
+	fd_GenesisState_distributions         protoreflect.FieldDescriptor
+	fd_GenesisState_claimed_rewards       protoreflect.FieldDescriptor
+	fd_GenesisState_category_claim_totals protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -180,8 +232,9 @@ func init() {
 	md_GenesisState = File_distro_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
 	fd_GenesisState_votes = md_GenesisState.Fields().ByName("votes")
-	fd_GenesisState_epoch_distributions = md_GenesisState.Fields().ByName("epoch_distributions")
+	fd_GenesisState_distributions = md_GenesisState.Fields().ByName("distributions")
 	fd_GenesisState_claimed_rewards = md_GenesisState.Fields().ByName("claimed_rewards")
+	fd_GenesisState_category_claim_totals = md_GenesisState.Fields().ByName("category_claim_totals")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -261,15 +314,21 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.EpochDistributions) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.EpochDistributions})
-		if !f(fd_GenesisState_epoch_distributions, value) {
+	if len(x.Distributions) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.Distributions})
+		if !f(fd_GenesisState_distributions, value) {
 			return
 		}
 	}
 	if len(x.ClaimedRewards) != 0 {
 		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.ClaimedRewards})
 		if !f(fd_GenesisState_claimed_rewards, value) {
+			return
+		}
+	}
+	if len(x.CategoryClaimTotals) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_5_list{list: &x.CategoryClaimTotals})
+		if !f(fd_GenesisState_category_claim_totals, value) {
 			return
 		}
 	}
@@ -292,10 +351,12 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return x.Params != nil
 	case "distro.v1.GenesisState.votes":
 		return len(x.Votes) != 0
-	case "distro.v1.GenesisState.epoch_distributions":
-		return len(x.EpochDistributions) != 0
+	case "distro.v1.GenesisState.distributions":
+		return len(x.Distributions) != 0
 	case "distro.v1.GenesisState.claimed_rewards":
 		return len(x.ClaimedRewards) != 0
+	case "distro.v1.GenesisState.category_claim_totals":
+		return len(x.CategoryClaimTotals) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.GenesisState"))
@@ -316,10 +377,12 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.Params = nil
 	case "distro.v1.GenesisState.votes":
 		x.Votes = nil
-	case "distro.v1.GenesisState.epoch_distributions":
-		x.EpochDistributions = nil
+	case "distro.v1.GenesisState.distributions":
+		x.Distributions = nil
 	case "distro.v1.GenesisState.claimed_rewards":
 		x.ClaimedRewards = nil
+	case "distro.v1.GenesisState.category_claim_totals":
+		x.CategoryClaimTotals = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.GenesisState"))
@@ -345,17 +408,23 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 		}
 		listValue := &_GenesisState_2_list{list: &x.Votes}
 		return protoreflect.ValueOfList(listValue)
-	case "distro.v1.GenesisState.epoch_distributions":
-		if len(x.EpochDistributions) == 0 {
+	case "distro.v1.GenesisState.distributions":
+		if len(x.Distributions) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_3_list{})
 		}
-		listValue := &_GenesisState_3_list{list: &x.EpochDistributions}
+		listValue := &_GenesisState_3_list{list: &x.Distributions}
 		return protoreflect.ValueOfList(listValue)
 	case "distro.v1.GenesisState.claimed_rewards":
 		if len(x.ClaimedRewards) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_4_list{})
 		}
 		listValue := &_GenesisState_4_list{list: &x.ClaimedRewards}
+		return protoreflect.ValueOfList(listValue)
+	case "distro.v1.GenesisState.category_claim_totals":
+		if len(x.CategoryClaimTotals) == 0 {
+			return protoreflect.ValueOfList(&_GenesisState_5_list{})
+		}
+		listValue := &_GenesisState_5_list{list: &x.CategoryClaimTotals}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
@@ -383,14 +452,18 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		lv := value.List()
 		clv := lv.(*_GenesisState_2_list)
 		x.Votes = *clv.list
-	case "distro.v1.GenesisState.epoch_distributions":
+	case "distro.v1.GenesisState.distributions":
 		lv := value.List()
 		clv := lv.(*_GenesisState_3_list)
-		x.EpochDistributions = *clv.list
+		x.Distributions = *clv.list
 	case "distro.v1.GenesisState.claimed_rewards":
 		lv := value.List()
 		clv := lv.(*_GenesisState_4_list)
 		x.ClaimedRewards = *clv.list
+	case "distro.v1.GenesisState.category_claim_totals":
+		lv := value.List()
+		clv := lv.(*_GenesisState_5_list)
+		x.CategoryClaimTotals = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.GenesisState"))
@@ -422,17 +495,23 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		}
 		value := &_GenesisState_2_list{list: &x.Votes}
 		return protoreflect.ValueOfList(value)
-	case "distro.v1.GenesisState.epoch_distributions":
-		if x.EpochDistributions == nil {
-			x.EpochDistributions = []*EpochDistribution{}
+	case "distro.v1.GenesisState.distributions":
+		if x.Distributions == nil {
+			x.Distributions = []*Distribution{}
 		}
-		value := &_GenesisState_3_list{list: &x.EpochDistributions}
+		value := &_GenesisState_3_list{list: &x.Distributions}
 		return protoreflect.ValueOfList(value)
 	case "distro.v1.GenesisState.claimed_rewards":
 		if x.ClaimedRewards == nil {
 			x.ClaimedRewards = []*ClaimedReward{}
 		}
 		value := &_GenesisState_4_list{list: &x.ClaimedRewards}
+		return protoreflect.ValueOfList(value)
+	case "distro.v1.GenesisState.category_claim_totals":
+		if x.CategoryClaimTotals == nil {
+			x.CategoryClaimTotals = []*CategoryClaimTotal{}
+		}
+		value := &_GenesisState_5_list{list: &x.CategoryClaimTotals}
 		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
@@ -453,12 +532,15 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "distro.v1.GenesisState.votes":
 		list := []*DistributionVote{}
 		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
-	case "distro.v1.GenesisState.epoch_distributions":
-		list := []*EpochDistribution{}
+	case "distro.v1.GenesisState.distributions":
+		list := []*Distribution{}
 		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
 	case "distro.v1.GenesisState.claimed_rewards":
 		list := []*ClaimedReward{}
 		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
+	case "distro.v1.GenesisState.category_claim_totals":
+		list := []*CategoryClaimTotal{}
+		return protoreflect.ValueOfList(&_GenesisState_5_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.GenesisState"))
@@ -538,14 +620,20 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if len(x.EpochDistributions) > 0 {
-			for _, e := range x.EpochDistributions {
+		if len(x.Distributions) > 0 {
+			for _, e := range x.Distributions {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
 		if len(x.ClaimedRewards) > 0 {
 			for _, e := range x.ClaimedRewards {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if len(x.CategoryClaimTotals) > 0 {
+			for _, e := range x.CategoryClaimTotals {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -579,6 +667,22 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if len(x.CategoryClaimTotals) > 0 {
+			for iNdEx := len(x.CategoryClaimTotals) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.CategoryClaimTotals[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x2a
+			}
+		}
 		if len(x.ClaimedRewards) > 0 {
 			for iNdEx := len(x.ClaimedRewards) - 1; iNdEx >= 0; iNdEx-- {
 				encoded, err := options.Marshal(x.ClaimedRewards[iNdEx])
@@ -595,9 +699,9 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0x22
 			}
 		}
-		if len(x.EpochDistributions) > 0 {
-			for iNdEx := len(x.EpochDistributions) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.EpochDistributions[iNdEx])
+		if len(x.Distributions) > 0 {
+			for iNdEx := len(x.Distributions) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Distributions[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -762,7 +866,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EpochDistributions", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Distributions", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -789,8 +893,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.EpochDistributions = append(x.EpochDistributions, &EpochDistribution{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EpochDistributions[len(x.EpochDistributions)-1]); err != nil {
+				x.Distributions = append(x.Distributions, &Distribution{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Distributions[len(x.Distributions)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -825,6 +929,40 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				}
 				x.ClaimedRewards = append(x.ClaimedRewards, &ClaimedReward{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimedRewards[len(x.ClaimedRewards)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CategoryClaimTotals", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.CategoryClaimTotals = append(x.CategoryClaimTotals, &CategoryClaimTotal{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.CategoryClaimTotals[len(x.CategoryClaimTotals)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -875,9 +1013,9 @@ var (
 	fd_Params_license_tally_threshold      protoreflect.FieldDescriptor
 	fd_Params_stake_tally_threshold        protoreflect.FieldDescriptor
 	fd_Params_epoch_identifier             protoreflect.FieldDescriptor
-	fd_Params_distribution_review_delay    protoreflect.FieldDescriptor
+	fd_Params_review_delay_days            protoreflect.FieldDescriptor
 	fd_Params_challenge_bond               protoreflect.FieldDescriptor
-	fd_Params_vote_window_epochs           protoreflect.FieldDescriptor
+	fd_Params_vote_window_days             protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -893,9 +1031,9 @@ func init() {
 	fd_Params_license_tally_threshold = md_Params.Fields().ByName("license_tally_threshold")
 	fd_Params_stake_tally_threshold = md_Params.Fields().ByName("stake_tally_threshold")
 	fd_Params_epoch_identifier = md_Params.Fields().ByName("epoch_identifier")
-	fd_Params_distribution_review_delay = md_Params.Fields().ByName("distribution_review_delay")
+	fd_Params_review_delay_days = md_Params.Fields().ByName("review_delay_days")
 	fd_Params_challenge_bond = md_Params.Fields().ByName("challenge_bond")
-	fd_Params_vote_window_epochs = md_Params.Fields().ByName("vote_window_epochs")
+	fd_Params_vote_window_days = md_Params.Fields().ByName("vote_window_days")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -1023,9 +1161,9 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
-	if x.DistributionReviewDelay != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.DistributionReviewDelay)
-		if !f(fd_Params_distribution_review_delay, value) {
+	if x.ReviewDelayDays != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ReviewDelayDays)
+		if !f(fd_Params_review_delay_days, value) {
 			return
 		}
 	}
@@ -1035,9 +1173,9 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
-	if x.VoteWindowEpochs != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.VoteWindowEpochs)
-		if !f(fd_Params_vote_window_epochs, value) {
+	if x.VoteWindowDays != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.VoteWindowDays)
+		if !f(fd_Params_vote_window_days, value) {
 			return
 		}
 	}
@@ -1076,12 +1214,12 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.StakeTallyThreshold != ""
 	case "distro.v1.Params.epoch_identifier":
 		return x.EpochIdentifier != ""
-	case "distro.v1.Params.distribution_review_delay":
-		return x.DistributionReviewDelay != uint64(0)
+	case "distro.v1.Params.review_delay_days":
+		return x.ReviewDelayDays != uint64(0)
 	case "distro.v1.Params.challenge_bond":
 		return x.ChallengeBond != ""
-	case "distro.v1.Params.vote_window_epochs":
-		return x.VoteWindowEpochs != uint64(0)
+	case "distro.v1.Params.vote_window_days":
+		return x.VoteWindowDays != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1118,12 +1256,12 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 		x.StakeTallyThreshold = ""
 	case "distro.v1.Params.epoch_identifier":
 		x.EpochIdentifier = ""
-	case "distro.v1.Params.distribution_review_delay":
-		x.DistributionReviewDelay = uint64(0)
+	case "distro.v1.Params.review_delay_days":
+		x.ReviewDelayDays = uint64(0)
 	case "distro.v1.Params.challenge_bond":
 		x.ChallengeBond = ""
-	case "distro.v1.Params.vote_window_epochs":
-		x.VoteWindowEpochs = uint64(0)
+	case "distro.v1.Params.vote_window_days":
+		x.VoteWindowDays = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1170,14 +1308,14 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 	case "distro.v1.Params.epoch_identifier":
 		value := x.EpochIdentifier
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.Params.distribution_review_delay":
-		value := x.DistributionReviewDelay
+	case "distro.v1.Params.review_delay_days":
+		value := x.ReviewDelayDays
 		return protoreflect.ValueOfUint64(value)
 	case "distro.v1.Params.challenge_bond":
 		value := x.ChallengeBond
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.Params.vote_window_epochs":
-		value := x.VoteWindowEpochs
+	case "distro.v1.Params.vote_window_days":
+		value := x.VoteWindowDays
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -1219,12 +1357,12 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 		x.StakeTallyThreshold = value.Interface().(string)
 	case "distro.v1.Params.epoch_identifier":
 		x.EpochIdentifier = value.Interface().(string)
-	case "distro.v1.Params.distribution_review_delay":
-		x.DistributionReviewDelay = value.Uint()
+	case "distro.v1.Params.review_delay_days":
+		x.ReviewDelayDays = value.Uint()
 	case "distro.v1.Params.challenge_bond":
 		x.ChallengeBond = value.Interface().(string)
-	case "distro.v1.Params.vote_window_epochs":
-		x.VoteWindowEpochs = value.Uint()
+	case "distro.v1.Params.vote_window_days":
+		x.VoteWindowDays = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1265,12 +1403,12 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 		panic(fmt.Errorf("field stake_tally_threshold of message distro.v1.Params is not mutable"))
 	case "distro.v1.Params.epoch_identifier":
 		panic(fmt.Errorf("field epoch_identifier of message distro.v1.Params is not mutable"))
-	case "distro.v1.Params.distribution_review_delay":
-		panic(fmt.Errorf("field distribution_review_delay of message distro.v1.Params is not mutable"))
+	case "distro.v1.Params.review_delay_days":
+		panic(fmt.Errorf("field review_delay_days of message distro.v1.Params is not mutable"))
 	case "distro.v1.Params.challenge_bond":
 		panic(fmt.Errorf("field challenge_bond of message distro.v1.Params is not mutable"))
-	case "distro.v1.Params.vote_window_epochs":
-		panic(fmt.Errorf("field vote_window_epochs of message distro.v1.Params is not mutable"))
+	case "distro.v1.Params.vote_window_days":
+		panic(fmt.Errorf("field vote_window_days of message distro.v1.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1304,11 +1442,11 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 		return protoreflect.ValueOfString("")
 	case "distro.v1.Params.epoch_identifier":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.Params.distribution_review_delay":
+	case "distro.v1.Params.review_delay_days":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "distro.v1.Params.challenge_bond":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.Params.vote_window_epochs":
+	case "distro.v1.Params.vote_window_days":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
@@ -1418,15 +1556,15 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.DistributionReviewDelay != 0 {
-			n += 1 + runtime.Sov(uint64(x.DistributionReviewDelay))
+		if x.ReviewDelayDays != 0 {
+			n += 1 + runtime.Sov(uint64(x.ReviewDelayDays))
 		}
 		l = len(x.ChallengeBond)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.VoteWindowEpochs != 0 {
-			n += 1 + runtime.Sov(uint64(x.VoteWindowEpochs))
+		if x.VoteWindowDays != 0 {
+			n += 1 + runtime.Sov(uint64(x.VoteWindowDays))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1457,8 +1595,8 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.VoteWindowEpochs != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.VoteWindowEpochs))
+		if x.VoteWindowDays != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.VoteWindowDays))
 			i--
 			dAtA[i] = 0x68
 		}
@@ -1469,8 +1607,8 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x62
 		}
-		if x.DistributionReviewDelay != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.DistributionReviewDelay))
+		if x.ReviewDelayDays != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ReviewDelayDays))
 			i--
 			dAtA[i] = 0x58
 		}
@@ -1900,9 +2038,9 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 11:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DistributionReviewDelay", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ReviewDelayDays", wireType)
 				}
-				x.DistributionReviewDelay = 0
+				x.ReviewDelayDays = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1912,7 +2050,7 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.DistributionReviewDelay |= uint64(b&0x7F) << shift
+					x.ReviewDelayDays |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1951,9 +2089,9 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 13:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field VoteWindowEpochs", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field VoteWindowDays", wireType)
 				}
-				x.VoteWindowEpochs = 0
+				x.VoteWindowDays = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1963,7 +2101,7 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.VoteWindowEpochs |= uint64(b&0x7F) << shift
+					x.VoteWindowDays |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -2025,12 +2163,15 @@ type GenesisState struct {
 	// Params defines all the parameters of the module.
 	Params *Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
 	// votes is the raw per-signer set of submitted distribution roots, keyed by
-	// (epoch, signer). These are kept (never pruned) for audit.
+	// (date, signer). These are kept (never pruned) for audit.
 	Votes []*DistributionVote `protobuf:"bytes,2,rep,name=votes,proto3" json:"votes,omitempty"`
-	// epoch_distributions is the canonical/finalized distribution per epoch.
-	EpochDistributions []*EpochDistribution `protobuf:"bytes,3,rep,name=epoch_distributions,json=epochDistributions,proto3" json:"epoch_distributions,omitempty"`
-	// claimed_rewards tracks the claimed reward nonces per epoch.
+	// distributions is the canonical/finalized distribution per day.
+	Distributions []*Distribution `protobuf:"bytes,3,rep,name=distributions,proto3" json:"distributions,omitempty"`
+	// claimed_rewards tracks the claimed reward nonces per day.
 	ClaimedRewards []*ClaimedReward `protobuf:"bytes,4,rep,name=claimed_rewards,json=claimedRewards,proto3" json:"claimed_rewards,omitempty"`
+	// category_claim_totals tracks the cumulative claimed amount per
+	// (date, category).
+	CategoryClaimTotals []*CategoryClaimTotal `protobuf:"bytes,5,rep,name=category_claim_totals,json=categoryClaimTotals,proto3" json:"category_claim_totals,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -2067,9 +2208,9 @@ func (x *GenesisState) GetVotes() []*DistributionVote {
 	return nil
 }
 
-func (x *GenesisState) GetEpochDistributions() []*EpochDistribution {
+func (x *GenesisState) GetDistributions() []*Distribution {
 	if x != nil {
-		return x.EpochDistributions
+		return x.Distributions
 	}
 	return nil
 }
@@ -2077,6 +2218,13 @@ func (x *GenesisState) GetEpochDistributions() []*EpochDistribution {
 func (x *GenesisState) GetClaimedRewards() []*ClaimedReward {
 	if x != nil {
 		return x.ClaimedRewards
+	}
+	return nil
+}
+
+func (x *GenesisState) GetCategoryClaimTotals() []*CategoryClaimTotal {
+	if x != nil {
+		return x.CategoryClaimTotals
 	}
 	return nil
 }
@@ -2103,20 +2251,20 @@ type Params struct {
 	// reach to pass the stake-based tally. Default "0.667".
 	StakeTallyThreshold string `protobuf:"bytes,9,opt,name=stake_tally_threshold,json=stakeTallyThreshold,proto3" json:"stake_tally_threshold,omitempty"`
 	// epoch_identifier is the x/epochs identifier whose AfterEpochEnd triggers the
-	// tally. Default "day".
+	// daily tally. Default "day".
 	EpochIdentifier string `protobuf:"bytes,10,opt,name=epoch_identifier,json=epochIdentifier,proto3" json:"epoch_identifier,omitempty"`
-	// distribution_review_delay is the number of epochs a distribution stays
-	// PENDING (challengeable) after consensus before auto-promoting to LIVE.
+	// review_delay_days is the number of days a distribution stays PENDING
+	// (challengeable) after consensus before auto-promoting to LIVE.
 	// 0 disables the delay (instant LIVE, no challenge window).
-	DistributionReviewDelay uint64 `protobuf:"varint,11,opt,name=distribution_review_delay,json=distributionReviewDelay,proto3" json:"distribution_review_delay,omitempty"`
+	ReviewDelayDays uint64 `protobuf:"varint,11,opt,name=review_delay_days,json=reviewDelayDays,proto3" json:"review_delay_days,omitempty"`
 	// challenge_bond is the amount (in the module denom) a challenger must escrow
 	// to place a PENDING distribution UNDER_REVIEW. Burned if the challenge is
 	// frivolous (re-vote re-confirms the same root), refunded otherwise.
 	ChallengeBond string `protobuf:"bytes,12,opt,name=challenge_bond,json=challengeBond,proto3" json:"challenge_bond,omitempty"`
-	// vote_window_epochs is how many epochs after an epoch (day) a VOTING
+	// vote_window_days is how many days after a distribution day a VOTING
 	// distribution has to reach consensus before it expires and is no longer
-	// tallied. Bounds epoch-end work.
-	VoteWindowEpochs uint64 `protobuf:"varint,13,opt,name=vote_window_epochs,json=voteWindowEpochs,proto3" json:"vote_window_epochs,omitempty"`
+	// tallied. Bounds daily tally work.
+	VoteWindowDays uint64 `protobuf:"varint,13,opt,name=vote_window_days,json=voteWindowDays,proto3" json:"vote_window_days,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -2209,9 +2357,9 @@ func (x *Params) GetEpochIdentifier() string {
 	return ""
 }
 
-func (x *Params) GetDistributionReviewDelay() uint64 {
+func (x *Params) GetReviewDelayDays() uint64 {
 	if x != nil {
-		return x.DistributionReviewDelay
+		return x.ReviewDelayDays
 	}
 	return 0
 }
@@ -2223,9 +2371,9 @@ func (x *Params) GetChallengeBond() string {
 	return ""
 }
 
-func (x *Params) GetVoteWindowEpochs() uint64 {
+func (x *Params) GetVoteWindowDays() uint64 {
 	if x != nil {
-		return x.VoteWindowEpochs
+		return x.VoteWindowDays
 	}
 	return 0
 }
@@ -2239,7 +2387,7 @@ var file_distro_v1_genesis_proto_rawDesc = []byte{
 	0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e,
 	0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x15, 0x64,
 	0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x76, 0x31, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x96, 0x02, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73,
+	0x72, 0x6f, 0x74, 0x6f, 0x22, 0xdf, 0x02, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73,
 	0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x2f, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76,
 	0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x06,
@@ -2247,68 +2395,71 @@ var file_distro_v1_genesis_proto_rawDesc = []byte{
 	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76,
 	0x31, 0x2e, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x6f,
 	0x74, 0x65, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x12,
-	0x53, 0x0a, 0x13, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62,
-	0x75, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x64,
-	0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x44, 0x69,
-	0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00,
-	0x52, 0x12, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
+	0x43, 0x0a, 0x0d, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x42,
+	0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0d, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
 	0x69, 0x6f, 0x6e, 0x73, 0x12, 0x47, 0x0a, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f,
 	0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e,
 	0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65,
 	0x64, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0e, 0x63,
-	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x22, 0x8b, 0x05,
-	0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x27, 0x0a, 0x0f, 0x6d, 0x69, 0x6e, 0x74,
-	0x69, 0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0e, 0x6d, 0x69, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x12, 0x2b, 0x0a, 0x11, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67, 0x5f, 0x61,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x72, 0x65,
-	0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x14,
-	0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64,
-	0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x61, 0x78, 0x5f, 0x73, 0x75, 0x70, 0x70,
-	0x6c, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6d, 0x61, 0x78, 0x53, 0x75, 0x70,
-	0x70, 0x6c, 0x79, 0x12, 0x36, 0x0a, 0x17, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
-	0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x18, 0x05,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x15, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69,
-	0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x44, 0x61, 0x74, 0x65, 0x12, 0x37, 0x0a, 0x18, 0x6d,
-	0x6f, 0x6e, 0x74, 0x68, 0x73, 0x5f, 0x69, 0x6e, 0x5f, 0x68, 0x61, 0x6c, 0x76, 0x69, 0x6e, 0x67,
-	0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x15, 0x6d,
-	0x6f, 0x6e, 0x74, 0x68, 0x73, 0x49, 0x6e, 0x48, 0x61, 0x6c, 0x76, 0x69, 0x6e, 0x67, 0x50, 0x65,
-	0x72, 0x69, 0x6f, 0x64, 0x12, 0x3f, 0x0a, 0x1c, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75,
-	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x74, 0x79, 0x70,
-	0x65, 0x5f, 0x69, 0x64, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x19, 0x64, 0x69, 0x73, 0x74,
-	0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x54,
-	0x79, 0x70, 0x65, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x17, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65,
-	0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64,
-	0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x15, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x54,
-	0x61, 0x6c, 0x6c, 0x79, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x12, 0x32, 0x0a,
-	0x15, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f, 0x74, 0x68, 0x72,
-	0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x13, 0x73, 0x74,
-	0x61, 0x6b, 0x65, 0x54, 0x61, 0x6c, 0x6c, 0x79, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c,
-	0x64, 0x12, 0x29, 0x0a, 0x10, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x65, 0x6e, 0x74,
-	0x69, 0x66, 0x69, 0x65, 0x72, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x65, 0x70, 0x6f,
-	0x63, 0x68, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x12, 0x3a, 0x0a, 0x19,
-	0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x65, 0x76,
-	0x69, 0x65, 0x77, 0x5f, 0x64, 0x65, 0x6c, 0x61, 0x79, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x04, 0x52,
-	0x17, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x76,
-	0x69, 0x65, 0x77, 0x44, 0x65, 0x6c, 0x61, 0x79, 0x12, 0x25, 0x0a, 0x0e, 0x63, 0x68, 0x61, 0x6c,
-	0x6c, 0x65, 0x6e, 0x67, 0x65, 0x5f, 0x62, 0x6f, 0x6e, 0x64, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0d, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x42, 0x6f, 0x6e, 0x64, 0x12,
-	0x2c, 0x0a, 0x12, 0x76, 0x6f, 0x74, 0x65, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x65,
-	0x70, 0x6f, 0x63, 0x68, 0x73, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x04, 0x52, 0x10, 0x76, 0x6f, 0x74,
-	0x65, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x73, 0x3a, 0x1c, 0xe8,
-	0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x13, 0x74, 0x73, 0x63, 0x2f, 0x78, 0x2f, 0x64, 0x69,
-	0x73, 0x74, 0x72, 0x6f, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x9e, 0x01, 0x0a, 0x0d,
-	0x63, 0x6f, 0x6d, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47,
-	0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x3a, 0x67,
-	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x54, 0x72, 0x75, 0x73, 0x74, 0x65,
-	0x64, 0x53, 0x6d, 0x61, 0x72, 0x74, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x2f, 0x74, 0x73, 0x63, 0x2f,
-	0x76, 0x33, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x76, 0x31,
-	0x3b, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x44, 0x58, 0x58, 0xaa,
-	0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x09, 0x44, 0x69,
-	0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x15, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f,
-	0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
-	0x02, 0x0a, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x12, 0x57, 0x0a,
+	0x15, 0x63, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f,
+	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x64,
+	0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72,
+	0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x42, 0x04, 0xc8, 0xde, 0x1f,
+	0x00, 0x52, 0x13, 0x63, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d,
+	0x54, 0x6f, 0x74, 0x61, 0x6c, 0x73, 0x22, 0xf7, 0x04, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x12, 0x27, 0x0a, 0x0f, 0x6d, 0x69, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x6d, 0x69, 0x6e, 0x74,
+	0x69, 0x6e, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x2b, 0x0a, 0x11, 0x72, 0x65,
+	0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x1d, 0x0a,
+	0x0a, 0x6d, 0x61, 0x78, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x09, 0x6d, 0x61, 0x78, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x12, 0x36, 0x0a, 0x17,
+	0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61,
+	0x72, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x15, 0x64,
+	0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74,
+	0x44, 0x61, 0x74, 0x65, 0x12, 0x37, 0x0a, 0x18, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x5f, 0x69,
+	0x6e, 0x5f, 0x68, 0x61, 0x6c, 0x76, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64,
+	0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x15, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x49, 0x6e,
+	0x48, 0x61, 0x6c, 0x76, 0x69, 0x6e, 0x67, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x12, 0x3f, 0x0a,
+	0x1c, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x69,
+	0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x07, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x19, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f,
+	0x6e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x54, 0x79, 0x70, 0x65, 0x49, 0x64, 0x12, 0x36,
+	0x0a, 0x17, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f,
+	0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x15, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x54, 0x61, 0x6c, 0x6c, 0x79, 0x54, 0x68, 0x72,
+	0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x12, 0x32, 0x0a, 0x15, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f,
+	0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18,
+	0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x13, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x6c, 0x6c,
+	0x79, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x12, 0x29, 0x0a, 0x10, 0x65, 0x70,
+	0x6f, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x18, 0x0a,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x49, 0x64, 0x65, 0x6e, 0x74,
+	0x69, 0x66, 0x69, 0x65, 0x72, 0x12, 0x2a, 0x0a, 0x11, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x5f,
+	0x64, 0x65, 0x6c, 0x61, 0x79, 0x5f, 0x64, 0x61, 0x79, 0x73, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x0f, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x44, 0x65, 0x6c, 0x61, 0x79, 0x44, 0x61, 0x79,
+	0x73, 0x12, 0x25, 0x0a, 0x0e, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x5f, 0x62,
+	0x6f, 0x6e, 0x64, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x68, 0x61, 0x6c, 0x6c,
+	0x65, 0x6e, 0x67, 0x65, 0x42, 0x6f, 0x6e, 0x64, 0x12, 0x28, 0x0a, 0x10, 0x76, 0x6f, 0x74, 0x65,
+	0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x64, 0x61, 0x79, 0x73, 0x18, 0x0d, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x0e, 0x76, 0x6f, 0x74, 0x65, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x44, 0x61,
+	0x79, 0x73, 0x3a, 0x1c, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x13, 0x74, 0x73, 0x63,
+	0x2f, 0x78, 0x2f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x42, 0x9e, 0x01, 0x0a, 0x0d, 0x63, 0x6f, 0x6d, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e,
+	0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x3a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x54,
+	0x72, 0x75, 0x73, 0x74, 0x65, 0x64, 0x53, 0x6d, 0x61, 0x72, 0x74, 0x43, 0x68, 0x61, 0x69, 0x6e,
+	0x2f, 0x74, 0x73, 0x63, 0x2f, 0x76, 0x33, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x64, 0x69, 0x73, 0x74,
+	0x72, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x76, 0x31, 0xa2, 0x02,
+	0x03, 0x44, 0x58, 0x58, 0xaa, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x56, 0x31,
+	0xca, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x15, 0x44,
+	0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0a, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x3a, 0x3a, 0x56,
+	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2325,22 +2476,24 @@ func file_distro_v1_genesis_proto_rawDescGZIP() []byte {
 
 var file_distro_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_distro_v1_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil),      // 0: distro.v1.GenesisState
-	(*Params)(nil),            // 1: distro.v1.Params
-	(*DistributionVote)(nil),  // 2: distro.v1.DistributionVote
-	(*EpochDistribution)(nil), // 3: distro.v1.EpochDistribution
-	(*ClaimedReward)(nil),     // 4: distro.v1.ClaimedReward
+	(*GenesisState)(nil),       // 0: distro.v1.GenesisState
+	(*Params)(nil),             // 1: distro.v1.Params
+	(*DistributionVote)(nil),   // 2: distro.v1.DistributionVote
+	(*Distribution)(nil),       // 3: distro.v1.Distribution
+	(*ClaimedReward)(nil),      // 4: distro.v1.ClaimedReward
+	(*CategoryClaimTotal)(nil), // 5: distro.v1.CategoryClaimTotal
 }
 var file_distro_v1_genesis_proto_depIdxs = []int32{
 	1, // 0: distro.v1.GenesisState.params:type_name -> distro.v1.Params
 	2, // 1: distro.v1.GenesisState.votes:type_name -> distro.v1.DistributionVote
-	3, // 2: distro.v1.GenesisState.epoch_distributions:type_name -> distro.v1.EpochDistribution
+	3, // 2: distro.v1.GenesisState.distributions:type_name -> distro.v1.Distribution
 	4, // 3: distro.v1.GenesisState.claimed_rewards:type_name -> distro.v1.ClaimedReward
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	5, // 4: distro.v1.GenesisState.category_claim_totals:type_name -> distro.v1.CategoryClaimTotal
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_distro_v1_genesis_proto_init() }

@@ -6,7 +6,7 @@ import "cosmos_proto/cosmos.proto";
 
 option go_package = "github.com/TrustedSmartChain/tsc/v3/x/distro/types";
 
-// DistributionStatus is the lifecycle state of an epoch's distribution.
+// DistributionStatus is the lifecycle state of a day's distribution.
 //
 // VOTING -> PENDING -> LIVE is the happy path. A licensed holder may challenge a
 // PENDING distribution within the review-delay window, moving it to
@@ -24,32 +24,35 @@ enum DistributionStatus {
   // DISTRIBUTION_STATUS_UNDER_REVIEW means a licensed holder challenged the
   // pending root; voting has reopened and the re-tally will resolve it.
   DISTRIBUTION_STATUS_UNDER_REVIEW = 3;
-  // DISTRIBUTION_STATUS_EXPIRED means the epoch never reached consensus within
+  // DISTRIBUTION_STATUS_EXPIRED means the day never reached consensus within
   // the voting window; it is no longer tallied.
   DISTRIBUTION_STATUS_EXPIRED = 4;
 }
 
-// DistributionVote is a single node's submitted merkle root for an epoch.
-// Stored (and retained) keyed by (epoch, signer).
+// DistributionVote is a single node's submitted merkle root for a day.
+// Stored (and retained) keyed by (date, signer).
 message DistributionVote {
-  int64 epoch = 1;
+  // date is the distribution day in YYYY-MM-DD form.
+  string date = 1;
   string signer = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   bytes merkle_root = 3;
 }
 
-// EpochDistribution is the canonical/finalized result for an epoch (day).
-message EpochDistribution {
-  int64 epoch = 1;
+// Distribution is the canonical/finalized result for a single day, identified by
+// its date (YYYY-MM-DD).
+message Distribution {
+  // date is the distribution day in YYYY-MM-DD form.
+  string date = 1;
   bytes merkle_root = 2;
   DistributionStatus status = 3;
   // license_tally / stake_tally record the winning root's fractions at finalization.
   string license_tally = 4;
   string stake_tally = 5;
-  // finalized_height is the block height at which the epoch went LIVE.
+  // finalized_height is the block height at which the distribution went LIVE.
   int64 finalized_height = 6;
-  // pending_since_epoch is the epoch number at which this distribution entered
-  // PENDING; used to measure the review-delay window.
-  int64 pending_since_epoch = 7;
+  // pending_since_date is the date (YYYY-MM-DD) at which this distribution
+  // entered PENDING; used to measure the review-delay window.
+  string pending_since_date = 7;
   // challenger is the address that placed this distribution UNDER_REVIEW (empty
   // otherwise). Set while UNDER_REVIEW so the bond can be refunded or burned.
   string challenger = 8 [(cosmos_proto.scalar) = "cosmos.AddressString"];
@@ -57,12 +60,23 @@ message EpochDistribution {
   // challenger while UNDER_REVIEW.
   string challenge_bond = 9;
   // claimed_amount is the cumulative amount (in the module denom) already
-  // claimed for this epoch, capped by the epoch's halving budget.
+  // claimed for this day, capped by the day's halving budget.
   string claimed_amount = 10;
 }
 
-// ClaimedReward is the genesis representation of the claimed nonces for an epoch.
+// ClaimedReward is the genesis representation of the claimed nonces for a day.
 message ClaimedReward {
-  int64 epoch = 1;
+  // date is the distribution day in YYYY-MM-DD form.
+  string date = 1;
   repeated uint64 nonces = 2;
+}
+
+// CategoryClaimTotal is the cumulative amount (in the module denom) claimed for
+// a single reward category within a day's distribution. Totals accumulate as
+// rewards are claimed and are queryable via Query/ClaimTotalByCategory.
+message CategoryClaimTotal {
+  // date is the distribution day in YYYY-MM-DD form.
+  string date = 1;
+  string category = 2;
+  string total = 3;
 }

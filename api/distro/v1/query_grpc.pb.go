@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Query_Params_FullMethodName            = "/distro.v1.Query/Params"
-	Query_EpochDistribution_FullMethodName = "/distro.v1.Query/EpochDistribution"
-	Query_DistributionVotes_FullMethodName = "/distro.v1.Query/DistributionVotes"
-	Query_Claimed_FullMethodName           = "/distro.v1.Query/Claimed"
+	Query_Params_FullMethodName               = "/distro.v1.Query/Params"
+	Query_Distribution_FullMethodName         = "/distro.v1.Query/Distribution"
+	Query_DistributionVotes_FullMethodName    = "/distro.v1.Query/DistributionVotes"
+	Query_Claimed_FullMethodName              = "/distro.v1.Query/Claimed"
+	Query_ClaimTotalByCategory_FullMethodName = "/distro.v1.Query/ClaimTotalByCategory"
 )
 
 // QueryClient is the client API for Query service.
@@ -31,12 +32,15 @@ const (
 type QueryClient interface {
 	// Params queries all parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// EpochDistribution queries the canonical distribution for an epoch.
-	EpochDistribution(ctx context.Context, in *QueryEpochDistributionRequest, opts ...grpc.CallOption) (*QueryEpochDistributionResponse, error)
-	// DistributionVotes queries all submitted votes for an epoch.
+	// Distribution queries the canonical distribution for a day (YYYY-MM-DD).
+	Distribution(ctx context.Context, in *QueryDistributionRequest, opts ...grpc.CallOption) (*QueryDistributionResponse, error)
+	// DistributionVotes queries all submitted votes for a day (YYYY-MM-DD).
 	DistributionVotes(ctx context.Context, in *QueryDistributionVotesRequest, opts ...grpc.CallOption) (*QueryDistributionVotesResponse, error)
-	// Claimed reports whether a (epoch, nonce) reward has been claimed.
+	// Claimed reports whether a (date, nonce) reward has been claimed.
 	Claimed(ctx context.Context, in *QueryClaimedRequest, opts ...grpc.CallOption) (*QueryClaimedResponse, error)
+	// ClaimTotalByCategory reports the cumulative claimed amount per category for a
+	// day's distribution (YYYY-MM-DD).
+	ClaimTotalByCategory(ctx context.Context, in *QueryClaimTotalByCategoryRequest, opts ...grpc.CallOption) (*QueryClaimTotalByCategoryResponse, error)
 }
 
 type queryClient struct {
@@ -56,9 +60,9 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
-func (c *queryClient) EpochDistribution(ctx context.Context, in *QueryEpochDistributionRequest, opts ...grpc.CallOption) (*QueryEpochDistributionResponse, error) {
-	out := new(QueryEpochDistributionResponse)
-	err := c.cc.Invoke(ctx, Query_EpochDistribution_FullMethodName, in, out, opts...)
+func (c *queryClient) Distribution(ctx context.Context, in *QueryDistributionRequest, opts ...grpc.CallOption) (*QueryDistributionResponse, error) {
+	out := new(QueryDistributionResponse)
+	err := c.cc.Invoke(ctx, Query_Distribution_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,18 +87,30 @@ func (c *queryClient) Claimed(ctx context.Context, in *QueryClaimedRequest, opts
 	return out, nil
 }
 
+func (c *queryClient) ClaimTotalByCategory(ctx context.Context, in *QueryClaimTotalByCategoryRequest, opts ...grpc.CallOption) (*QueryClaimTotalByCategoryResponse, error) {
+	out := new(QueryClaimTotalByCategoryResponse)
+	err := c.cc.Invoke(ctx, Query_ClaimTotalByCategory_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
 type QueryServer interface {
 	// Params queries all parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// EpochDistribution queries the canonical distribution for an epoch.
-	EpochDistribution(context.Context, *QueryEpochDistributionRequest) (*QueryEpochDistributionResponse, error)
-	// DistributionVotes queries all submitted votes for an epoch.
+	// Distribution queries the canonical distribution for a day (YYYY-MM-DD).
+	Distribution(context.Context, *QueryDistributionRequest) (*QueryDistributionResponse, error)
+	// DistributionVotes queries all submitted votes for a day (YYYY-MM-DD).
 	DistributionVotes(context.Context, *QueryDistributionVotesRequest) (*QueryDistributionVotesResponse, error)
-	// Claimed reports whether a (epoch, nonce) reward has been claimed.
+	// Claimed reports whether a (date, nonce) reward has been claimed.
 	Claimed(context.Context, *QueryClaimedRequest) (*QueryClaimedResponse, error)
+	// ClaimTotalByCategory reports the cumulative claimed amount per category for a
+	// day's distribution (YYYY-MM-DD).
+	ClaimTotalByCategory(context.Context, *QueryClaimTotalByCategoryRequest) (*QueryClaimTotalByCategoryResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -105,14 +121,17 @@ type UnimplementedQueryServer struct {
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
 }
-func (UnimplementedQueryServer) EpochDistribution(context.Context, *QueryEpochDistributionRequest) (*QueryEpochDistributionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method EpochDistribution not implemented")
+func (UnimplementedQueryServer) Distribution(context.Context, *QueryDistributionRequest) (*QueryDistributionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Distribution not implemented")
 }
 func (UnimplementedQueryServer) DistributionVotes(context.Context, *QueryDistributionVotesRequest) (*QueryDistributionVotesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DistributionVotes not implemented")
 }
 func (UnimplementedQueryServer) Claimed(context.Context, *QueryClaimedRequest) (*QueryClaimedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Claimed not implemented")
+}
+func (UnimplementedQueryServer) ClaimTotalByCategory(context.Context, *QueryClaimTotalByCategoryRequest) (*QueryClaimTotalByCategoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimTotalByCategory not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -145,20 +164,20 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_EpochDistribution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryEpochDistributionRequest)
+func _Query_Distribution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryDistributionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).EpochDistribution(ctx, in)
+		return srv.(QueryServer).Distribution(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_EpochDistribution_FullMethodName,
+		FullMethod: Query_Distribution_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).EpochDistribution(ctx, req.(*QueryEpochDistributionRequest))
+		return srv.(QueryServer).Distribution(ctx, req.(*QueryDistributionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -199,6 +218,24 @@ func _Query_Claimed_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ClaimTotalByCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryClaimTotalByCategoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ClaimTotalByCategory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ClaimTotalByCategory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ClaimTotalByCategory(ctx, req.(*QueryClaimTotalByCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -211,8 +248,8 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Params_Handler,
 		},
 		{
-			MethodName: "EpochDistribution",
-			Handler:    _Query_EpochDistribution_Handler,
+			MethodName: "Distribution",
+			Handler:    _Query_Distribution_Handler,
 		},
 		{
 			MethodName: "DistributionVotes",
@@ -221,6 +258,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Claimed",
 			Handler:    _Query_Claimed_Handler,
+		},
+		{
+			MethodName: "ClaimTotalByCategory",
+			Handler:    _Query_ClaimTotalByCategory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -75,14 +75,14 @@ func migrateDistroParams(ctx context.Context, app *ChainApp) error {
 	if params.EpochIdentifier == "" {
 		params.EpochIdentifier = distrotypes.DefaultEpochIdentifier
 	}
-	if params.DistributionReviewDelay == 0 {
-		params.DistributionReviewDelay = distrotypes.DefaultDistributionReviewDelay
+	if params.ReviewDelayDays == 0 {
+		params.ReviewDelayDays = distrotypes.DefaultReviewDelayDays
 	}
 	if params.ChallengeBond == "" {
 		params.ChallengeBond = distrotypes.DefaultChallengeBond
 	}
-	if params.VoteWindowEpochs == 0 {
-		params.VoteWindowEpochs = distrotypes.DefaultVoteWindowEpochs
+	if params.VoteWindowDays == 0 {
+		params.VoteWindowDays = distrotypes.DefaultVoteWindowDays
 	}
 
 	return app.DistroKeeper.Params.Set(ctx, params)

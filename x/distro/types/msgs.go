@@ -22,9 +22,9 @@ func NewMsgUpdateParams(
 	licenseTallyThreshold string,
 	stakeTallyThreshold string,
 	epochIdentifier string,
-	distributionReviewDelay uint64,
+	reviewDelayDays uint64,
 	challengeBond string,
-	voteWindowEpochs uint64,
+	voteWindowDays uint64,
 ) *MsgUpdateParams {
 	return &MsgUpdateParams{
 		Authority: sender.String(),
@@ -39,9 +39,9 @@ func NewMsgUpdateParams(
 			licenseTallyThreshold,
 			stakeTallyThreshold,
 			epochIdentifier,
-			distributionReviewDelay,
+			reviewDelayDays,
 			challengeBond,
-			voteWindowEpochs,
+			voteWindowDays,
 		),
 	}
 }

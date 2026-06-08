@@ -16,7 +16,7 @@ import (
 
 var (
 	md_DistributionVote             protoreflect.MessageDescriptor
-	fd_DistributionVote_epoch       protoreflect.FieldDescriptor
+	fd_DistributionVote_date        protoreflect.FieldDescriptor
 	fd_DistributionVote_signer      protoreflect.FieldDescriptor
 	fd_DistributionVote_merkle_root protoreflect.FieldDescriptor
 )
@@ -24,7 +24,7 @@ var (
 func init() {
 	file_distro_v1_state_proto_init()
 	md_DistributionVote = File_distro_v1_state_proto.Messages().ByName("DistributionVote")
-	fd_DistributionVote_epoch = md_DistributionVote.Fields().ByName("epoch")
+	fd_DistributionVote_date = md_DistributionVote.Fields().ByName("date")
 	fd_DistributionVote_signer = md_DistributionVote.Fields().ByName("signer")
 	fd_DistributionVote_merkle_root = md_DistributionVote.Fields().ByName("merkle_root")
 }
@@ -94,9 +94,9 @@ func (x *fastReflection_DistributionVote) Interface() protoreflect.ProtoMessage 
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_DistributionVote) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Epoch != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Epoch)
-		if !f(fd_DistributionVote_epoch, value) {
+	if x.Date != "" {
+		value := protoreflect.ValueOfString(x.Date)
+		if !f(fd_DistributionVote_date, value) {
 			return
 		}
 	}
@@ -127,8 +127,8 @@ func (x *fastReflection_DistributionVote) Range(f func(protoreflect.FieldDescrip
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_DistributionVote) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "distro.v1.DistributionVote.epoch":
-		return x.Epoch != int64(0)
+	case "distro.v1.DistributionVote.date":
+		return x.Date != ""
 	case "distro.v1.DistributionVote.signer":
 		return x.Signer != ""
 	case "distro.v1.DistributionVote.merkle_root":
@@ -149,8 +149,8 @@ func (x *fastReflection_DistributionVote) Has(fd protoreflect.FieldDescriptor) b
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_DistributionVote) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "distro.v1.DistributionVote.epoch":
-		x.Epoch = int64(0)
+	case "distro.v1.DistributionVote.date":
+		x.Date = ""
 	case "distro.v1.DistributionVote.signer":
 		x.Signer = ""
 	case "distro.v1.DistributionVote.merkle_root":
@@ -171,9 +171,9 @@ func (x *fastReflection_DistributionVote) Clear(fd protoreflect.FieldDescriptor)
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_DistributionVote) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "distro.v1.DistributionVote.epoch":
-		value := x.Epoch
-		return protoreflect.ValueOfInt64(value)
+	case "distro.v1.DistributionVote.date":
+		value := x.Date
+		return protoreflect.ValueOfString(value)
 	case "distro.v1.DistributionVote.signer":
 		value := x.Signer
 		return protoreflect.ValueOfString(value)
@@ -200,8 +200,8 @@ func (x *fastReflection_DistributionVote) Get(descriptor protoreflect.FieldDescr
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_DistributionVote) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "distro.v1.DistributionVote.epoch":
-		x.Epoch = value.Int()
+	case "distro.v1.DistributionVote.date":
+		x.Date = value.Interface().(string)
 	case "distro.v1.DistributionVote.signer":
 		x.Signer = value.Interface().(string)
 	case "distro.v1.DistributionVote.merkle_root":
@@ -226,8 +226,8 @@ func (x *fastReflection_DistributionVote) Set(fd protoreflect.FieldDescriptor, v
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_DistributionVote) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "distro.v1.DistributionVote.epoch":
-		panic(fmt.Errorf("field epoch of message distro.v1.DistributionVote is not mutable"))
+	case "distro.v1.DistributionVote.date":
+		panic(fmt.Errorf("field date of message distro.v1.DistributionVote is not mutable"))
 	case "distro.v1.DistributionVote.signer":
 		panic(fmt.Errorf("field signer of message distro.v1.DistributionVote is not mutable"))
 	case "distro.v1.DistributionVote.merkle_root":
@@ -245,8 +245,8 @@ func (x *fastReflection_DistributionVote) Mutable(fd protoreflect.FieldDescripto
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_DistributionVote) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "distro.v1.DistributionVote.epoch":
-		return protoreflect.ValueOfInt64(int64(0))
+	case "distro.v1.DistributionVote.date":
+		return protoreflect.ValueOfString("")
 	case "distro.v1.DistributionVote.signer":
 		return protoreflect.ValueOfString("")
 	case "distro.v1.DistributionVote.merkle_root":
@@ -320,8 +320,9 @@ func (x *fastReflection_DistributionVote) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.Epoch != 0 {
-			n += 1 + runtime.Sov(uint64(x.Epoch))
+		l = len(x.Date)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		l = len(x.Signer)
 		if l > 0 {
@@ -374,10 +375,12 @@ func (x *fastReflection_DistributionVote) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x12
 		}
-		if x.Epoch != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Epoch))
+		if len(x.Date) > 0 {
+			i -= len(x.Date)
+			copy(dAtA[i:], x.Date)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Date)))
 			i--
-			dAtA[i] = 0x8
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -429,10 +432,10 @@ func (x *fastReflection_DistributionVote) ProtoMethods() *protoiface.Methods {
 			}
 			switch fieldNum {
 			case 1:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Date", wireType)
 				}
-				x.Epoch = 0
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -442,11 +445,24 @@ func (x *fastReflection_DistributionVote) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Epoch |= int64(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Date = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
@@ -549,43 +565,43 @@ func (x *fastReflection_DistributionVote) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_EpochDistribution                     protoreflect.MessageDescriptor
-	fd_EpochDistribution_epoch               protoreflect.FieldDescriptor
-	fd_EpochDistribution_merkle_root         protoreflect.FieldDescriptor
-	fd_EpochDistribution_status              protoreflect.FieldDescriptor
-	fd_EpochDistribution_license_tally       protoreflect.FieldDescriptor
-	fd_EpochDistribution_stake_tally         protoreflect.FieldDescriptor
-	fd_EpochDistribution_finalized_height    protoreflect.FieldDescriptor
-	fd_EpochDistribution_pending_since_epoch protoreflect.FieldDescriptor
-	fd_EpochDistribution_challenger          protoreflect.FieldDescriptor
-	fd_EpochDistribution_challenge_bond      protoreflect.FieldDescriptor
-	fd_EpochDistribution_claimed_amount      protoreflect.FieldDescriptor
+	md_Distribution                    protoreflect.MessageDescriptor
+	fd_Distribution_date               protoreflect.FieldDescriptor
+	fd_Distribution_merkle_root        protoreflect.FieldDescriptor
+	fd_Distribution_status             protoreflect.FieldDescriptor
+	fd_Distribution_license_tally      protoreflect.FieldDescriptor
+	fd_Distribution_stake_tally        protoreflect.FieldDescriptor
+	fd_Distribution_finalized_height   protoreflect.FieldDescriptor
+	fd_Distribution_pending_since_date protoreflect.FieldDescriptor
+	fd_Distribution_challenger         protoreflect.FieldDescriptor
+	fd_Distribution_challenge_bond     protoreflect.FieldDescriptor
+	fd_Distribution_claimed_amount     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_distro_v1_state_proto_init()
-	md_EpochDistribution = File_distro_v1_state_proto.Messages().ByName("EpochDistribution")
-	fd_EpochDistribution_epoch = md_EpochDistribution.Fields().ByName("epoch")
-	fd_EpochDistribution_merkle_root = md_EpochDistribution.Fields().ByName("merkle_root")
-	fd_EpochDistribution_status = md_EpochDistribution.Fields().ByName("status")
-	fd_EpochDistribution_license_tally = md_EpochDistribution.Fields().ByName("license_tally")
-	fd_EpochDistribution_stake_tally = md_EpochDistribution.Fields().ByName("stake_tally")
-	fd_EpochDistribution_finalized_height = md_EpochDistribution.Fields().ByName("finalized_height")
-	fd_EpochDistribution_pending_since_epoch = md_EpochDistribution.Fields().ByName("pending_since_epoch")
-	fd_EpochDistribution_challenger = md_EpochDistribution.Fields().ByName("challenger")
-	fd_EpochDistribution_challenge_bond = md_EpochDistribution.Fields().ByName("challenge_bond")
-	fd_EpochDistribution_claimed_amount = md_EpochDistribution.Fields().ByName("claimed_amount")
+	md_Distribution = File_distro_v1_state_proto.Messages().ByName("Distribution")
+	fd_Distribution_date = md_Distribution.Fields().ByName("date")
+	fd_Distribution_merkle_root = md_Distribution.Fields().ByName("merkle_root")
+	fd_Distribution_status = md_Distribution.Fields().ByName("status")
+	fd_Distribution_license_tally = md_Distribution.Fields().ByName("license_tally")
+	fd_Distribution_stake_tally = md_Distribution.Fields().ByName("stake_tally")
+	fd_Distribution_finalized_height = md_Distribution.Fields().ByName("finalized_height")
+	fd_Distribution_pending_since_date = md_Distribution.Fields().ByName("pending_since_date")
+	fd_Distribution_challenger = md_Distribution.Fields().ByName("challenger")
+	fd_Distribution_challenge_bond = md_Distribution.Fields().ByName("challenge_bond")
+	fd_Distribution_claimed_amount = md_Distribution.Fields().ByName("claimed_amount")
 }
 
-var _ protoreflect.Message = (*fastReflection_EpochDistribution)(nil)
+var _ protoreflect.Message = (*fastReflection_Distribution)(nil)
 
-type fastReflection_EpochDistribution EpochDistribution
+type fastReflection_Distribution Distribution
 
-func (x *EpochDistribution) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EpochDistribution)(x)
+func (x *Distribution) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_Distribution)(x)
 }
 
-func (x *EpochDistribution) slowProtoReflect() protoreflect.Message {
+func (x *Distribution) slowProtoReflect() protoreflect.Message {
 	mi := &file_distro_v1_state_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -597,43 +613,43 @@ func (x *EpochDistribution) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_EpochDistribution_messageType fastReflection_EpochDistribution_messageType
-var _ protoreflect.MessageType = fastReflection_EpochDistribution_messageType{}
+var _fastReflection_Distribution_messageType fastReflection_Distribution_messageType
+var _ protoreflect.MessageType = fastReflection_Distribution_messageType{}
 
-type fastReflection_EpochDistribution_messageType struct{}
+type fastReflection_Distribution_messageType struct{}
 
-func (x fastReflection_EpochDistribution_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EpochDistribution)(nil)
+func (x fastReflection_Distribution_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_Distribution)(nil)
 }
-func (x fastReflection_EpochDistribution_messageType) New() protoreflect.Message {
-	return new(fastReflection_EpochDistribution)
+func (x fastReflection_Distribution_messageType) New() protoreflect.Message {
+	return new(fastReflection_Distribution)
 }
-func (x fastReflection_EpochDistribution_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EpochDistribution
+func (x fastReflection_Distribution_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_Distribution
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_EpochDistribution) Descriptor() protoreflect.MessageDescriptor {
-	return md_EpochDistribution
+func (x *fastReflection_Distribution) Descriptor() protoreflect.MessageDescriptor {
+	return md_Distribution
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EpochDistribution) Type() protoreflect.MessageType {
-	return _fastReflection_EpochDistribution_messageType
+func (x *fastReflection_Distribution) Type() protoreflect.MessageType {
+	return _fastReflection_Distribution_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EpochDistribution) New() protoreflect.Message {
-	return new(fastReflection_EpochDistribution)
+func (x *fastReflection_Distribution) New() protoreflect.Message {
+	return new(fastReflection_Distribution)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_EpochDistribution) Interface() protoreflect.ProtoMessage {
-	return (*EpochDistribution)(x)
+func (x *fastReflection_Distribution) Interface() protoreflect.ProtoMessage {
+	return (*Distribution)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -641,64 +657,64 @@ func (x *fastReflection_EpochDistribution) Interface() protoreflect.ProtoMessage
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_EpochDistribution) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Epoch != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Epoch)
-		if !f(fd_EpochDistribution_epoch, value) {
+func (x *fastReflection_Distribution) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Date != "" {
+		value := protoreflect.ValueOfString(x.Date)
+		if !f(fd_Distribution_date, value) {
 			return
 		}
 	}
 	if len(x.MerkleRoot) != 0 {
 		value := protoreflect.ValueOfBytes(x.MerkleRoot)
-		if !f(fd_EpochDistribution_merkle_root, value) {
+		if !f(fd_Distribution_merkle_root, value) {
 			return
 		}
 	}
 	if x.Status != 0 {
 		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.Status))
-		if !f(fd_EpochDistribution_status, value) {
+		if !f(fd_Distribution_status, value) {
 			return
 		}
 	}
 	if x.LicenseTally != "" {
 		value := protoreflect.ValueOfString(x.LicenseTally)
-		if !f(fd_EpochDistribution_license_tally, value) {
+		if !f(fd_Distribution_license_tally, value) {
 			return
 		}
 	}
 	if x.StakeTally != "" {
 		value := protoreflect.ValueOfString(x.StakeTally)
-		if !f(fd_EpochDistribution_stake_tally, value) {
+		if !f(fd_Distribution_stake_tally, value) {
 			return
 		}
 	}
 	if x.FinalizedHeight != int64(0) {
 		value := protoreflect.ValueOfInt64(x.FinalizedHeight)
-		if !f(fd_EpochDistribution_finalized_height, value) {
+		if !f(fd_Distribution_finalized_height, value) {
 			return
 		}
 	}
-	if x.PendingSinceEpoch != int64(0) {
-		value := protoreflect.ValueOfInt64(x.PendingSinceEpoch)
-		if !f(fd_EpochDistribution_pending_since_epoch, value) {
+	if x.PendingSinceDate != "" {
+		value := protoreflect.ValueOfString(x.PendingSinceDate)
+		if !f(fd_Distribution_pending_since_date, value) {
 			return
 		}
 	}
 	if x.Challenger != "" {
 		value := protoreflect.ValueOfString(x.Challenger)
-		if !f(fd_EpochDistribution_challenger, value) {
+		if !f(fd_Distribution_challenger, value) {
 			return
 		}
 	}
 	if x.ChallengeBond != "" {
 		value := protoreflect.ValueOfString(x.ChallengeBond)
-		if !f(fd_EpochDistribution_challenge_bond, value) {
+		if !f(fd_Distribution_challenge_bond, value) {
 			return
 		}
 	}
 	if x.ClaimedAmount != "" {
 		value := protoreflect.ValueOfString(x.ClaimedAmount)
-		if !f(fd_EpochDistribution_claimed_amount, value) {
+		if !f(fd_Distribution_claimed_amount, value) {
 			return
 		}
 	}
@@ -715,33 +731,33 @@ func (x *fastReflection_EpochDistribution) Range(f func(protoreflect.FieldDescri
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_EpochDistribution) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_Distribution) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "distro.v1.EpochDistribution.epoch":
-		return x.Epoch != int64(0)
-	case "distro.v1.EpochDistribution.merkle_root":
+	case "distro.v1.Distribution.date":
+		return x.Date != ""
+	case "distro.v1.Distribution.merkle_root":
 		return len(x.MerkleRoot) != 0
-	case "distro.v1.EpochDistribution.status":
+	case "distro.v1.Distribution.status":
 		return x.Status != 0
-	case "distro.v1.EpochDistribution.license_tally":
+	case "distro.v1.Distribution.license_tally":
 		return x.LicenseTally != ""
-	case "distro.v1.EpochDistribution.stake_tally":
+	case "distro.v1.Distribution.stake_tally":
 		return x.StakeTally != ""
-	case "distro.v1.EpochDistribution.finalized_height":
+	case "distro.v1.Distribution.finalized_height":
 		return x.FinalizedHeight != int64(0)
-	case "distro.v1.EpochDistribution.pending_since_epoch":
-		return x.PendingSinceEpoch != int64(0)
-	case "distro.v1.EpochDistribution.challenger":
+	case "distro.v1.Distribution.pending_since_date":
+		return x.PendingSinceDate != ""
+	case "distro.v1.Distribution.challenger":
 		return x.Challenger != ""
-	case "distro.v1.EpochDistribution.challenge_bond":
+	case "distro.v1.Distribution.challenge_bond":
 		return x.ChallengeBond != ""
-	case "distro.v1.EpochDistribution.claimed_amount":
+	case "distro.v1.Distribution.claimed_amount":
 		return x.ClaimedAmount != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.EpochDistribution"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Distribution"))
 		}
-		panic(fmt.Errorf("message distro.v1.EpochDistribution does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message distro.v1.Distribution does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -751,33 +767,33 @@ func (x *fastReflection_EpochDistribution) Has(fd protoreflect.FieldDescriptor) 
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochDistribution) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_Distribution) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "distro.v1.EpochDistribution.epoch":
-		x.Epoch = int64(0)
-	case "distro.v1.EpochDistribution.merkle_root":
+	case "distro.v1.Distribution.date":
+		x.Date = ""
+	case "distro.v1.Distribution.merkle_root":
 		x.MerkleRoot = nil
-	case "distro.v1.EpochDistribution.status":
+	case "distro.v1.Distribution.status":
 		x.Status = 0
-	case "distro.v1.EpochDistribution.license_tally":
+	case "distro.v1.Distribution.license_tally":
 		x.LicenseTally = ""
-	case "distro.v1.EpochDistribution.stake_tally":
+	case "distro.v1.Distribution.stake_tally":
 		x.StakeTally = ""
-	case "distro.v1.EpochDistribution.finalized_height":
+	case "distro.v1.Distribution.finalized_height":
 		x.FinalizedHeight = int64(0)
-	case "distro.v1.EpochDistribution.pending_since_epoch":
-		x.PendingSinceEpoch = int64(0)
-	case "distro.v1.EpochDistribution.challenger":
+	case "distro.v1.Distribution.pending_since_date":
+		x.PendingSinceDate = ""
+	case "distro.v1.Distribution.challenger":
 		x.Challenger = ""
-	case "distro.v1.EpochDistribution.challenge_bond":
+	case "distro.v1.Distribution.challenge_bond":
 		x.ChallengeBond = ""
-	case "distro.v1.EpochDistribution.claimed_amount":
+	case "distro.v1.Distribution.claimed_amount":
 		x.ClaimedAmount = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.EpochDistribution"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Distribution"))
 		}
-		panic(fmt.Errorf("message distro.v1.EpochDistribution does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message distro.v1.Distribution does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -787,43 +803,43 @@ func (x *fastReflection_EpochDistribution) Clear(fd protoreflect.FieldDescriptor
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EpochDistribution) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Distribution) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "distro.v1.EpochDistribution.epoch":
-		value := x.Epoch
-		return protoreflect.ValueOfInt64(value)
-	case "distro.v1.EpochDistribution.merkle_root":
+	case "distro.v1.Distribution.date":
+		value := x.Date
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.Distribution.merkle_root":
 		value := x.MerkleRoot
 		return protoreflect.ValueOfBytes(value)
-	case "distro.v1.EpochDistribution.status":
+	case "distro.v1.Distribution.status":
 		value := x.Status
 		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
-	case "distro.v1.EpochDistribution.license_tally":
+	case "distro.v1.Distribution.license_tally":
 		value := x.LicenseTally
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.EpochDistribution.stake_tally":
+	case "distro.v1.Distribution.stake_tally":
 		value := x.StakeTally
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.EpochDistribution.finalized_height":
+	case "distro.v1.Distribution.finalized_height":
 		value := x.FinalizedHeight
 		return protoreflect.ValueOfInt64(value)
-	case "distro.v1.EpochDistribution.pending_since_epoch":
-		value := x.PendingSinceEpoch
-		return protoreflect.ValueOfInt64(value)
-	case "distro.v1.EpochDistribution.challenger":
+	case "distro.v1.Distribution.pending_since_date":
+		value := x.PendingSinceDate
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.Distribution.challenger":
 		value := x.Challenger
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.EpochDistribution.challenge_bond":
+	case "distro.v1.Distribution.challenge_bond":
 		value := x.ChallengeBond
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.EpochDistribution.claimed_amount":
+	case "distro.v1.Distribution.claimed_amount":
 		value := x.ClaimedAmount
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.EpochDistribution"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Distribution"))
 		}
-		panic(fmt.Errorf("message distro.v1.EpochDistribution does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message distro.v1.Distribution does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -837,33 +853,33 @@ func (x *fastReflection_EpochDistribution) Get(descriptor protoreflect.FieldDesc
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochDistribution) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_Distribution) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "distro.v1.EpochDistribution.epoch":
-		x.Epoch = value.Int()
-	case "distro.v1.EpochDistribution.merkle_root":
+	case "distro.v1.Distribution.date":
+		x.Date = value.Interface().(string)
+	case "distro.v1.Distribution.merkle_root":
 		x.MerkleRoot = value.Bytes()
-	case "distro.v1.EpochDistribution.status":
+	case "distro.v1.Distribution.status":
 		x.Status = (DistributionStatus)(value.Enum())
-	case "distro.v1.EpochDistribution.license_tally":
+	case "distro.v1.Distribution.license_tally":
 		x.LicenseTally = value.Interface().(string)
-	case "distro.v1.EpochDistribution.stake_tally":
+	case "distro.v1.Distribution.stake_tally":
 		x.StakeTally = value.Interface().(string)
-	case "distro.v1.EpochDistribution.finalized_height":
+	case "distro.v1.Distribution.finalized_height":
 		x.FinalizedHeight = value.Int()
-	case "distro.v1.EpochDistribution.pending_since_epoch":
-		x.PendingSinceEpoch = value.Int()
-	case "distro.v1.EpochDistribution.challenger":
+	case "distro.v1.Distribution.pending_since_date":
+		x.PendingSinceDate = value.Interface().(string)
+	case "distro.v1.Distribution.challenger":
 		x.Challenger = value.Interface().(string)
-	case "distro.v1.EpochDistribution.challenge_bond":
+	case "distro.v1.Distribution.challenge_bond":
 		x.ChallengeBond = value.Interface().(string)
-	case "distro.v1.EpochDistribution.claimed_amount":
+	case "distro.v1.Distribution.claimed_amount":
 		x.ClaimedAmount = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.EpochDistribution"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Distribution"))
 		}
-		panic(fmt.Errorf("message distro.v1.EpochDistribution does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message distro.v1.Distribution does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -877,76 +893,76 @@ func (x *fastReflection_EpochDistribution) Set(fd protoreflect.FieldDescriptor, 
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochDistribution) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Distribution) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "distro.v1.EpochDistribution.epoch":
-		panic(fmt.Errorf("field epoch of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.merkle_root":
-		panic(fmt.Errorf("field merkle_root of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.status":
-		panic(fmt.Errorf("field status of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.license_tally":
-		panic(fmt.Errorf("field license_tally of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.stake_tally":
-		panic(fmt.Errorf("field stake_tally of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.finalized_height":
-		panic(fmt.Errorf("field finalized_height of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.pending_since_epoch":
-		panic(fmt.Errorf("field pending_since_epoch of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.challenger":
-		panic(fmt.Errorf("field challenger of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.challenge_bond":
-		panic(fmt.Errorf("field challenge_bond of message distro.v1.EpochDistribution is not mutable"))
-	case "distro.v1.EpochDistribution.claimed_amount":
-		panic(fmt.Errorf("field claimed_amount of message distro.v1.EpochDistribution is not mutable"))
+	case "distro.v1.Distribution.date":
+		panic(fmt.Errorf("field date of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.merkle_root":
+		panic(fmt.Errorf("field merkle_root of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.status":
+		panic(fmt.Errorf("field status of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.license_tally":
+		panic(fmt.Errorf("field license_tally of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.stake_tally":
+		panic(fmt.Errorf("field stake_tally of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.finalized_height":
+		panic(fmt.Errorf("field finalized_height of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.pending_since_date":
+		panic(fmt.Errorf("field pending_since_date of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.challenger":
+		panic(fmt.Errorf("field challenger of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.challenge_bond":
+		panic(fmt.Errorf("field challenge_bond of message distro.v1.Distribution is not mutable"))
+	case "distro.v1.Distribution.claimed_amount":
+		panic(fmt.Errorf("field claimed_amount of message distro.v1.Distribution is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.EpochDistribution"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Distribution"))
 		}
-		panic(fmt.Errorf("message distro.v1.EpochDistribution does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message distro.v1.Distribution does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EpochDistribution) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_Distribution) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "distro.v1.EpochDistribution.epoch":
-		return protoreflect.ValueOfInt64(int64(0))
-	case "distro.v1.EpochDistribution.merkle_root":
+	case "distro.v1.Distribution.date":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.Distribution.merkle_root":
 		return protoreflect.ValueOfBytes(nil)
-	case "distro.v1.EpochDistribution.status":
+	case "distro.v1.Distribution.status":
 		return protoreflect.ValueOfEnum(0)
-	case "distro.v1.EpochDistribution.license_tally":
+	case "distro.v1.Distribution.license_tally":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.EpochDistribution.stake_tally":
+	case "distro.v1.Distribution.stake_tally":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.EpochDistribution.finalized_height":
+	case "distro.v1.Distribution.finalized_height":
 		return protoreflect.ValueOfInt64(int64(0))
-	case "distro.v1.EpochDistribution.pending_since_epoch":
-		return protoreflect.ValueOfInt64(int64(0))
-	case "distro.v1.EpochDistribution.challenger":
+	case "distro.v1.Distribution.pending_since_date":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.EpochDistribution.challenge_bond":
+	case "distro.v1.Distribution.challenger":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.EpochDistribution.claimed_amount":
+	case "distro.v1.Distribution.challenge_bond":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.Distribution.claimed_amount":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.EpochDistribution"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Distribution"))
 		}
-		panic(fmt.Errorf("message distro.v1.EpochDistribution does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message distro.v1.Distribution does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EpochDistribution) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_Distribution) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in distro.v1.EpochDistribution", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in distro.v1.Distribution", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -954,7 +970,7 @@ func (x *fastReflection_EpochDistribution) WhichOneof(d protoreflect.OneofDescri
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EpochDistribution) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_Distribution) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -965,7 +981,7 @@ func (x *fastReflection_EpochDistribution) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EpochDistribution) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_Distribution) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -977,7 +993,7 @@ func (x *fastReflection_EpochDistribution) SetUnknown(fields protoreflect.RawFie
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_EpochDistribution) IsValid() bool {
+func (x *fastReflection_Distribution) IsValid() bool {
 	return x != nil
 }
 
@@ -987,9 +1003,9 @@ func (x *fastReflection_EpochDistribution) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_Distribution) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EpochDistribution)
+		x := input.Message.Interface().(*Distribution)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1001,8 +1017,9 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.Epoch != 0 {
-			n += 1 + runtime.Sov(uint64(x.Epoch))
+		l = len(x.Date)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		l = len(x.MerkleRoot)
 		if l > 0 {
@@ -1022,8 +1039,9 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 		if x.FinalizedHeight != 0 {
 			n += 1 + runtime.Sov(uint64(x.FinalizedHeight))
 		}
-		if x.PendingSinceEpoch != 0 {
-			n += 1 + runtime.Sov(uint64(x.PendingSinceEpoch))
+		l = len(x.PendingSinceDate)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		l = len(x.Challenger)
 		if l > 0 {
@@ -1047,7 +1065,7 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EpochDistribution)
+		x := input.Message.Interface().(*Distribution)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1087,10 +1105,12 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x42
 		}
-		if x.PendingSinceEpoch != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.PendingSinceEpoch))
+		if len(x.PendingSinceDate) > 0 {
+			i -= len(x.PendingSinceDate)
+			copy(dAtA[i:], x.PendingSinceDate)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.PendingSinceDate)))
 			i--
-			dAtA[i] = 0x38
+			dAtA[i] = 0x3a
 		}
 		if x.FinalizedHeight != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.FinalizedHeight))
@@ -1123,10 +1143,12 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x12
 		}
-		if x.Epoch != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Epoch))
+		if len(x.Date) > 0 {
+			i -= len(x.Date)
+			copy(dAtA[i:], x.Date)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Date)))
 			i--
-			dAtA[i] = 0x8
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -1139,7 +1161,7 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EpochDistribution)
+		x := input.Message.Interface().(*Distribution)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1171,17 +1193,17 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EpochDistribution: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Distribution: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EpochDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Distribution: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Date", wireType)
 				}
-				x.Epoch = 0
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1191,11 +1213,24 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Epoch |= int64(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Date = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MerkleRoot", wireType)
@@ -1333,10 +1368,10 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 					}
 				}
 			case 7:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field PendingSinceEpoch", wireType)
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field PendingSinceDate", wireType)
 				}
-				x.PendingSinceEpoch = 0
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1346,11 +1381,24 @@ func (x *fastReflection_EpochDistribution) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.PendingSinceEpoch |= int64(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.PendingSinceDate = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			case 8:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Challenger", wireType)
@@ -1530,14 +1578,14 @@ func (x *_ClaimedReward_2_list) IsValid() bool {
 
 var (
 	md_ClaimedReward        protoreflect.MessageDescriptor
-	fd_ClaimedReward_epoch  protoreflect.FieldDescriptor
+	fd_ClaimedReward_date   protoreflect.FieldDescriptor
 	fd_ClaimedReward_nonces protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_distro_v1_state_proto_init()
 	md_ClaimedReward = File_distro_v1_state_proto.Messages().ByName("ClaimedReward")
-	fd_ClaimedReward_epoch = md_ClaimedReward.Fields().ByName("epoch")
+	fd_ClaimedReward_date = md_ClaimedReward.Fields().ByName("date")
 	fd_ClaimedReward_nonces = md_ClaimedReward.Fields().ByName("nonces")
 }
 
@@ -1606,9 +1654,9 @@ func (x *fastReflection_ClaimedReward) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_ClaimedReward) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Epoch != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Epoch)
-		if !f(fd_ClaimedReward_epoch, value) {
+	if x.Date != "" {
+		value := protoreflect.ValueOfString(x.Date)
+		if !f(fd_ClaimedReward_date, value) {
 			return
 		}
 	}
@@ -1633,8 +1681,8 @@ func (x *fastReflection_ClaimedReward) Range(f func(protoreflect.FieldDescriptor
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_ClaimedReward) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "distro.v1.ClaimedReward.epoch":
-		return x.Epoch != int64(0)
+	case "distro.v1.ClaimedReward.date":
+		return x.Date != ""
 	case "distro.v1.ClaimedReward.nonces":
 		return len(x.Nonces) != 0
 	default:
@@ -1653,8 +1701,8 @@ func (x *fastReflection_ClaimedReward) Has(fd protoreflect.FieldDescriptor) bool
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_ClaimedReward) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "distro.v1.ClaimedReward.epoch":
-		x.Epoch = int64(0)
+	case "distro.v1.ClaimedReward.date":
+		x.Date = ""
 	case "distro.v1.ClaimedReward.nonces":
 		x.Nonces = nil
 	default:
@@ -1673,9 +1721,9 @@ func (x *fastReflection_ClaimedReward) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_ClaimedReward) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "distro.v1.ClaimedReward.epoch":
-		value := x.Epoch
-		return protoreflect.ValueOfInt64(value)
+	case "distro.v1.ClaimedReward.date":
+		value := x.Date
+		return protoreflect.ValueOfString(value)
 	case "distro.v1.ClaimedReward.nonces":
 		if len(x.Nonces) == 0 {
 			return protoreflect.ValueOfList(&_ClaimedReward_2_list{})
@@ -1702,8 +1750,8 @@ func (x *fastReflection_ClaimedReward) Get(descriptor protoreflect.FieldDescript
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_ClaimedReward) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "distro.v1.ClaimedReward.epoch":
-		x.Epoch = value.Int()
+	case "distro.v1.ClaimedReward.date":
+		x.Date = value.Interface().(string)
 	case "distro.v1.ClaimedReward.nonces":
 		lv := value.List()
 		clv := lv.(*_ClaimedReward_2_list)
@@ -1734,8 +1782,8 @@ func (x *fastReflection_ClaimedReward) Mutable(fd protoreflect.FieldDescriptor) 
 		}
 		value := &_ClaimedReward_2_list{list: &x.Nonces}
 		return protoreflect.ValueOfList(value)
-	case "distro.v1.ClaimedReward.epoch":
-		panic(fmt.Errorf("field epoch of message distro.v1.ClaimedReward is not mutable"))
+	case "distro.v1.ClaimedReward.date":
+		panic(fmt.Errorf("field date of message distro.v1.ClaimedReward is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.ClaimedReward"))
@@ -1749,8 +1797,8 @@ func (x *fastReflection_ClaimedReward) Mutable(fd protoreflect.FieldDescriptor) 
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_ClaimedReward) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "distro.v1.ClaimedReward.epoch":
-		return protoreflect.ValueOfInt64(int64(0))
+	case "distro.v1.ClaimedReward.date":
+		return protoreflect.ValueOfString("")
 	case "distro.v1.ClaimedReward.nonces":
 		list := []uint64{}
 		return protoreflect.ValueOfList(&_ClaimedReward_2_list{list: &list})
@@ -1823,8 +1871,9 @@ func (x *fastReflection_ClaimedReward) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.Epoch != 0 {
-			n += 1 + runtime.Sov(uint64(x.Epoch))
+		l = len(x.Date)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if len(x.Nonces) > 0 {
 			l = 0
@@ -1882,10 +1931,12 @@ func (x *fastReflection_ClaimedReward) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x12
 		}
-		if x.Epoch != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Epoch))
+		if len(x.Date) > 0 {
+			i -= len(x.Date)
+			copy(dAtA[i:], x.Date)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Date)))
 			i--
-			dAtA[i] = 0x8
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -1937,10 +1988,10 @@ func (x *fastReflection_ClaimedReward) ProtoMethods() *protoiface.Methods {
 			}
 			switch fieldNum {
 			case 1:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Date", wireType)
 				}
-				x.Epoch = 0
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1950,11 +2001,24 @@ func (x *fastReflection_ClaimedReward) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Epoch |= int64(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Date = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			case 2:
 				if wireType == 0 {
 					var v uint64
@@ -2066,6 +2130,554 @@ func (x *fastReflection_ClaimedReward) ProtoMethods() *protoiface.Methods {
 	}
 }
 
+var (
+	md_CategoryClaimTotal          protoreflect.MessageDescriptor
+	fd_CategoryClaimTotal_date     protoreflect.FieldDescriptor
+	fd_CategoryClaimTotal_category protoreflect.FieldDescriptor
+	fd_CategoryClaimTotal_total    protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_distro_v1_state_proto_init()
+	md_CategoryClaimTotal = File_distro_v1_state_proto.Messages().ByName("CategoryClaimTotal")
+	fd_CategoryClaimTotal_date = md_CategoryClaimTotal.Fields().ByName("date")
+	fd_CategoryClaimTotal_category = md_CategoryClaimTotal.Fields().ByName("category")
+	fd_CategoryClaimTotal_total = md_CategoryClaimTotal.Fields().ByName("total")
+}
+
+var _ protoreflect.Message = (*fastReflection_CategoryClaimTotal)(nil)
+
+type fastReflection_CategoryClaimTotal CategoryClaimTotal
+
+func (x *CategoryClaimTotal) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_CategoryClaimTotal)(x)
+}
+
+func (x *CategoryClaimTotal) slowProtoReflect() protoreflect.Message {
+	mi := &file_distro_v1_state_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_CategoryClaimTotal_messageType fastReflection_CategoryClaimTotal_messageType
+var _ protoreflect.MessageType = fastReflection_CategoryClaimTotal_messageType{}
+
+type fastReflection_CategoryClaimTotal_messageType struct{}
+
+func (x fastReflection_CategoryClaimTotal_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_CategoryClaimTotal)(nil)
+}
+func (x fastReflection_CategoryClaimTotal_messageType) New() protoreflect.Message {
+	return new(fastReflection_CategoryClaimTotal)
+}
+func (x fastReflection_CategoryClaimTotal_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_CategoryClaimTotal
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_CategoryClaimTotal) Descriptor() protoreflect.MessageDescriptor {
+	return md_CategoryClaimTotal
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_CategoryClaimTotal) Type() protoreflect.MessageType {
+	return _fastReflection_CategoryClaimTotal_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_CategoryClaimTotal) New() protoreflect.Message {
+	return new(fastReflection_CategoryClaimTotal)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_CategoryClaimTotal) Interface() protoreflect.ProtoMessage {
+	return (*CategoryClaimTotal)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_CategoryClaimTotal) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Date != "" {
+		value := protoreflect.ValueOfString(x.Date)
+		if !f(fd_CategoryClaimTotal_date, value) {
+			return
+		}
+	}
+	if x.Category != "" {
+		value := protoreflect.ValueOfString(x.Category)
+		if !f(fd_CategoryClaimTotal_category, value) {
+			return
+		}
+	}
+	if x.Total != "" {
+		value := protoreflect.ValueOfString(x.Total)
+		if !f(fd_CategoryClaimTotal_total, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_CategoryClaimTotal) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "distro.v1.CategoryClaimTotal.date":
+		return x.Date != ""
+	case "distro.v1.CategoryClaimTotal.category":
+		return x.Category != ""
+	case "distro.v1.CategoryClaimTotal.total":
+		return x.Total != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.CategoryClaimTotal"))
+		}
+		panic(fmt.Errorf("message distro.v1.CategoryClaimTotal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_CategoryClaimTotal) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "distro.v1.CategoryClaimTotal.date":
+		x.Date = ""
+	case "distro.v1.CategoryClaimTotal.category":
+		x.Category = ""
+	case "distro.v1.CategoryClaimTotal.total":
+		x.Total = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.CategoryClaimTotal"))
+		}
+		panic(fmt.Errorf("message distro.v1.CategoryClaimTotal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_CategoryClaimTotal) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "distro.v1.CategoryClaimTotal.date":
+		value := x.Date
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.CategoryClaimTotal.category":
+		value := x.Category
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.CategoryClaimTotal.total":
+		value := x.Total
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.CategoryClaimTotal"))
+		}
+		panic(fmt.Errorf("message distro.v1.CategoryClaimTotal does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_CategoryClaimTotal) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "distro.v1.CategoryClaimTotal.date":
+		x.Date = value.Interface().(string)
+	case "distro.v1.CategoryClaimTotal.category":
+		x.Category = value.Interface().(string)
+	case "distro.v1.CategoryClaimTotal.total":
+		x.Total = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.CategoryClaimTotal"))
+		}
+		panic(fmt.Errorf("message distro.v1.CategoryClaimTotal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_CategoryClaimTotal) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "distro.v1.CategoryClaimTotal.date":
+		panic(fmt.Errorf("field date of message distro.v1.CategoryClaimTotal is not mutable"))
+	case "distro.v1.CategoryClaimTotal.category":
+		panic(fmt.Errorf("field category of message distro.v1.CategoryClaimTotal is not mutable"))
+	case "distro.v1.CategoryClaimTotal.total":
+		panic(fmt.Errorf("field total of message distro.v1.CategoryClaimTotal is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.CategoryClaimTotal"))
+		}
+		panic(fmt.Errorf("message distro.v1.CategoryClaimTotal does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_CategoryClaimTotal) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "distro.v1.CategoryClaimTotal.date":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.CategoryClaimTotal.category":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.CategoryClaimTotal.total":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.CategoryClaimTotal"))
+		}
+		panic(fmt.Errorf("message distro.v1.CategoryClaimTotal does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_CategoryClaimTotal) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in distro.v1.CategoryClaimTotal", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_CategoryClaimTotal) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_CategoryClaimTotal) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_CategoryClaimTotal) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_CategoryClaimTotal) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*CategoryClaimTotal)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Date)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Category)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Total)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*CategoryClaimTotal)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.Total) > 0 {
+			i -= len(x.Total)
+			copy(dAtA[i:], x.Total)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Total)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if len(x.Category) > 0 {
+			i -= len(x.Category)
+			copy(dAtA[i:], x.Category)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Category)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Date) > 0 {
+			i -= len(x.Date)
+			copy(dAtA[i:], x.Date)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Date)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*CategoryClaimTotal)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: CategoryClaimTotal: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: CategoryClaimTotal: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Date", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Date = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Category", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Category = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Total = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -2079,7 +2691,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// DistributionStatus is the lifecycle state of an epoch's distribution.
+// DistributionStatus is the lifecycle state of a day's distribution.
 //
 // VOTING -> PENDING -> LIVE is the happy path. A licensed holder may challenge a
 // PENDING distribution within the review-delay window, moving it to
@@ -2097,7 +2709,7 @@ const (
 	// DISTRIBUTION_STATUS_UNDER_REVIEW means a licensed holder challenged the
 	// pending root; voting has reopened and the re-tally will resolve it.
 	DistributionStatus_DISTRIBUTION_STATUS_UNDER_REVIEW DistributionStatus = 3
-	// DISTRIBUTION_STATUS_EXPIRED means the epoch never reached consensus within
+	// DISTRIBUTION_STATUS_EXPIRED means the day never reached consensus within
 	// the voting window; it is no longer tallied.
 	DistributionStatus_DISTRIBUTION_STATUS_EXPIRED DistributionStatus = 4
 )
@@ -2147,14 +2759,15 @@ func (DistributionStatus) EnumDescriptor() ([]byte, []int) {
 	return file_distro_v1_state_proto_rawDescGZIP(), []int{0}
 }
 
-// DistributionVote is a single node's submitted merkle root for an epoch.
-// Stored (and retained) keyed by (epoch, signer).
+// DistributionVote is a single node's submitted merkle root for a day.
+// Stored (and retained) keyed by (date, signer).
 type DistributionVote struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Epoch      int64  `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// date is the distribution day in YYYY-MM-DD form.
+	Date       string `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	Signer     string `protobuf:"bytes,2,opt,name=signer,proto3" json:"signer,omitempty"`
 	MerkleRoot []byte `protobuf:"bytes,3,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
 }
@@ -2179,11 +2792,11 @@ func (*DistributionVote) Descriptor() ([]byte, []int) {
 	return file_distro_v1_state_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *DistributionVote) GetEpoch() int64 {
+func (x *DistributionVote) GetDate() string {
 	if x != nil {
-		return x.Epoch
+		return x.Date
 	}
-	return 0
+	return ""
 }
 
 func (x *DistributionVote) GetSigner() string {
@@ -2200,23 +2813,25 @@ func (x *DistributionVote) GetMerkleRoot() []byte {
 	return nil
 }
 
-// EpochDistribution is the canonical/finalized result for an epoch (day).
-type EpochDistribution struct {
+// Distribution is the canonical/finalized result for a single day, identified by
+// its date (YYYY-MM-DD).
+type Distribution struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Epoch      int64              `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// date is the distribution day in YYYY-MM-DD form.
+	Date       string             `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	MerkleRoot []byte             `protobuf:"bytes,2,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
 	Status     DistributionStatus `protobuf:"varint,3,opt,name=status,proto3,enum=distro.v1.DistributionStatus" json:"status,omitempty"`
 	// license_tally / stake_tally record the winning root's fractions at finalization.
 	LicenseTally string `protobuf:"bytes,4,opt,name=license_tally,json=licenseTally,proto3" json:"license_tally,omitempty"`
 	StakeTally   string `protobuf:"bytes,5,opt,name=stake_tally,json=stakeTally,proto3" json:"stake_tally,omitempty"`
-	// finalized_height is the block height at which the epoch went LIVE.
+	// finalized_height is the block height at which the distribution went LIVE.
 	FinalizedHeight int64 `protobuf:"varint,6,opt,name=finalized_height,json=finalizedHeight,proto3" json:"finalized_height,omitempty"`
-	// pending_since_epoch is the epoch number at which this distribution entered
-	// PENDING; used to measure the review-delay window.
-	PendingSinceEpoch int64 `protobuf:"varint,7,opt,name=pending_since_epoch,json=pendingSinceEpoch,proto3" json:"pending_since_epoch,omitempty"`
+	// pending_since_date is the date (YYYY-MM-DD) at which this distribution
+	// entered PENDING; used to measure the review-delay window.
+	PendingSinceDate string `protobuf:"bytes,7,opt,name=pending_since_date,json=pendingSinceDate,proto3" json:"pending_since_date,omitempty"`
 	// challenger is the address that placed this distribution UNDER_REVIEW (empty
 	// otherwise). Set while UNDER_REVIEW so the bond can be refunded or burned.
 	Challenger string `protobuf:"bytes,8,opt,name=challenger,proto3" json:"challenger,omitempty"`
@@ -2224,12 +2839,12 @@ type EpochDistribution struct {
 	// challenger while UNDER_REVIEW.
 	ChallengeBond string `protobuf:"bytes,9,opt,name=challenge_bond,json=challengeBond,proto3" json:"challenge_bond,omitempty"`
 	// claimed_amount is the cumulative amount (in the module denom) already
-	// claimed for this epoch, capped by the epoch's halving budget.
+	// claimed for this day, capped by the day's halving budget.
 	ClaimedAmount string `protobuf:"bytes,10,opt,name=claimed_amount,json=claimedAmount,proto3" json:"claimed_amount,omitempty"`
 }
 
-func (x *EpochDistribution) Reset() {
-	*x = EpochDistribution{}
+func (x *Distribution) Reset() {
+	*x = Distribution{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_distro_v1_state_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2237,94 +2852,95 @@ func (x *EpochDistribution) Reset() {
 	}
 }
 
-func (x *EpochDistribution) String() string {
+func (x *Distribution) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EpochDistribution) ProtoMessage() {}
+func (*Distribution) ProtoMessage() {}
 
-// Deprecated: Use EpochDistribution.ProtoReflect.Descriptor instead.
-func (*EpochDistribution) Descriptor() ([]byte, []int) {
+// Deprecated: Use Distribution.ProtoReflect.Descriptor instead.
+func (*Distribution) Descriptor() ([]byte, []int) {
 	return file_distro_v1_state_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EpochDistribution) GetEpoch() int64 {
+func (x *Distribution) GetDate() string {
 	if x != nil {
-		return x.Epoch
+		return x.Date
 	}
-	return 0
+	return ""
 }
 
-func (x *EpochDistribution) GetMerkleRoot() []byte {
+func (x *Distribution) GetMerkleRoot() []byte {
 	if x != nil {
 		return x.MerkleRoot
 	}
 	return nil
 }
 
-func (x *EpochDistribution) GetStatus() DistributionStatus {
+func (x *Distribution) GetStatus() DistributionStatus {
 	if x != nil {
 		return x.Status
 	}
 	return DistributionStatus_DISTRIBUTION_STATUS_VOTING
 }
 
-func (x *EpochDistribution) GetLicenseTally() string {
+func (x *Distribution) GetLicenseTally() string {
 	if x != nil {
 		return x.LicenseTally
 	}
 	return ""
 }
 
-func (x *EpochDistribution) GetStakeTally() string {
+func (x *Distribution) GetStakeTally() string {
 	if x != nil {
 		return x.StakeTally
 	}
 	return ""
 }
 
-func (x *EpochDistribution) GetFinalizedHeight() int64 {
+func (x *Distribution) GetFinalizedHeight() int64 {
 	if x != nil {
 		return x.FinalizedHeight
 	}
 	return 0
 }
 
-func (x *EpochDistribution) GetPendingSinceEpoch() int64 {
+func (x *Distribution) GetPendingSinceDate() string {
 	if x != nil {
-		return x.PendingSinceEpoch
+		return x.PendingSinceDate
 	}
-	return 0
+	return ""
 }
 
-func (x *EpochDistribution) GetChallenger() string {
+func (x *Distribution) GetChallenger() string {
 	if x != nil {
 		return x.Challenger
 	}
 	return ""
 }
 
-func (x *EpochDistribution) GetChallengeBond() string {
+func (x *Distribution) GetChallengeBond() string {
 	if x != nil {
 		return x.ChallengeBond
 	}
 	return ""
 }
 
-func (x *EpochDistribution) GetClaimedAmount() string {
+func (x *Distribution) GetClaimedAmount() string {
 	if x != nil {
 		return x.ClaimedAmount
 	}
 	return ""
 }
 
-// ClaimedReward is the genesis representation of the claimed nonces for an epoch.
+// ClaimedReward is the genesis representation of the claimed nonces for a day.
 type ClaimedReward struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Epoch  int64    `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// date is the distribution day in YYYY-MM-DD form.
+	Date   string   `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	Nonces []uint64 `protobuf:"varint,2,rep,packed,name=nonces,proto3" json:"nonces,omitempty"`
 }
 
@@ -2348,11 +2964,11 @@ func (*ClaimedReward) Descriptor() ([]byte, []int) {
 	return file_distro_v1_state_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ClaimedReward) GetEpoch() int64 {
+func (x *ClaimedReward) GetDate() string {
 	if x != nil {
-		return x.Epoch
+		return x.Date
 	}
-	return 0
+	return ""
 }
 
 func (x *ClaimedReward) GetNonces() []uint64 {
@@ -2360,6 +2976,61 @@ func (x *ClaimedReward) GetNonces() []uint64 {
 		return x.Nonces
 	}
 	return nil
+}
+
+// CategoryClaimTotal is the cumulative amount (in the module denom) claimed for
+// a single reward category within a day's distribution. Totals accumulate as
+// rewards are claimed and are queryable via Query/ClaimTotalByCategory.
+type CategoryClaimTotal struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// date is the distribution day in YYYY-MM-DD form.
+	Date     string `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Category string `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
+	Total    string `protobuf:"bytes,3,opt,name=total,proto3" json:"total,omitempty"`
+}
+
+func (x *CategoryClaimTotal) Reset() {
+	*x = CategoryClaimTotal{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_distro_v1_state_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CategoryClaimTotal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CategoryClaimTotal) ProtoMessage() {}
+
+// Deprecated: Use CategoryClaimTotal.ProtoReflect.Descriptor instead.
+func (*CategoryClaimTotal) Descriptor() ([]byte, []int) {
+	return file_distro_v1_state_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CategoryClaimTotal) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *CategoryClaimTotal) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *CategoryClaimTotal) GetTotal() string {
+	if x != nil {
+		return x.Total
+	}
+	return ""
 }
 
 var File_distro_v1_state_proto protoreflect.FileDescriptor
@@ -2370,68 +3041,73 @@ var file_distro_v1_state_proto_rawDesc = []byte{
 	0x76, 0x31, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f,
 	0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
 	0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x22, 0x7b, 0x0a, 0x10, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
-	0x69, 0x6f, 0x6e, 0x56, 0x6f, 0x74, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x30, 0x0a,
-	0x06, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2,
-	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x12,
-	0x1f, 0x0a, 0x0b, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x52, 0x6f, 0x6f, 0x74,
-	0x22, 0xaa, 0x03, 0x0a, 0x11, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69,
-	0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x1f, 0x0a, 0x0b,
-	0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0c, 0x52, 0x0a, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x52, 0x6f, 0x6f, 0x74, 0x12, 0x35, 0x0a,
-	0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1d, 0x2e,
-	0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69,
-	0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74,
-	0x61, 0x74, 0x75, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f,
-	0x74, 0x61, 0x6c, 0x6c, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x6c, 0x69, 0x63,
-	0x65, 0x6e, 0x73, 0x65, 0x54, 0x61, 0x6c, 0x6c, 0x79, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x74, 0x61,
-	0x6b, 0x65, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a,
-	0x73, 0x74, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x6c, 0x6c, 0x79, 0x12, 0x29, 0x0a, 0x10, 0x66, 0x69,
-	0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x06,
-	0x20, 0x01, 0x28, 0x03, 0x52, 0x0f, 0x66, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x48,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2e, 0x0a, 0x13, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
-	0x5f, 0x73, 0x69, 0x6e, 0x63, 0x65, 0x5f, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x07, 0x20, 0x01,
-	0x28, 0x03, 0x52, 0x11, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x69, 0x6e, 0x63, 0x65,
-	0x45, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x38, 0x0a, 0x0a, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e,
-	0x67, 0x65, 0x72, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x0a, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x72, 0x12,
-	0x25, 0x0a, 0x0e, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x5f, 0x62, 0x6f, 0x6e,
-	0x64, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e,
-	0x67, 0x65, 0x42, 0x6f, 0x6e, 0x64, 0x12, 0x25, 0x0a, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65,
-	0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d,
-	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x3d, 0x0a,
-	0x0d, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x12, 0x14,
-	0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x65,
-	0x70, 0x6f, 0x63, 0x68, 0x12, 0x16, 0x0a, 0x06, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x73, 0x18, 0x02,
-	0x20, 0x03, 0x28, 0x04, 0x52, 0x06, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x73, 0x2a, 0xc0, 0x01, 0x0a,
-	0x12, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61,
-	0x74, 0x75, 0x73, 0x12, 0x1e, 0x0a, 0x1a, 0x44, 0x49, 0x53, 0x54, 0x52, 0x49, 0x42, 0x55, 0x54,
-	0x49, 0x4f, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x56, 0x4f, 0x54, 0x49, 0x4e,
-	0x47, 0x10, 0x00, 0x12, 0x1c, 0x0a, 0x18, 0x44, 0x49, 0x53, 0x54, 0x52, 0x49, 0x42, 0x55, 0x54,
-	0x49, 0x4f, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x4c, 0x49, 0x56, 0x45, 0x10,
-	0x01, 0x12, 0x1f, 0x0a, 0x1b, 0x44, 0x49, 0x53, 0x54, 0x52, 0x49, 0x42, 0x55, 0x54, 0x49, 0x4f,
-	0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47,
-	0x10, 0x02, 0x12, 0x24, 0x0a, 0x20, 0x44, 0x49, 0x53, 0x54, 0x52, 0x49, 0x42, 0x55, 0x54, 0x49,
-	0x4f, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x44, 0x45, 0x52, 0x5f,
-	0x52, 0x45, 0x56, 0x49, 0x45, 0x57, 0x10, 0x03, 0x12, 0x1f, 0x0a, 0x1b, 0x44, 0x49, 0x53, 0x54,
-	0x52, 0x49, 0x42, 0x55, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f,
-	0x45, 0x58, 0x50, 0x49, 0x52, 0x45, 0x44, 0x10, 0x04, 0x1a, 0x04, 0x88, 0xa3, 0x1e, 0x00, 0x42,
-	0x9c, 0x01, 0x0a, 0x0d, 0x63, 0x6f, 0x6d, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76,
-	0x31, 0x42, 0x0a, 0x53, 0x74, 0x61, 0x74, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
-	0x3a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x54, 0x72, 0x75, 0x73,
-	0x74, 0x65, 0x64, 0x53, 0x6d, 0x61, 0x72, 0x74, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x2f, 0x74, 0x73,
-	0x63, 0x2f, 0x76, 0x33, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f,
-	0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x44, 0x58,
-	0x58, 0xaa, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x09,
-	0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x15, 0x44, 0x69, 0x73, 0x74,
-	0x72, 0x6f, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0xea, 0x02, 0x0a, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x74, 0x6f, 0x22, 0x79, 0x0a, 0x10, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
+	0x69, 0x6f, 0x6e, 0x56, 0x6f, 0x74, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x64, 0x61, 0x74, 0x65, 0x12, 0x30, 0x0a, 0x06, 0x73,
+	0x69, 0x67, 0x6e, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
+	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x12, 0x1f, 0x0a,
+	0x0b, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0c, 0x52, 0x0a, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x52, 0x6f, 0x6f, 0x74, 0x22, 0xa1,
+	0x03, 0x0a, 0x0c, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x12,
+	0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x64,
+	0x61, 0x74, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x5f, 0x72, 0x6f,
+	0x6f, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x6d, 0x65, 0x72, 0x6b, 0x6c, 0x65,
+	0x52, 0x6f, 0x6f, 0x74, 0x12, 0x35, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x0e, 0x32, 0x1d, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31,
+	0x2e, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x6c,
+	0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0c, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x54, 0x61, 0x6c, 0x6c, 0x79,
+	0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x18,
+	0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x6c, 0x6c,
+	0x79, 0x12, 0x29, 0x0a, 0x10, 0x66, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x5f, 0x68,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0f, 0x66, 0x69, 0x6e,
+	0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2c, 0x0a, 0x12,
+	0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x73, 0x69, 0x6e, 0x63, 0x65, 0x5f, 0x64, 0x61,
+	0x74, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x53, 0x69, 0x6e, 0x63, 0x65, 0x44, 0x61, 0x74, 0x65, 0x12, 0x38, 0x0a, 0x0a, 0x63, 0x68,
+	0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x72, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
+	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65,
+	0x6e, 0x67, 0x65, 0x72, 0x12, 0x25, 0x0a, 0x0e, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67,
+	0x65, 0x5f, 0x62, 0x6f, 0x6e, 0x64, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x68,
+	0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x42, 0x6f, 0x6e, 0x64, 0x12, 0x25, 0x0a, 0x0e, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x0a, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x6d, 0x6f, 0x75,
+	0x6e, 0x74, 0x22, 0x3b, 0x0a, 0x0d, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x77,
+	0x61, 0x72, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x64, 0x61, 0x74, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x6e, 0x6f, 0x6e, 0x63, 0x65,
+	0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x04, 0x52, 0x06, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x73, 0x22,
+	0x5a, 0x0a, 0x12, 0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d,
+	0x54, 0x6f, 0x74, 0x61, 0x6c, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x04, 0x64, 0x61, 0x74, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x61, 0x74,
+	0x65, 0x67, 0x6f, 0x72, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x63, 0x61, 0x74,
+	0x65, 0x67, 0x6f, 0x72, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x2a, 0xc0, 0x01, 0x0a, 0x12,
+	0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x12, 0x1e, 0x0a, 0x1a, 0x44, 0x49, 0x53, 0x54, 0x52, 0x49, 0x42, 0x55, 0x54, 0x49,
+	0x4f, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x56, 0x4f, 0x54, 0x49, 0x4e, 0x47,
+	0x10, 0x00, 0x12, 0x1c, 0x0a, 0x18, 0x44, 0x49, 0x53, 0x54, 0x52, 0x49, 0x42, 0x55, 0x54, 0x49,
+	0x4f, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x4c, 0x49, 0x56, 0x45, 0x10, 0x01,
+	0x12, 0x1f, 0x0a, 0x1b, 0x44, 0x49, 0x53, 0x54, 0x52, 0x49, 0x42, 0x55, 0x54, 0x49, 0x4f, 0x4e,
+	0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10,
+	0x02, 0x12, 0x24, 0x0a, 0x20, 0x44, 0x49, 0x53, 0x54, 0x52, 0x49, 0x42, 0x55, 0x54, 0x49, 0x4f,
+	0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x44, 0x45, 0x52, 0x5f, 0x52,
+	0x45, 0x56, 0x49, 0x45, 0x57, 0x10, 0x03, 0x12, 0x1f, 0x0a, 0x1b, 0x44, 0x49, 0x53, 0x54, 0x52,
+	0x49, 0x42, 0x55, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x45,
+	0x58, 0x50, 0x49, 0x52, 0x45, 0x44, 0x10, 0x04, 0x1a, 0x04, 0x88, 0xa3, 0x1e, 0x00, 0x42, 0x9c,
+	0x01, 0x0a, 0x0d, 0x63, 0x6f, 0x6d, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31,
+	0x42, 0x0a, 0x53, 0x74, 0x61, 0x74, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x3a,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x54, 0x72, 0x75, 0x73, 0x74,
+	0x65, 0x64, 0x53, 0x6d, 0x61, 0x72, 0x74, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x2f, 0x74, 0x73, 0x63,
+	0x2f, 0x76, 0x33, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x76,
+	0x31, 0x3b, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x44, 0x58, 0x58,
+	0xaa, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x09, 0x44,
+	0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x15, 0x44, 0x69, 0x73, 0x74, 0x72,
+	0x6f, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0xea, 0x02, 0x0a, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2447,15 +3123,16 @@ func file_distro_v1_state_proto_rawDescGZIP() []byte {
 }
 
 var file_distro_v1_state_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_distro_v1_state_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_distro_v1_state_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_distro_v1_state_proto_goTypes = []interface{}{
-	(DistributionStatus)(0),   // 0: distro.v1.DistributionStatus
-	(*DistributionVote)(nil),  // 1: distro.v1.DistributionVote
-	(*EpochDistribution)(nil), // 2: distro.v1.EpochDistribution
-	(*ClaimedReward)(nil),     // 3: distro.v1.ClaimedReward
+	(DistributionStatus)(0),    // 0: distro.v1.DistributionStatus
+	(*DistributionVote)(nil),   // 1: distro.v1.DistributionVote
+	(*Distribution)(nil),       // 2: distro.v1.Distribution
+	(*ClaimedReward)(nil),      // 3: distro.v1.ClaimedReward
+	(*CategoryClaimTotal)(nil), // 4: distro.v1.CategoryClaimTotal
 }
 var file_distro_v1_state_proto_depIdxs = []int32{
-	0, // 0: distro.v1.EpochDistribution.status:type_name -> distro.v1.DistributionStatus
+	0, // 0: distro.v1.Distribution.status:type_name -> distro.v1.DistributionStatus
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -2482,7 +3159,7 @@ func file_distro_v1_state_proto_init() {
 			}
 		}
 		file_distro_v1_state_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochDistribution); i {
+			switch v := v.(*Distribution); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2505,6 +3182,18 @@ func file_distro_v1_state_proto_init() {
 				return nil
 			}
 		}
+		file_distro_v1_state_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CategoryClaimTotal); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2512,7 +3201,7 @@ func file_distro_v1_state_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_distro_v1_state_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

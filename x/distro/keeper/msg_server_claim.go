@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	"cosmossdk.io/collections"
@@ -13,10 +14,10 @@ import (
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
 
-// Claim mints and pays out a reward from a finalized (live) epoch distribution.
-// The leaf is reconstructed from (nonce, address, amount) and verified against
-// the canonical root. Funds are minted on demand and sent to the reward
-// address. A given (epoch, nonce) can be claimed at most once.
+// Claim mints and pays out a reward from a finalized (live) day's distribution.
+// The leaf is reconstructed from (nonce, address, total, categories) and verified
+// against the canonical root. Funds are minted on demand and sent to the reward
+// address. A given (date, nonce) can be claimed at most once.
 func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.MsgClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
@@ -27,47 +28,76 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 	if err != nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "invalid reward address")
 	}
-	amount, ok := math.NewIntFromString(msg.Amount)
+	total, ok := math.NewIntFromString(msg.Total)
 	if !ok {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "amount is not a valid integer")
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "total is not a valid integer")
 	}
-	if !amount.IsPositive() {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "amount must be positive")
+	if !total.IsPositive() {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "total must be positive")
 	}
+
+	// Validate the category breakdown: every amount must be a positive integer
+	// and the categories must sum to total. The merkle leaf commits to this map,
+	// so the canonical root already pins the expected breakdown — this check
+	// rejects internally inconsistent claims before proof verification.
+	if len(msg.Categories) == 0 {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "categories must not be empty")
+	}
+	categorySum := math.ZeroInt()
+	for category, raw := range msg.Categories {
+		if category == "" {
+			return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "category name must not be empty")
+		}
+		catAmount, ok := math.NewIntFromString(raw)
+		if !ok {
+			return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "category %q amount is not a valid integer", category)
+		}
+		if !catAmount.IsPositive() {
+			return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "category %q amount must be positive", category)
+		}
+		categorySum = categorySum.Add(catAmount)
+	}
+	if !categorySum.Equal(total) {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest,
+			"categories sum %s does not equal total %s", categorySum, total)
+	}
+
+	// amount is the value minted and budget-checked for this claim.
+	amount := total
 
 	params, err := ms.k.Params.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// The epoch must have reached consensus.
-	ed, err := ms.k.EpochDistributions.Get(ctx, msg.Epoch)
+	// The day must have reached consensus.
+	ed, err := ms.k.Distributions.Get(ctx, msg.Date)
 	if err != nil {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for epoch %d", msg.Epoch)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for date %q", msg.Date)
 	}
 	if ed.Status != types.DISTRIBUTION_STATUS_LIVE {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "epoch %d is not live", msg.Epoch)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is not live", msg.Date)
 	}
 
 	// Reject double claims.
-	claimedKey := collections.Join(msg.Epoch, msg.Nonce)
+	claimedKey := collections.Join(msg.Date, msg.Nonce)
 	if claimed, err := ms.k.Claimed.Has(ctx, claimedKey); err != nil {
 		return nil, err
 	} else if claimed {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "reward %d for epoch %d already claimed", msg.Nonce, msg.Epoch)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "reward %d for date %q already claimed", msg.Nonce, msg.Date)
 	}
 
 	// Verify the merkle proof against the canonical root.
-	leaf := types.LeafHash(msg.Nonce, msg.Address, msg.Amount)
+	leaf := types.LeafHash(msg.Nonce, msg.Address, msg.Total, msg.Categories)
 	if !types.VerifyProof(ed.MerkleRoot, leaf, msg.Proof) {
 		return nil, errorsmod.Wrap(sdkerrors.ErrUnauthorized, "invalid merkle proof")
 	}
 
-	// Enforce the per-epoch emission budget derived from the halving schedule:
-	// the cumulative amount claimed for this epoch may not exceed the epoch's
-	// allocation. This bounds on-demand minting to the emission curve so a
-	// finalized root cannot mint beyond the day's budget.
-	budget, err := epochBudget(params, msg.Epoch)
+	// Enforce the per-day emission budget derived from the halving schedule: the
+	// cumulative amount claimed for this day may not exceed the day's allocation.
+	// This bounds on-demand minting to the emission curve so a finalized root
+	// cannot mint beyond the day's budget.
+	budget, err := dateBudget(params, msg.Date)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +108,7 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 	newClaimed := claimed.Add(amount)
 	if newClaimed.GT(budget) {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest,
-			"claim would exceed epoch %d budget: claimed %s + %s > %s", msg.Epoch, claimed, amount, budget)
+			"claim would exceed date %q budget: claimed %s + %s > %s", msg.Date, claimed, amount, budget)
 	}
 
 	// Mint on demand, respecting max supply as a final safety bound.
@@ -104,16 +134,40 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 		return nil, err
 	}
 	ed.ClaimedAmount = newClaimed.String()
-	if err := ms.k.EpochDistributions.Set(ctx, msg.Epoch, ed); err != nil {
+	if err := ms.k.Distributions.Set(ctx, msg.Date, ed); err != nil {
 		return nil, err
+	}
+
+	// Accumulate the per-category claimed totals for this day so they can be
+	// queried via Query/ClaimTotalByCategory.
+	for category, raw := range msg.Categories {
+		catAmount, _ := math.NewIntFromString(raw) // already validated above
+		key := collections.Join(msg.Date, category)
+		running := catAmount
+		if existing, err := ms.k.ClaimTotals.Get(ctx, key); err == nil {
+			prev, ok := math.NewIntFromString(existing.Total)
+			if !ok {
+				prev = math.ZeroInt()
+			}
+			running = prev.Add(catAmount)
+		} else if !errors.Is(err, collections.ErrNotFound) {
+			return nil, err
+		}
+		if err := ms.k.ClaimTotals.Set(ctx, key, types.CategoryClaimTotal{
+			Date:     msg.Date,
+			Category: category,
+			Total:    running.String(),
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeClaim,
-		sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatInt(msg.Epoch, 10)),
+		sdk.NewAttribute(types.AttributeKeyDate, msg.Date),
 		sdk.NewAttribute(types.AttributeKeyNonce, strconv.FormatUint(msg.Nonce, 10)),
 		sdk.NewAttribute(types.AttributeKeyAddress, msg.Address),
-		sdk.NewAttribute(types.AttributeKeyAmount, msg.Amount),
+		sdk.NewAttribute(types.AttributeKeyAmount, msg.Total),
 	))
 
 	return &types.MsgClaimResponse{}, nil

@@ -21,17 +21,17 @@ const DefaultLicenseTallyThreshold string = "0.667"
 const DefaultStakeTallyThreshold string = "0.667"
 const DefaultEpochIdentifier string = "day"
 
-// DefaultDistributionReviewDelay keeps a distribution PENDING (challengeable) for
-// three epochs after consensus before it auto-promotes to LIVE.
-const DefaultDistributionReviewDelay uint64 = 3
+// DefaultReviewDelayDays keeps a distribution PENDING (challengeable) for three
+// days after consensus before it auto-promotes to LIVE.
+const DefaultReviewDelayDays uint64 = 3
 
 // DefaultChallengeBond is the bond escrowed to challenge a pending distribution
 // (10 tokens at 18 decimals). Tune per economic policy.
 const DefaultChallengeBond string = "10000000000000000000"
 
-// DefaultVoteWindowEpochs is how many epochs a VOTING distribution may remain
-// open (without reaching consensus) before it expires and stops being tallied.
-const DefaultVoteWindowEpochs uint64 = 7
+// DefaultVoteWindowDays is how many days a VOTING distribution may remain open
+// (without reaching consensus) before it expires and stops being tallied.
+const DefaultVoteWindowDays uint64 = 7
 
 // NewParams creates a new Params instance.
 func NewParams(
@@ -45,9 +45,9 @@ func NewParams(
 	license_tally_threshold string,
 	stake_tally_threshold string,
 	epoch_identifier string,
-	distribution_review_delay uint64,
+	review_delay_days uint64,
 	challenge_bond string,
-	vote_window_epochs uint64) Params {
+	vote_window_days uint64) Params {
 	return Params{
 		MintingAddress:            minting_address,
 		ReceivingAddress:          receiving_address,
@@ -59,9 +59,9 @@ func NewParams(
 		LicenseTallyThreshold:     license_tally_threshold,
 		StakeTallyThreshold:       stake_tally_threshold,
 		EpochIdentifier:           epoch_identifier,
-		DistributionReviewDelay:   distribution_review_delay,
+		ReviewDelayDays:           review_delay_days,
 		ChallengeBond:             challenge_bond,
-		VoteWindowEpochs:          vote_window_epochs,
+		VoteWindowDays:            vote_window_days,
 	}
 }
 
@@ -77,9 +77,9 @@ func DefaultParams() Params {
 		DefaultLicenseTallyThreshold,
 		DefaultStakeTallyThreshold,
 		DefaultEpochIdentifier,
-		DefaultDistributionReviewDelay,
+		DefaultReviewDelayDays,
 		DefaultChallengeBond,
-		DefaultVoteWindowEpochs,
+		DefaultVoteWindowDays,
 	)
 }
 
@@ -118,8 +118,8 @@ func (p Params) Validate() error {
 	if err := validateChallengeBond(p.ChallengeBond); err != nil {
 		return err
 	}
-	if p.VoteWindowEpochs == 0 {
-		return fmt.Errorf("vote window epochs must be greater than zero")
+	if p.VoteWindowDays == 0 {
+		return fmt.Errorf("vote window days must be greater than zero")
 	}
 
 	return nil

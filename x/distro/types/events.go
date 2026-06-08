@@ -2,15 +2,15 @@ package types
 
 // Event types and attribute keys emitted by the decentralized distribution.
 const (
-	EventTypeSubmitRoot        = "submit_distribution_root"
-	EventTypeEpochPending      = "epoch_distribution_pending"
-	EventTypeEpochUnderReview  = "epoch_distribution_under_review"
-	EventTypeChallengeResolved = "epoch_distribution_challenge_resolved"
-	EventTypeEpochFinalized    = "epoch_distribution_finalized"
-	EventTypeEpochExpired      = "epoch_distribution_expired"
-	EventTypeClaim             = "claim_distribution"
+	EventTypeSubmitRoot              = "submit_distribution_root"
+	EventTypeDistributionPending     = "distribution_pending"
+	EventTypeDistributionUnderReview = "distribution_under_review"
+	EventTypeChallengeResolved       = "distribution_challenge_resolved"
+	EventTypeDistributionFinalized   = "distribution_finalized"
+	EventTypeDistributionExpired     = "distribution_expired"
+	EventTypeClaim                   = "claim_distribution"
 
-	AttributeKeyEpoch        = "epoch"
+	AttributeKeyDate         = "date"
 	AttributeKeySigner       = "signer"
 	AttributeKeyMerkleRoot   = "merkle_root"
 	AttributeKeyLicenseTally = "license_tally"

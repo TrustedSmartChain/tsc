@@ -24,36 +24,36 @@ func (gs GenesisState) Validate() error {
 		return err
 	}
 
-	// Validate epoch distributions and index them for cross-checks.
-	epochStatus := make(map[int64]DistributionStatus, len(gs.EpochDistributions))
-	for _, ed := range gs.EpochDistributions {
-		if _, dup := epochStatus[ed.Epoch]; dup {
-			return fmt.Errorf("duplicate epoch distribution for epoch %d", ed.Epoch)
+	// Validate distributions and index them for cross-checks.
+	dateStatus := make(map[string]DistributionStatus, len(gs.Distributions))
+	for _, d := range gs.Distributions {
+		if _, dup := dateStatus[d.Date]; dup {
+			return fmt.Errorf("duplicate distribution for date %q", d.Date)
 		}
-		epochStatus[ed.Epoch] = ed.Status
+		dateStatus[d.Date] = d.Status
 
 		// PENDING/UNDER_REVIEW/LIVE must carry a candidate/finalized root.
-		// VOTING and EXPIRED epochs legitimately have no root.
-		switch ed.Status {
+		// VOTING and EXPIRED days legitimately have no root.
+		switch d.Status {
 		case DISTRIBUTION_STATUS_VOTING, DISTRIBUTION_STATUS_EXPIRED:
 			// no root required
 		default:
-			if len(ed.MerkleRoot) == 0 {
-				return fmt.Errorf("epoch distribution %d in status %s has empty merkle root", ed.Epoch, ed.Status)
+			if len(d.MerkleRoot) == 0 {
+				return fmt.Errorf("distribution %q in status %s has empty merkle root", d.Date, d.Status)
 			}
 		}
-		// An UNDER_REVIEW epoch must record who challenged it (for bond resolution).
-		if ed.Status == DISTRIBUTION_STATUS_UNDER_REVIEW && ed.Challenger == "" {
-			return fmt.Errorf("epoch distribution %d is under review but has no challenger", ed.Epoch)
+		// An UNDER_REVIEW day must record who challenged it (for bond resolution).
+		if d.Status == DISTRIBUTION_STATUS_UNDER_REVIEW && d.Challenger == "" {
+			return fmt.Errorf("distribution %q is under review but has no challenger", d.Date)
 		}
-		if ed.ChallengeBond != "" {
-			if bond, ok := math.NewIntFromString(ed.ChallengeBond); !ok || bond.IsNegative() {
-				return fmt.Errorf("epoch distribution %d has invalid challenge bond %q", ed.Epoch, ed.ChallengeBond)
+		if d.ChallengeBond != "" {
+			if bond, ok := math.NewIntFromString(d.ChallengeBond); !ok || bond.IsNegative() {
+				return fmt.Errorf("distribution %q has invalid challenge bond %q", d.Date, d.ChallengeBond)
 			}
 		}
-		if ed.ClaimedAmount != "" {
-			if claimed, ok := math.NewIntFromString(ed.ClaimedAmount); !ok || claimed.IsNegative() {
-				return fmt.Errorf("epoch distribution %d has invalid claimed amount %q", ed.Epoch, ed.ClaimedAmount)
+		if d.ClaimedAmount != "" {
+			if claimed, ok := math.NewIntFromString(d.ClaimedAmount); !ok || claimed.IsNegative() {
+				return fmt.Errorf("distribution %q has invalid claimed amount %q", d.Date, d.ClaimedAmount)
 			}
 		}
 	}
@@ -61,18 +61,18 @@ func (gs GenesisState) Validate() error {
 	// Votes must carry a non-empty root.
 	for _, v := range gs.Votes {
 		if len(v.MerkleRoot) == 0 {
-			return fmt.Errorf("vote for epoch %d signer %s has empty merkle root", v.Epoch, v.Signer)
+			return fmt.Errorf("vote for date %q signer %s has empty merkle root", v.Date, v.Signer)
 		}
 	}
 
-	// Claimed rewards may only reference a finalized (live) epoch distribution.
+	// Claimed rewards may only reference a finalized (live) distribution.
 	for _, cr := range gs.ClaimedRewards {
-		status, ok := epochStatus[cr.Epoch]
+		status, ok := dateStatus[cr.Date]
 		if !ok {
-			return fmt.Errorf("claimed rewards reference unknown epoch %d", cr.Epoch)
+			return fmt.Errorf("claimed rewards reference unknown date %q", cr.Date)
 		}
 		if status != DISTRIBUTION_STATUS_LIVE {
-			return fmt.Errorf("claimed rewards reference non-live epoch %d (status %s)", cr.Epoch, status)
+			return fmt.Errorf("claimed rewards reference non-live date %q (status %s)", cr.Date, status)
 		}
 	}
 

@@ -24,13 +24,15 @@ type Keeper struct {
 	Schema collections.Schema
 	Params collections.Item[types.Params]
 
-	// Votes holds the raw per-signer submitted roots keyed by (epoch, signer).
+	// Votes holds the raw per-signer submitted roots keyed by (date, signer).
 	// These are retained (never pruned) for audit.
-	Votes collections.Map[collections.Pair[int64, string], types.DistributionVote]
-	// EpochDistributions holds the canonical/finalized distribution per epoch.
-	EpochDistributions collections.Map[int64, types.EpochDistribution]
-	// Claimed is the set of claimed reward nonces keyed by (epoch, nonce).
-	Claimed collections.KeySet[collections.Pair[int64, uint64]]
+	Votes collections.Map[collections.Pair[string, string], types.DistributionVote]
+	// Distributions holds the canonical/finalized distribution per day (date).
+	Distributions collections.Map[string, types.Distribution]
+	// Claimed is the set of claimed reward nonces keyed by (date, nonce).
+	Claimed collections.KeySet[collections.Pair[string, uint64]]
+	// ClaimTotals accumulates the claimed amount per (date, category).
+	ClaimTotals collections.Map[collections.Pair[string, string], types.CategoryClaimTotal]
 
 	authority string
 
@@ -68,17 +70,22 @@ func NewKeeper(
 		Params: collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		Votes: collections.NewMap(
 			sb, types.VotesKeyPrefix, "votes",
-			collections.PairKeyCodec(collections.Int64Key, collections.StringKey),
+			collections.PairKeyCodec(collections.StringKey, collections.StringKey),
 			codec.CollValue[types.DistributionVote](cdc),
 		),
-		EpochDistributions: collections.NewMap(
-			sb, types.EpochDistributionsKeyPrefix, "epoch_distributions",
-			collections.Int64Key,
-			codec.CollValue[types.EpochDistribution](cdc),
+		Distributions: collections.NewMap(
+			sb, types.DistributionsKeyPrefix, "distributions",
+			collections.StringKey,
+			codec.CollValue[types.Distribution](cdc),
 		),
 		Claimed: collections.NewKeySet(
 			sb, types.ClaimedKeyPrefix, "claimed",
-			collections.PairKeyCodec(collections.Int64Key, collections.Uint64Key),
+			collections.PairKeyCodec(collections.StringKey, collections.Uint64Key),
+		),
+		ClaimTotals: collections.NewMap(
+			sb, types.ClaimTotalsKeyPrefix, "claim_totals",
+			collections.PairKeyCodec(collections.StringKey, collections.StringKey),
+			codec.CollValue[types.CategoryClaimTotal](cdc),
 		),
 
 		authority:      authority,
@@ -115,22 +122,28 @@ func (k *Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) erro
 	}
 
 	for _, v := range data.Votes {
-		if err := k.Votes.Set(ctx, collections.Join(v.Epoch, v.Signer), v); err != nil {
+		if err := k.Votes.Set(ctx, collections.Join(v.Date, v.Signer), v); err != nil {
 			return err
 		}
 	}
 
-	for _, ed := range data.EpochDistributions {
-		if err := k.EpochDistributions.Set(ctx, ed.Epoch, ed); err != nil {
+	for _, d := range data.Distributions {
+		if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
 			return err
 		}
 	}
 
 	for _, cr := range data.ClaimedRewards {
 		for _, nonce := range cr.Nonces {
-			if err := k.Claimed.Set(ctx, collections.Join(cr.Epoch, nonce)); err != nil {
+			if err := k.Claimed.Set(ctx, collections.Join(cr.Date, nonce)); err != nil {
 				return err
 			}
+		}
+	}
+
+	for _, ct := range data.CategoryClaimTotals {
+		if err := k.ClaimTotals.Set(ctx, collections.Join(ct.Date, ct.Category), ct); err != nil {
+			return err
 		}
 	}
 
@@ -145,43 +158,52 @@ func (k *Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 	}
 
 	var votes []types.DistributionVote
-	if err := k.Votes.Walk(ctx, nil, func(_ collections.Pair[int64, string], v types.DistributionVote) (bool, error) {
+	if err := k.Votes.Walk(ctx, nil, func(_ collections.Pair[string, string], v types.DistributionVote) (bool, error) {
 		votes = append(votes, v)
 		return false, nil
 	}); err != nil {
 		panic(err)
 	}
 
-	var epochDistributions []types.EpochDistribution
-	if err := k.EpochDistributions.Walk(ctx, nil, func(_ int64, ed types.EpochDistribution) (bool, error) {
-		epochDistributions = append(epochDistributions, ed)
+	var distributions []types.Distribution
+	if err := k.Distributions.Walk(ctx, nil, func(_ string, d types.Distribution) (bool, error) {
+		distributions = append(distributions, d)
 		return false, nil
 	}); err != nil {
 		panic(err)
 	}
 
-	// Collect claimed nonces grouped by epoch, preserving ascending key order.
-	claimedByEpoch := map[int64][]uint64{}
-	var claimedEpochOrder []int64
-	if err := k.Claimed.Walk(ctx, nil, func(key collections.Pair[int64, uint64]) (bool, error) {
-		epoch := key.K1()
-		if _, ok := claimedByEpoch[epoch]; !ok {
-			claimedEpochOrder = append(claimedEpochOrder, epoch)
+	// Collect claimed nonces grouped by date, preserving ascending key order.
+	claimedByDate := map[string][]uint64{}
+	var claimedDateOrder []string
+	if err := k.Claimed.Walk(ctx, nil, func(key collections.Pair[string, uint64]) (bool, error) {
+		date := key.K1()
+		if _, ok := claimedByDate[date]; !ok {
+			claimedDateOrder = append(claimedDateOrder, date)
 		}
-		claimedByEpoch[epoch] = append(claimedByEpoch[epoch], key.K2())
+		claimedByDate[date] = append(claimedByDate[date], key.K2())
 		return false, nil
 	}); err != nil {
 		panic(err)
 	}
-	claimedRewards := make([]types.ClaimedReward, 0, len(claimedEpochOrder))
-	for _, epoch := range claimedEpochOrder {
-		claimedRewards = append(claimedRewards, types.ClaimedReward{Epoch: epoch, Nonces: claimedByEpoch[epoch]})
+	claimedRewards := make([]types.ClaimedReward, 0, len(claimedDateOrder))
+	for _, date := range claimedDateOrder {
+		claimedRewards = append(claimedRewards, types.ClaimedReward{Date: date, Nonces: claimedByDate[date]})
+	}
+
+	var categoryClaimTotals []types.CategoryClaimTotal
+	if err := k.ClaimTotals.Walk(ctx, nil, func(_ collections.Pair[string, string], ct types.CategoryClaimTotal) (bool, error) {
+		categoryClaimTotals = append(categoryClaimTotals, ct)
+		return false, nil
+	}); err != nil {
+		panic(err)
 	}
 
 	return &types.GenesisState{
-		Params:             params,
-		Votes:              votes,
-		EpochDistributions: epochDistributions,
-		ClaimedRewards:     claimedRewards,
+		Params:              params,
+		Votes:               votes,
+		Distributions:       distributions,
+		ClaimedRewards:      claimedRewards,
+		CategoryClaimTotals: categoryClaimTotals,
 	}
 }

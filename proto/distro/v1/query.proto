@@ -14,17 +14,22 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/tsc/distro/v1/params";
   }
-  // EpochDistribution queries the canonical distribution for an epoch.
-  rpc EpochDistribution(QueryEpochDistributionRequest) returns (QueryEpochDistributionResponse) {
-    option (google.api.http).get = "/tsc/distro/v1/epoch_distribution/{epoch}";
+  // Distribution queries the canonical distribution for a day (YYYY-MM-DD).
+  rpc Distribution(QueryDistributionRequest) returns (QueryDistributionResponse) {
+    option (google.api.http).get = "/tsc/distro/v1/distribution/{date}";
   }
-  // DistributionVotes queries all submitted votes for an epoch.
+  // DistributionVotes queries all submitted votes for a day (YYYY-MM-DD).
   rpc DistributionVotes(QueryDistributionVotesRequest) returns (QueryDistributionVotesResponse) {
-    option (google.api.http).get = "/tsc/distro/v1/distribution_votes/{epoch}";
+    option (google.api.http).get = "/tsc/distro/v1/distribution_votes/{date}";
   }
-  // Claimed reports whether a (epoch, nonce) reward has been claimed.
+  // Claimed reports whether a (date, nonce) reward has been claimed.
   rpc Claimed(QueryClaimedRequest) returns (QueryClaimedResponse) {
-    option (google.api.http).get = "/tsc/distro/v1/claimed/{epoch}/{nonce}";
+    option (google.api.http).get = "/tsc/distro/v1/claimed/{date}/{nonce}";
+  }
+  // ClaimTotalByCategory reports the cumulative claimed amount per category for a
+  // day's distribution (YYYY-MM-DD).
+  rpc ClaimTotalByCategory(QueryClaimTotalByCategoryRequest) returns (QueryClaimTotalByCategoryResponse) {
+    option (google.api.http).get = "/tsc/distro/v1/claim_total_by_category/{date}";
   }
 }
 
@@ -37,16 +42,18 @@ message QueryParamsResponse {
   Params params = 1;
 }
 
-message QueryEpochDistributionRequest {
-  int64 epoch = 1;
+message QueryDistributionRequest {
+  // date is the distribution day in YYYY-MM-DD form.
+  string date = 1;
 }
 
-message QueryEpochDistributionResponse {
-  EpochDistribution epoch_distribution = 1;
+message QueryDistributionResponse {
+  Distribution distribution = 1;
 }
 
 message QueryDistributionVotesRequest {
-  int64 epoch = 1;
+  // date is the distribution day in YYYY-MM-DD form.
+  string date = 1;
 }
 
 message QueryDistributionVotesResponse {
@@ -54,10 +61,23 @@ message QueryDistributionVotesResponse {
 }
 
 message QueryClaimedRequest {
-  int64 epoch = 1;
+  // date is the distribution day in YYYY-MM-DD form.
+  string date = 1;
   uint64 nonce = 2;
 }
 
 message QueryClaimedResponse {
   bool claimed = 1;
+}
+
+message QueryClaimTotalByCategoryRequest {
+  // date selects the distribution by calendar day (YYYY-MM-DD).
+  string date = 1;
+}
+
+message QueryClaimTotalByCategoryResponse {
+  // date is the distribution day the totals belong to.
+  string date = 1;
+  // totals maps each reward category to its cumulative claimed amount.
+  map<string, string> totals = 2;
 }

@@ -13,14 +13,18 @@ message GenesisState {
   Params params = 1 [(gogoproto.nullable) = false];
 
   // votes is the raw per-signer set of submitted distribution roots, keyed by
-  // (epoch, signer). These are kept (never pruned) for audit.
+  // (date, signer). These are kept (never pruned) for audit.
   repeated DistributionVote votes = 2 [(gogoproto.nullable) = false];
 
-  // epoch_distributions is the canonical/finalized distribution per epoch.
-  repeated EpochDistribution epoch_distributions = 3 [(gogoproto.nullable) = false];
+  // distributions is the canonical/finalized distribution per day.
+  repeated Distribution distributions = 3 [(gogoproto.nullable) = false];
 
-  // claimed_rewards tracks the claimed reward nonces per epoch.
+  // claimed_rewards tracks the claimed reward nonces per day.
   repeated ClaimedReward claimed_rewards = 4 [(gogoproto.nullable) = false];
+
+  // category_claim_totals tracks the cumulative claimed amount per
+  // (date, category).
+  repeated CategoryClaimTotal category_claim_totals = 5 [(gogoproto.nullable) = false];
 }
 
 // Params defines the set of module parameters.
@@ -48,21 +52,21 @@ message Params {
   string stake_tally_threshold = 9;
 
   // epoch_identifier is the x/epochs identifier whose AfterEpochEnd triggers the
-  // tally. Default "day".
+  // daily tally. Default "day".
   string epoch_identifier = 10;
 
-  // distribution_review_delay is the number of epochs a distribution stays
-  // PENDING (challengeable) after consensus before auto-promoting to LIVE.
+  // review_delay_days is the number of days a distribution stays PENDING
+  // (challengeable) after consensus before auto-promoting to LIVE.
   // 0 disables the delay (instant LIVE, no challenge window).
-  uint64 distribution_review_delay = 11;
+  uint64 review_delay_days = 11;
 
   // challenge_bond is the amount (in the module denom) a challenger must escrow
   // to place a PENDING distribution UNDER_REVIEW. Burned if the challenge is
   // frivolous (re-vote re-confirms the same root), refunded otherwise.
   string challenge_bond = 12;
 
-  // vote_window_epochs is how many epochs after an epoch (day) a VOTING
+  // vote_window_days is how many days after a distribution day a VOTING
   // distribution has to reach consensus before it expires and is no longer
-  // tallied. Bounds epoch-end work.
-  uint64 vote_window_epochs = 13;
+  // tallied. Bounds daily tally work.
+  uint64 vote_window_days = 13;
 }

@@ -33,11 +33,11 @@ type MsgClient interface {
 	//
 	// Since: cosmos-sdk 0.47
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
-	// SubmitDistributionRoot records a node's merkle root for an epoch (day).
+	// SubmitDistributionRoot records a node's merkle root for a day.
 	SubmitDistributionRoot(ctx context.Context, in *MsgSubmitDistributionRoot, opts ...grpc.CallOption) (*MsgSubmitDistributionRootResponse, error)
-	// Claim claims a reward from a finalized (live) epoch via a merkle proof.
+	// Claim claims a reward from a finalized (live) day via a merkle proof.
 	Claim(ctx context.Context, in *MsgClaim, opts ...grpc.CallOption) (*MsgClaimResponse, error)
-	// ChallengeDistribution places a PENDING epoch distribution UNDER_REVIEW,
+	// ChallengeDistribution places a PENDING day's distribution UNDER_REVIEW,
 	// reopening voting. The challenger must hold an active license and escrows a
 	// bond that is refunded if the re-vote changes the root, or burned otherwise.
 	ChallengeDistribution(ctx context.Context, in *MsgChallengeDistribution, opts ...grpc.CallOption) (*MsgChallengeDistributionResponse, error)
@@ -95,11 +95,11 @@ type MsgServer interface {
 	//
 	// Since: cosmos-sdk 0.47
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
-	// SubmitDistributionRoot records a node's merkle root for an epoch (day).
+	// SubmitDistributionRoot records a node's merkle root for a day.
 	SubmitDistributionRoot(context.Context, *MsgSubmitDistributionRoot) (*MsgSubmitDistributionRootResponse, error)
-	// Claim claims a reward from a finalized (live) epoch via a merkle proof.
+	// Claim claims a reward from a finalized (live) day via a merkle proof.
 	Claim(context.Context, *MsgClaim) (*MsgClaimResponse, error)
-	// ChallengeDistribution places a PENDING epoch distribution UNDER_REVIEW,
+	// ChallengeDistribution places a PENDING day's distribution UNDER_REVIEW,
 	// reopening voting. The challenger must hold an active license and escrows a
 	// bond that is refunded if the re-vote changes the root, or burned otherwise.
 	ChallengeDistribution(context.Context, *MsgChallengeDistribution) (*MsgChallengeDistributionResponse, error)

@@ -24,7 +24,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// DistributionStatus is the lifecycle state of an epoch's distribution.
+// DistributionStatus is the lifecycle state of a day's distribution.
 //
 // VOTING -> PENDING -> LIVE is the happy path. A licensed holder may challenge a
 // PENDING distribution within the review-delay window, moving it to
@@ -42,7 +42,7 @@ const (
 	// DISTRIBUTION_STATUS_UNDER_REVIEW means a licensed holder challenged the
 	// pending root; voting has reopened and the re-tally will resolve it.
 	DISTRIBUTION_STATUS_UNDER_REVIEW DistributionStatus = 3
-	// DISTRIBUTION_STATUS_EXPIRED means the epoch never reached consensus within
+	// DISTRIBUTION_STATUS_EXPIRED means the day never reached consensus within
 	// the voting window; it is no longer tallied.
 	DISTRIBUTION_STATUS_EXPIRED DistributionStatus = 4
 )
@@ -71,10 +71,11 @@ func (DistributionStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_263e8e2c78e904c8, []int{0}
 }
 
-// DistributionVote is a single node's submitted merkle root for an epoch.
-// Stored (and retained) keyed by (epoch, signer).
+// DistributionVote is a single node's submitted merkle root for a day.
+// Stored (and retained) keyed by (date, signer).
 type DistributionVote struct {
-	Epoch      int64  `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// date is the distribution day in YYYY-MM-DD form.
+	Date       string `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	Signer     string `protobuf:"bytes,2,opt,name=signer,proto3" json:"signer,omitempty"`
 	MerkleRoot []byte `protobuf:"bytes,3,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
 }
@@ -112,11 +113,11 @@ func (m *DistributionVote) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DistributionVote proto.InternalMessageInfo
 
-func (m *DistributionVote) GetEpoch() int64 {
+func (m *DistributionVote) GetDate() string {
 	if m != nil {
-		return m.Epoch
+		return m.Date
 	}
-	return 0
+	return ""
 }
 
 func (m *DistributionVote) GetSigner() string {
@@ -133,19 +134,21 @@ func (m *DistributionVote) GetMerkleRoot() []byte {
 	return nil
 }
 
-// EpochDistribution is the canonical/finalized result for an epoch (day).
-type EpochDistribution struct {
-	Epoch      int64              `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+// Distribution is the canonical/finalized result for a single day, identified by
+// its date (YYYY-MM-DD).
+type Distribution struct {
+	// date is the distribution day in YYYY-MM-DD form.
+	Date       string             `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	MerkleRoot []byte             `protobuf:"bytes,2,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
 	Status     DistributionStatus `protobuf:"varint,3,opt,name=status,proto3,enum=distro.v1.DistributionStatus" json:"status,omitempty"`
 	// license_tally / stake_tally record the winning root's fractions at finalization.
 	LicenseTally string `protobuf:"bytes,4,opt,name=license_tally,json=licenseTally,proto3" json:"license_tally,omitempty"`
 	StakeTally   string `protobuf:"bytes,5,opt,name=stake_tally,json=stakeTally,proto3" json:"stake_tally,omitempty"`
-	// finalized_height is the block height at which the epoch went LIVE.
+	// finalized_height is the block height at which the distribution went LIVE.
 	FinalizedHeight int64 `protobuf:"varint,6,opt,name=finalized_height,json=finalizedHeight,proto3" json:"finalized_height,omitempty"`
-	// pending_since_epoch is the epoch number at which this distribution entered
-	// PENDING; used to measure the review-delay window.
-	PendingSinceEpoch int64 `protobuf:"varint,7,opt,name=pending_since_epoch,json=pendingSinceEpoch,proto3" json:"pending_since_epoch,omitempty"`
+	// pending_since_date is the date (YYYY-MM-DD) at which this distribution
+	// entered PENDING; used to measure the review-delay window.
+	PendingSinceDate string `protobuf:"bytes,7,opt,name=pending_since_date,json=pendingSinceDate,proto3" json:"pending_since_date,omitempty"`
 	// challenger is the address that placed this distribution UNDER_REVIEW (empty
 	// otherwise). Set while UNDER_REVIEW so the bond can be refunded or burned.
 	Challenger string `protobuf:"bytes,8,opt,name=challenger,proto3" json:"challenger,omitempty"`
@@ -153,22 +156,22 @@ type EpochDistribution struct {
 	// challenger while UNDER_REVIEW.
 	ChallengeBond string `protobuf:"bytes,9,opt,name=challenge_bond,json=challengeBond,proto3" json:"challenge_bond,omitempty"`
 	// claimed_amount is the cumulative amount (in the module denom) already
-	// claimed for this epoch, capped by the epoch's halving budget.
+	// claimed for this day, capped by the day's halving budget.
 	ClaimedAmount string `protobuf:"bytes,10,opt,name=claimed_amount,json=claimedAmount,proto3" json:"claimed_amount,omitempty"`
 }
 
-func (m *EpochDistribution) Reset()         { *m = EpochDistribution{} }
-func (m *EpochDistribution) String() string { return proto.CompactTextString(m) }
-func (*EpochDistribution) ProtoMessage()    {}
-func (*EpochDistribution) Descriptor() ([]byte, []int) {
+func (m *Distribution) Reset()         { *m = Distribution{} }
+func (m *Distribution) String() string { return proto.CompactTextString(m) }
+func (*Distribution) ProtoMessage()    {}
+func (*Distribution) Descriptor() ([]byte, []int) {
 	return fileDescriptor_263e8e2c78e904c8, []int{1}
 }
-func (m *EpochDistribution) XXX_Unmarshal(b []byte) error {
+func (m *Distribution) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EpochDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Distribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_EpochDistribution.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Distribution.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -178,91 +181,92 @@ func (m *EpochDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *EpochDistribution) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EpochDistribution.Merge(m, src)
+func (m *Distribution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Distribution.Merge(m, src)
 }
-func (m *EpochDistribution) XXX_Size() int {
+func (m *Distribution) XXX_Size() int {
 	return m.Size()
 }
-func (m *EpochDistribution) XXX_DiscardUnknown() {
-	xxx_messageInfo_EpochDistribution.DiscardUnknown(m)
+func (m *Distribution) XXX_DiscardUnknown() {
+	xxx_messageInfo_Distribution.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_EpochDistribution proto.InternalMessageInfo
+var xxx_messageInfo_Distribution proto.InternalMessageInfo
 
-func (m *EpochDistribution) GetEpoch() int64 {
+func (m *Distribution) GetDate() string {
 	if m != nil {
-		return m.Epoch
+		return m.Date
 	}
-	return 0
+	return ""
 }
 
-func (m *EpochDistribution) GetMerkleRoot() []byte {
+func (m *Distribution) GetMerkleRoot() []byte {
 	if m != nil {
 		return m.MerkleRoot
 	}
 	return nil
 }
 
-func (m *EpochDistribution) GetStatus() DistributionStatus {
+func (m *Distribution) GetStatus() DistributionStatus {
 	if m != nil {
 		return m.Status
 	}
 	return DISTRIBUTION_STATUS_VOTING
 }
 
-func (m *EpochDistribution) GetLicenseTally() string {
+func (m *Distribution) GetLicenseTally() string {
 	if m != nil {
 		return m.LicenseTally
 	}
 	return ""
 }
 
-func (m *EpochDistribution) GetStakeTally() string {
+func (m *Distribution) GetStakeTally() string {
 	if m != nil {
 		return m.StakeTally
 	}
 	return ""
 }
 
-func (m *EpochDistribution) GetFinalizedHeight() int64 {
+func (m *Distribution) GetFinalizedHeight() int64 {
 	if m != nil {
 		return m.FinalizedHeight
 	}
 	return 0
 }
 
-func (m *EpochDistribution) GetPendingSinceEpoch() int64 {
+func (m *Distribution) GetPendingSinceDate() string {
 	if m != nil {
-		return m.PendingSinceEpoch
+		return m.PendingSinceDate
 	}
-	return 0
+	return ""
 }
 
-func (m *EpochDistribution) GetChallenger() string {
+func (m *Distribution) GetChallenger() string {
 	if m != nil {
 		return m.Challenger
 	}
 	return ""
 }
 
-func (m *EpochDistribution) GetChallengeBond() string {
+func (m *Distribution) GetChallengeBond() string {
 	if m != nil {
 		return m.ChallengeBond
 	}
 	return ""
 }
 
-func (m *EpochDistribution) GetClaimedAmount() string {
+func (m *Distribution) GetClaimedAmount() string {
 	if m != nil {
 		return m.ClaimedAmount
 	}
 	return ""
 }
 
-// ClaimedReward is the genesis representation of the claimed nonces for an epoch.
+// ClaimedReward is the genesis representation of the claimed nonces for a day.
 type ClaimedReward struct {
-	Epoch  int64    `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// date is the distribution day in YYYY-MM-DD form.
+	Date   string   `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	Nonces []uint64 `protobuf:"varint,2,rep,packed,name=nonces,proto3" json:"nonces,omitempty"`
 }
 
@@ -299,11 +303,11 @@ func (m *ClaimedReward) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ClaimedReward proto.InternalMessageInfo
 
-func (m *ClaimedReward) GetEpoch() int64 {
+func (m *ClaimedReward) GetDate() string {
 	if m != nil {
-		return m.Epoch
+		return m.Date
 	}
-	return 0
+	return ""
 }
 
 func (m *ClaimedReward) GetNonces() []uint64 {
@@ -313,54 +317,121 @@ func (m *ClaimedReward) GetNonces() []uint64 {
 	return nil
 }
 
+// CategoryClaimTotal is the cumulative amount (in the module denom) claimed for
+// a single reward category within a day's distribution. Totals accumulate as
+// rewards are claimed and are queryable via Query/ClaimTotalByCategory.
+type CategoryClaimTotal struct {
+	// date is the distribution day in YYYY-MM-DD form.
+	Date     string `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Category string `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
+	Total    string `protobuf:"bytes,3,opt,name=total,proto3" json:"total,omitempty"`
+}
+
+func (m *CategoryClaimTotal) Reset()         { *m = CategoryClaimTotal{} }
+func (m *CategoryClaimTotal) String() string { return proto.CompactTextString(m) }
+func (*CategoryClaimTotal) ProtoMessage()    {}
+func (*CategoryClaimTotal) Descriptor() ([]byte, []int) {
+	return fileDescriptor_263e8e2c78e904c8, []int{3}
+}
+func (m *CategoryClaimTotal) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CategoryClaimTotal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CategoryClaimTotal.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CategoryClaimTotal) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CategoryClaimTotal.Merge(m, src)
+}
+func (m *CategoryClaimTotal) XXX_Size() int {
+	return m.Size()
+}
+func (m *CategoryClaimTotal) XXX_DiscardUnknown() {
+	xxx_messageInfo_CategoryClaimTotal.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CategoryClaimTotal proto.InternalMessageInfo
+
+func (m *CategoryClaimTotal) GetDate() string {
+	if m != nil {
+		return m.Date
+	}
+	return ""
+}
+
+func (m *CategoryClaimTotal) GetCategory() string {
+	if m != nil {
+		return m.Category
+	}
+	return ""
+}
+
+func (m *CategoryClaimTotal) GetTotal() string {
+	if m != nil {
+		return m.Total
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterEnum("distro.v1.DistributionStatus", DistributionStatus_name, DistributionStatus_value)
 	proto.RegisterType((*DistributionVote)(nil), "distro.v1.DistributionVote")
-	proto.RegisterType((*EpochDistribution)(nil), "distro.v1.EpochDistribution")
+	proto.RegisterType((*Distribution)(nil), "distro.v1.Distribution")
 	proto.RegisterType((*ClaimedReward)(nil), "distro.v1.ClaimedReward")
+	proto.RegisterType((*CategoryClaimTotal)(nil), "distro.v1.CategoryClaimTotal")
 }
 
 func init() { proto.RegisterFile("distro/v1/state.proto", fileDescriptor_263e8e2c78e904c8) }
 
 var fileDescriptor_263e8e2c78e904c8 = []byte{
-	// 581 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0x41, 0x6f, 0xd3, 0x3c,
-	0x18, 0xc7, 0x9b, 0xb6, 0xeb, 0xfb, 0xce, 0x6c, 0x23, 0x33, 0x03, 0x85, 0x02, 0x59, 0x35, 0x40,
-	0x2a, 0x48, 0x24, 0x6c, 0x13, 0x12, 0x17, 0x0e, 0xeb, 0x1a, 0x41, 0xa4, 0xa9, 0x9b, 0x9c, 0xac,
-	0x20, 0x2e, 0x51, 0x9a, 0x98, 0xc4, 0x5a, 0x62, 0x57, 0xb1, 0x5b, 0x18, 0x7c, 0x01, 0x8e, 0x7c,
-	0x07, 0x6e, 0x9c, 0xf9, 0x00, 0x1c, 0x39, 0x4e, 0x9c, 0x38, 0xa2, 0xf6, 0x8b, 0xa0, 0x38, 0xa1,
-	0xaa, 0x46, 0x2b, 0x6e, 0x79, 0x7e, 0xcf, 0x2f, 0x7f, 0xdb, 0x8f, 0x65, 0x70, 0x3d, 0x24, 0x5c,
-	0x64, 0xcc, 0x1c, 0xef, 0x9a, 0x5c, 0xf8, 0x02, 0x1b, 0xc3, 0x8c, 0x09, 0x06, 0x57, 0x0b, 0x6c,
-	0x8c, 0x77, 0x9b, 0x5b, 0x11, 0x8b, 0x98, 0xa4, 0x66, 0xfe, 0x55, 0x08, 0xcd, 0x9b, 0x01, 0xe3,
-	0x29, 0xe3, 0x5e, 0xd1, 0x28, 0x8a, 0xa2, 0xb5, 0xf3, 0x01, 0xa8, 0xdd, 0xfc, 0x6f, 0x32, 0x18,
-	0x09, 0xc2, 0x68, 0x9f, 0x09, 0x0c, 0xb7, 0xc0, 0x0a, 0x1e, 0xb2, 0x20, 0xd6, 0x94, 0x96, 0xd2,
-	0xae, 0xa1, 0xa2, 0x80, 0x8f, 0x41, 0x83, 0x93, 0x88, 0xe2, 0x4c, 0xab, 0xb6, 0x94, 0xf6, 0x6a,
-	0x47, 0xfb, 0xf1, 0xf5, 0xd1, 0x56, 0x99, 0x75, 0x10, 0x86, 0x19, 0xe6, 0xdc, 0x11, 0x19, 0xa1,
-	0x11, 0x2a, 0x3d, 0xb8, 0x0d, 0xae, 0xa4, 0x38, 0x3b, 0x4b, 0xb0, 0x97, 0x31, 0x26, 0xb4, 0x5a,
-	0x4b, 0x69, 0xaf, 0x21, 0x50, 0x20, 0xc4, 0x98, 0xd8, 0xf9, 0x52, 0x03, 0x9b, 0x56, 0x1e, 0x3e,
-	0xbf, 0x85, 0x25, 0xcb, 0x5f, 0x0a, 0xab, 0x5e, 0x0e, 0x83, 0x4f, 0x40, 0x23, 0x1f, 0xca, 0x88,
-	0xcb, 0x85, 0x36, 0xf6, 0xee, 0x18, 0xb3, 0xb1, 0x18, 0xf3, 0xf9, 0x8e, 0x94, 0x50, 0x29, 0xc3,
-	0xbb, 0x60, 0x3d, 0x21, 0x01, 0xa6, 0x1c, 0x7b, 0xc2, 0x4f, 0x92, 0x73, 0xad, 0x9e, 0x9f, 0x0e,
-	0xad, 0x95, 0xd0, 0xcd, 0x59, 0xbe, 0x38, 0x17, 0xfe, 0xd9, 0x1f, 0x65, 0x45, 0x2a, 0x40, 0xa2,
-	0x42, 0x78, 0x00, 0xd4, 0x37, 0x84, 0xfa, 0x09, 0x79, 0x8f, 0x43, 0x2f, 0xc6, 0x24, 0x8a, 0x85,
-	0xd6, 0x90, 0xdb, 0xbf, 0x3a, 0xe3, 0x2f, 0x24, 0x86, 0x06, 0xb8, 0x36, 0xc4, 0x34, 0x24, 0x34,
-	0xf2, 0x38, 0xa1, 0x01, 0xf6, 0x8a, 0xc3, 0xfe, 0x27, 0xed, 0xcd, 0xb2, 0xe5, 0xe4, 0x1d, 0x39,
-	0x1a, 0xf8, 0x14, 0x80, 0x20, 0xf6, 0x93, 0x04, 0xd3, 0x08, 0x67, 0xda, 0xff, 0xff, 0x98, 0xfd,
-	0x9c, 0x0b, 0xef, 0x83, 0x8d, 0x59, 0xe5, 0x0d, 0x18, 0x0d, 0xb5, 0x55, 0xb9, 0xf1, 0xf5, 0x19,
-	0xed, 0x30, 0x1a, 0x4a, 0x2d, 0xf1, 0x49, 0x8a, 0x43, 0xcf, 0x4f, 0xd9, 0x88, 0x0a, 0x0d, 0x94,
-	0x5a, 0x41, 0x0f, 0x24, 0xdc, 0x79, 0x06, 0xd6, 0x0f, 0x0b, 0x80, 0xf0, 0x5b, 0x3f, 0x0b, 0x97,
-	0xdc, 0xd3, 0x0d, 0xd0, 0xa0, 0x8c, 0x06, 0x98, 0x6b, 0xd5, 0x56, 0xad, 0x5d, 0x47, 0x65, 0xf5,
-	0xf0, 0x9b, 0x02, 0xe0, 0xdf, 0xd7, 0x00, 0x75, 0xd0, 0xec, 0xda, 0x8e, 0x8b, 0xec, 0xce, 0xa9,
-	0x6b, 0x1f, 0xf7, 0x3c, 0xc7, 0x3d, 0x70, 0x4f, 0x1d, 0xaf, 0x7f, 0xec, 0xda, 0xbd, 0xe7, 0x6a,
-	0x05, 0xde, 0x06, 0xda, 0xa2, 0xfe, 0x91, 0xdd, 0xb7, 0x54, 0x05, 0x6e, 0x83, 0x5b, 0x8b, 0xba,
-	0x27, 0x56, 0xaf, 0x9b, 0xff, 0x5e, 0x85, 0xf7, 0x40, 0x6b, 0x91, 0x70, 0xda, 0xeb, 0x5a, 0xc8,
-	0x43, 0x56, 0xdf, 0xb6, 0x5e, 0xaa, 0xb5, 0x65, 0x31, 0xd6, 0xab, 0x13, 0x1b, 0x59, 0x5d, 0xb5,
-	0xde, 0xac, 0x7f, 0xfc, 0xac, 0x57, 0x3a, 0x47, 0xdf, 0x27, 0xba, 0x72, 0x31, 0xd1, 0x95, 0x5f,
-	0x13, 0x5d, 0xf9, 0x34, 0xd5, 0x2b, 0x17, 0x53, 0xbd, 0xf2, 0x73, 0xaa, 0x57, 0x5e, 0xef, 0x45,
-	0x44, 0xc4, 0xa3, 0x81, 0x11, 0xb0, 0xd4, 0x74, 0xb3, 0x11, 0x17, 0x38, 0x74, 0x52, 0x3f, 0x13,
-	0x87, 0xb1, 0x4f, 0xa8, 0x29, 0x78, 0x60, 0x8e, 0xf7, 0xcd, 0x77, 0x66, 0xf9, 0x7c, 0xc5, 0xf9,
-	0x10, 0xf3, 0x41, 0x43, 0x3e, 0xc0, 0xfd, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x29, 0xca, 0x2d,
-	0xe8, 0xd5, 0x03, 0x00, 0x00,
+	// 612 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x94, 0xd1, 0x6e, 0xd3, 0x3c,
+	0x14, 0xc7, 0x9b, 0xb6, 0xeb, 0xb7, 0x9e, 0x6f, 0x1b, 0x95, 0x35, 0x50, 0x28, 0x90, 0x55, 0x05,
+	0xa4, 0x82, 0xa0, 0x61, 0x9b, 0x90, 0x90, 0xb8, 0x5a, 0xd7, 0x08, 0x22, 0x4d, 0xdd, 0xe4, 0x64,
+	0x05, 0xed, 0x26, 0x72, 0x13, 0x93, 0x5a, 0x4b, 0xed, 0x29, 0x76, 0x07, 0xe5, 0x09, 0xb8, 0xe4,
+	0x15, 0x10, 0xaf, 0xc0, 0x03, 0x70, 0xc9, 0xe5, 0xc4, 0x15, 0x97, 0x68, 0x7b, 0x11, 0x14, 0x27,
+	0x54, 0xd3, 0x28, 0xe2, 0xce, 0xe7, 0x77, 0x7e, 0xfe, 0x1f, 0xd9, 0x6e, 0x03, 0xd7, 0x23, 0x26,
+	0x55, 0x2a, 0xec, 0xd3, 0x4d, 0x5b, 0x2a, 0xa2, 0x68, 0xf7, 0x24, 0x15, 0x4a, 0xa0, 0x7a, 0x8e,
+	0xbb, 0xa7, 0x9b, 0xcd, 0xf5, 0x58, 0xc4, 0x42, 0x53, 0x3b, 0x5b, 0xe5, 0x42, 0xf3, 0x66, 0x28,
+	0xe4, 0x44, 0xc8, 0x20, 0x6f, 0xe4, 0x45, 0xde, 0x6a, 0xcf, 0xa0, 0xd1, 0xcf, 0x76, 0xb3, 0xd1,
+	0x54, 0x31, 0xc1, 0x87, 0x42, 0x51, 0x84, 0xa0, 0x1a, 0x11, 0x45, 0x4d, 0xa3, 0x65, 0x74, 0xea,
+	0x58, 0xaf, 0xd1, 0x13, 0xa8, 0x49, 0x16, 0x73, 0x9a, 0x9a, 0xe5, 0x8c, 0xf6, 0xcc, 0xef, 0x5f,
+	0x1e, 0xaf, 0x17, 0x49, 0x3b, 0x51, 0x94, 0x52, 0x29, 0x3d, 0x95, 0x32, 0x1e, 0xe3, 0xc2, 0x43,
+	0x1b, 0xf0, 0xff, 0x84, 0xa6, 0xc7, 0x09, 0x0d, 0x52, 0x21, 0x94, 0x59, 0x69, 0x19, 0x9d, 0x15,
+	0x0c, 0x39, 0xc2, 0x42, 0xa8, 0xf6, 0xa7, 0x0a, 0xac, 0x5c, 0x9e, 0xbd, 0x70, 0xee, 0x95, 0x94,
+	0xf2, 0xd5, 0x14, 0xf4, 0x14, 0x6a, 0xd9, 0x5d, 0x4c, 0xa5, 0x9e, 0xb0, 0xb6, 0x75, 0xa7, 0x3b,
+	0xbf, 0x8d, 0xee, 0xe5, 0x74, 0x4f, 0x4b, 0xb8, 0x90, 0xd1, 0x5d, 0x58, 0x4d, 0x58, 0x48, 0xb9,
+	0xa4, 0x81, 0x22, 0x49, 0x32, 0x33, 0xab, 0x7a, 0xe8, 0x4a, 0x01, 0xfd, 0x8c, 0x65, 0xc3, 0xa5,
+	0x22, 0xc7, 0xbf, 0x95, 0x25, 0xad, 0x80, 0x46, 0xb9, 0xf0, 0x00, 0x1a, 0x6f, 0x18, 0x27, 0x09,
+	0x7b, 0x4f, 0xa3, 0x60, 0x4c, 0x59, 0x3c, 0x56, 0x66, 0xad, 0x65, 0x74, 0x2a, 0xf8, 0xda, 0x9c,
+	0xbf, 0xd4, 0x18, 0x3d, 0x02, 0x74, 0x42, 0x79, 0xc4, 0x78, 0x1c, 0x48, 0xc6, 0x43, 0x1a, 0xe8,
+	0xa3, 0xfe, 0xa7, 0x23, 0x1b, 0x45, 0xc7, 0xcb, 0x1a, 0xfd, 0xec, 0xd8, 0xcf, 0x00, 0xc2, 0x31,
+	0x49, 0x12, 0xca, 0x63, 0x9a, 0x9a, 0xcb, 0xff, 0xb8, 0xf2, 0x4b, 0x2e, 0xba, 0x0f, 0x6b, 0xf3,
+	0x2a, 0x18, 0x09, 0x1e, 0x99, 0x75, 0x3d, 0x63, 0x75, 0x4e, 0x7b, 0x82, 0x47, 0x5a, 0x4b, 0x08,
+	0x9b, 0xd0, 0x28, 0x20, 0x13, 0x31, 0xe5, 0xca, 0x84, 0x42, 0xcb, 0xe9, 0x8e, 0x86, 0xed, 0xe7,
+	0xb0, 0xba, 0x9b, 0x03, 0x4c, 0xdf, 0x92, 0x34, 0x5a, 0xf8, 0x46, 0x37, 0xa0, 0xc6, 0x05, 0x0f,
+	0xa9, 0x34, 0xcb, 0xad, 0x4a, 0xa7, 0x8a, 0x8b, 0xaa, 0x7d, 0x04, 0x68, 0x97, 0x28, 0x1a, 0x8b,
+	0x74, 0xa6, 0x43, 0x7c, 0xa1, 0x48, 0xb2, 0x30, 0xa1, 0x09, 0xcb, 0x61, 0x61, 0xe6, 0xbf, 0x2f,
+	0x3c, 0xaf, 0xd1, 0x3a, 0x2c, 0xa9, 0x6c, 0xa3, 0x7e, 0xdf, 0x3a, 0xce, 0x8b, 0x87, 0x5f, 0x0d,
+	0x40, 0x7f, 0x3e, 0x2f, 0xb2, 0xa0, 0xd9, 0x77, 0x3d, 0x1f, 0xbb, 0xbd, 0x43, 0xdf, 0xdd, 0x1f,
+	0x04, 0x9e, 0xbf, 0xe3, 0x1f, 0x7a, 0xc1, 0x70, 0xdf, 0x77, 0x07, 0x2f, 0x1a, 0x25, 0x74, 0x1b,
+	0xcc, 0x45, 0xfd, 0x3d, 0x77, 0xe8, 0x34, 0x0c, 0xb4, 0x01, 0xb7, 0x16, 0x75, 0x0f, 0x9c, 0x41,
+	0x3f, 0xdb, 0x5e, 0x46, 0xf7, 0xa0, 0xb5, 0x48, 0x38, 0x1c, 0xf4, 0x1d, 0x1c, 0x60, 0x67, 0xe8,
+	0x3a, 0xaf, 0x1a, 0x95, 0xbf, 0xc5, 0x38, 0xaf, 0x0f, 0x5c, 0xec, 0xf4, 0x1b, 0xd5, 0x66, 0xf5,
+	0xc3, 0x67, 0xab, 0xd4, 0xdb, 0xfb, 0x76, 0x6e, 0x19, 0x67, 0xe7, 0x96, 0xf1, 0xf3, 0xdc, 0x32,
+	0x3e, 0x5e, 0x58, 0xa5, 0xb3, 0x0b, 0xab, 0xf4, 0xe3, 0xc2, 0x2a, 0x1d, 0x6d, 0xc5, 0x4c, 0x8d,
+	0xa7, 0xa3, 0x6e, 0x28, 0x26, 0xb6, 0x9f, 0x4e, 0xa5, 0xa2, 0x91, 0x37, 0x21, 0xa9, 0xda, 0x1d,
+	0x13, 0xc6, 0x6d, 0x25, 0x43, 0xfb, 0x74, 0xdb, 0x7e, 0x67, 0x17, 0x5f, 0x03, 0x35, 0x3b, 0xa1,
+	0x72, 0x54, 0xd3, 0xff, 0xe7, 0xed, 0x5f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xf3, 0x40, 0xd1, 0xc8,
+	0x24, 0x04, 0x00, 0x00,
 }
 
 func (m *DistributionVote) Marshal() (dAtA []byte, err error) {
@@ -397,15 +468,17 @@ func (m *DistributionVote) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if m.Epoch != 0 {
-		i = encodeVarintState(dAtA, i, uint64(m.Epoch))
+	if len(m.Date) > 0 {
+		i -= len(m.Date)
+		copy(dAtA[i:], m.Date)
+		i = encodeVarintState(dAtA, i, uint64(len(m.Date)))
 		i--
-		dAtA[i] = 0x8
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *EpochDistribution) Marshal() (dAtA []byte, err error) {
+func (m *Distribution) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -415,12 +488,12 @@ func (m *EpochDistribution) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EpochDistribution) MarshalTo(dAtA []byte) (int, error) {
+func (m *Distribution) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *EpochDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Distribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -446,10 +519,12 @@ func (m *EpochDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x42
 	}
-	if m.PendingSinceEpoch != 0 {
-		i = encodeVarintState(dAtA, i, uint64(m.PendingSinceEpoch))
+	if len(m.PendingSinceDate) > 0 {
+		i -= len(m.PendingSinceDate)
+		copy(dAtA[i:], m.PendingSinceDate)
+		i = encodeVarintState(dAtA, i, uint64(len(m.PendingSinceDate)))
 		i--
-		dAtA[i] = 0x38
+		dAtA[i] = 0x3a
 	}
 	if m.FinalizedHeight != 0 {
 		i = encodeVarintState(dAtA, i, uint64(m.FinalizedHeight))
@@ -482,10 +557,12 @@ func (m *EpochDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if m.Epoch != 0 {
-		i = encodeVarintState(dAtA, i, uint64(m.Epoch))
+	if len(m.Date) > 0 {
+		i -= len(m.Date)
+		copy(dAtA[i:], m.Date)
+		i = encodeVarintState(dAtA, i, uint64(len(m.Date)))
 		i--
-		dAtA[i] = 0x8
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -528,10 +605,56 @@ func (m *ClaimedReward) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if m.Epoch != 0 {
-		i = encodeVarintState(dAtA, i, uint64(m.Epoch))
+	if len(m.Date) > 0 {
+		i -= len(m.Date)
+		copy(dAtA[i:], m.Date)
+		i = encodeVarintState(dAtA, i, uint64(len(m.Date)))
 		i--
-		dAtA[i] = 0x8
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CategoryClaimTotal) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CategoryClaimTotal) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CategoryClaimTotal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Total) > 0 {
+		i -= len(m.Total)
+		copy(dAtA[i:], m.Total)
+		i = encodeVarintState(dAtA, i, uint64(len(m.Total)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Category) > 0 {
+		i -= len(m.Category)
+		copy(dAtA[i:], m.Category)
+		i = encodeVarintState(dAtA, i, uint64(len(m.Category)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Date) > 0 {
+		i -= len(m.Date)
+		copy(dAtA[i:], m.Date)
+		i = encodeVarintState(dAtA, i, uint64(len(m.Date)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -553,8 +676,9 @@ func (m *DistributionVote) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Epoch != 0 {
-		n += 1 + sovState(uint64(m.Epoch))
+	l = len(m.Date)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
 	}
 	l = len(m.Signer)
 	if l > 0 {
@@ -567,14 +691,15 @@ func (m *DistributionVote) Size() (n int) {
 	return n
 }
 
-func (m *EpochDistribution) Size() (n int) {
+func (m *Distribution) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Epoch != 0 {
-		n += 1 + sovState(uint64(m.Epoch))
+	l = len(m.Date)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
 	}
 	l = len(m.MerkleRoot)
 	if l > 0 {
@@ -594,8 +719,9 @@ func (m *EpochDistribution) Size() (n int) {
 	if m.FinalizedHeight != 0 {
 		n += 1 + sovState(uint64(m.FinalizedHeight))
 	}
-	if m.PendingSinceEpoch != 0 {
-		n += 1 + sovState(uint64(m.PendingSinceEpoch))
+	l = len(m.PendingSinceDate)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
 	}
 	l = len(m.Challenger)
 	if l > 0 {
@@ -618,8 +744,9 @@ func (m *ClaimedReward) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Epoch != 0 {
-		n += 1 + sovState(uint64(m.Epoch))
+	l = len(m.Date)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
 	}
 	if len(m.Nonces) > 0 {
 		l = 0
@@ -627,6 +754,27 @@ func (m *ClaimedReward) Size() (n int) {
 			l += sovState(uint64(e))
 		}
 		n += 1 + sovState(uint64(l)) + l
+	}
+	return n
+}
+
+func (m *CategoryClaimTotal) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Date)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
+	}
+	l = len(m.Category)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
+	}
+	l = len(m.Total)
+	if l > 0 {
+		n += 1 + l + sovState(uint64(l))
 	}
 	return n
 }
@@ -667,10 +815,10 @@ func (m *DistributionVote) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Date", wireType)
 			}
-			m.Epoch = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowState
@@ -680,11 +828,24 @@ func (m *DistributionVote) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Epoch |= int64(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Date = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
@@ -772,7 +933,7 @@ func (m *DistributionVote) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EpochDistribution) Unmarshal(dAtA []byte) error {
+func (m *Distribution) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -795,17 +956,17 @@ func (m *EpochDistribution) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: EpochDistribution: wiretype end group for non-group")
+			return fmt.Errorf("proto: Distribution: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EpochDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Distribution: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Date", wireType)
 			}
-			m.Epoch = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowState
@@ -815,11 +976,24 @@ func (m *EpochDistribution) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Epoch |= int64(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Date = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MerkleRoot", wireType)
@@ -957,10 +1131,10 @@ func (m *EpochDistribution) Unmarshal(dAtA []byte) error {
 				}
 			}
 		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PendingSinceEpoch", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PendingSinceDate", wireType)
 			}
-			m.PendingSinceEpoch = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowState
@@ -970,11 +1144,24 @@ func (m *EpochDistribution) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.PendingSinceEpoch |= int64(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PendingSinceDate = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Challenger", wireType)
@@ -1122,10 +1309,10 @@ func (m *ClaimedReward) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Date", wireType)
 			}
-			m.Epoch = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowState
@@ -1135,11 +1322,24 @@ func (m *ClaimedReward) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Epoch |= int64(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Date = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 2:
 			if wireType == 0 {
 				var v uint64
@@ -1216,6 +1416,152 @@ func (m *ClaimedReward) Unmarshal(dAtA []byte) error {
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Nonces", wireType)
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipState(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthState
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CategoryClaimTotal) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowState
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CategoryClaimTotal: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CategoryClaimTotal: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Date", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Date = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Category", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Category = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowState
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthState
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthState
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Total = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipState(dAtA[iNdEx:])

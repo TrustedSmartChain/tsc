@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"strconv"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -12,7 +11,7 @@ import (
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
 
-// ChallengeDistribution places a PENDING epoch distribution UNDER_REVIEW,
+// ChallengeDistribution places a PENDING day's distribution UNDER_REVIEW,
 // reopening voting. The challenger must hold an active license of the configured
 // type and escrows the configured bond. The re-vote resolves the challenge: if
 // it re-confirms the same root the bond is burned (frivolous), otherwise the
@@ -41,12 +40,12 @@ func (ms msgServer) ChallengeDistribution(goCtx context.Context, msg *types.MsgC
 
 	// Only a PENDING distribution (consensus reached, in the review window) can
 	// be challenged.
-	ed, err := ms.k.EpochDistributions.Get(ctx, msg.Epoch)
+	ed, err := ms.k.Distributions.Get(ctx, msg.Date)
 	if err != nil {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for epoch %d", msg.Epoch)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for date %q", msg.Date)
 	}
 	if ed.Status != types.DISTRIBUTION_STATUS_PENDING {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "epoch %d is not pending (status %s)", msg.Epoch, ed.Status)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is not pending (status %s)", msg.Date, ed.Status)
 	}
 
 	// Escrow the challenge bond (if configured) from the challenger.
@@ -64,13 +63,13 @@ func (ms msgServer) ChallengeDistribution(goCtx context.Context, msg *types.MsgC
 	ed.Status = types.DISTRIBUTION_STATUS_UNDER_REVIEW
 	ed.Challenger = msg.Challenger
 	ed.ChallengeBond = bond.String()
-	if err := ms.k.EpochDistributions.Set(ctx, msg.Epoch, ed); err != nil {
+	if err := ms.k.Distributions.Set(ctx, msg.Date, ed); err != nil {
 		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeEpochUnderReview,
-		sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatInt(msg.Epoch, 10)),
+		types.EventTypeDistributionUnderReview,
+		sdk.NewAttribute(types.AttributeKeyDate, msg.Date),
 		sdk.NewAttribute(types.AttributeKeyChallenger, msg.Challenger),
 		sdk.NewAttribute(types.AttributeKeyBond, bond.String()),
 	))

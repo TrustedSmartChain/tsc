@@ -10,32 +10,37 @@ import (
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
 
-// epochBudget returns the maximum total amount distributable for an epoch (day),
-// derived from the halving schedule. Epoch N is treated as the Nth distribution
-// day, so budget(N) = TotalDistributableAt(dayN) - TotalDistributableAt(dayN-1),
-// and the sum of all epoch budgets equals the schedule's cumulative emission.
-// This is the per-epoch cap that bounds on-demand claim minting.
-func epochBudget(params types.Params, epoch int64) (math.Int, error) {
-	if epoch <= 0 {
-		return math.ZeroInt(), errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "epoch must be positive")
-	}
-
+// dateBudget returns the maximum total amount distributable for a single day,
+// derived from the halving schedule:
+//
+//	budget(date) = TotalDistributableAt(date) - TotalDistributableAt(date-1d)
+//
+// (the start date's budget is just TotalDistributableAt(startDate)). The sum of
+// all daily budgets equals the schedule's cumulative emission. This is the
+// per-day cap that bounds on-demand claim minting.
+func dateBudget(params types.Params, date string) (math.Int, error) {
 	schedule, err := newHalvingSchedule(params)
 	if err != nil {
 		return math.ZeroInt(), err
 	}
 
-	dayN := schedule.StartDate.AddDate(0, 0, int(epoch-1))
-	cumN, err := schedule.TotalDistributableAt(dayN)
+	target, err := parseDate(date)
+	if err != nil {
+		return math.ZeroInt(), errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid date %q: must be YYYY-MM-DD", date)
+	}
+	if target.Before(schedule.StartDate) {
+		return math.ZeroInt(), errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is before the distribution start date", date)
+	}
+
+	cumN, err := schedule.TotalDistributableAt(target)
 	if err != nil {
 		return math.ZeroInt(), err
 	}
-	if epoch == 1 {
+	if target.Equal(schedule.StartDate) {
 		return cumN, nil
 	}
 
-	dayPrev := schedule.StartDate.AddDate(0, 0, int(epoch-2))
-	cumPrev, err := schedule.TotalDistributableAt(dayPrev)
+	cumPrev, err := schedule.TotalDistributableAt(target.AddDate(0, 0, -1))
 	if err != nil {
 		return math.ZeroInt(), err
 	}
@@ -49,6 +54,35 @@ func epochBudget(params types.Params, epoch int64) (math.Int, error) {
 
 func parseDate(dateStr string) (time.Time, error) {
 	return time.Parse("2006-01-02", dateStr)
+}
+
+// dateForEpoch maps an x/epochs epoch number to its distribution day
+// (YYYY-MM-DD): epoch 1 is the start date, epoch N is startDate+(N-1) days. This
+// is how the daily epoch hook is translated into the date the module keys state
+// by.
+func dateForEpoch(startDateStr string, epoch int64) (string, error) {
+	start, err := parseDate(startDateStr)
+	if err != nil {
+		return "", errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid distribution start date: %v", err)
+	}
+	if epoch <= 0 {
+		return "", errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "epoch must be positive")
+	}
+	return start.AddDate(0, 0, int(epoch-1)).Format("2006-01-02"), nil
+}
+
+// daysBetween returns the number of whole days from `from` to `to` (positive
+// when `to` is later). Both dates must be YYYY-MM-DD.
+func daysBetween(from, to string) (int64, error) {
+	f, err := parseDate(from)
+	if err != nil {
+		return 0, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid date %q: must be YYYY-MM-DD", from)
+	}
+	t, err := parseDate(to)
+	if err != nil {
+		return 0, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid date %q: must be YYYY-MM-DD", to)
+	}
+	return int64(t.Sub(f).Hours() / 24), nil
 }
 
 // HalvingSchedule encapsulates the token distribution logic with halving periods.

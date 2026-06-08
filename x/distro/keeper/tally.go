@@ -112,19 +112,19 @@ type tallyResult struct {
 	stakeTally   math.LegacyDec
 }
 
-// tallyEpoch groups all votes for epoch by submitted root, computes the
+// tallyDistribution groups all votes for a day by submitted root, computes the
 // license-weighted and stake-weighted fractions for each, and returns the
 // winning root if any passes BOTH configured thresholds. Returns (nil, nil) if
 // no root reaches consensus. Iteration is deterministic (sorted by root bytes).
-func (k Keeper) tallyEpoch(ctx context.Context, epoch int64, params types.Params) (*tallyResult, error) {
+func (k Keeper) tallyDistribution(ctx context.Context, date string, params types.Params) (*tallyResult, error) {
 	type group struct {
 		licenseWeight uint64
 		stakeWeight   math.Int
 	}
 	groups := map[string]*group{}
 
-	rng := collections.NewPrefixedPairRange[int64, string](epoch)
-	err := k.Votes.Walk(ctx, rng, func(key collections.Pair[int64, string], vote types.DistributionVote) (bool, error) {
+	rng := collections.NewPrefixedPairRange[string, string](date)
+	err := k.Votes.Walk(ctx, rng, func(key collections.Pair[string, string], vote types.DistributionVote) (bool, error) {
 		signer := key.K2()
 
 		// A vote only counts while its signer still holds an active license.
