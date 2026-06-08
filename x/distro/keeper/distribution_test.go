@@ -494,6 +494,174 @@ func TestClaimRejectsInconsistentCategories(t *testing.T) {
 	require.ErrorContains(t, err, "categories must not be empty")
 }
 
+// TestClaimFourLeafProof exercises a multi-level (2-element) merkle proof
+// end-to-end through the claim handler: a 4-leaf tree is voted to consensus,
+// promoted to LIVE, then a leaf is claimed with its sibling and opposite-subtree
+// hash. The 2-leaf trees the other tests use only fold a single sibling, so this
+// is the only on-chain coverage of proof depth > 1.
+func TestClaimFourLeafProof(t *testing.T) {
+	f, voters := fourVoterConsensus(t)
+	accs := simtestutil.CreateIncrementalAccounts(4)
+
+	const epoch = int64(1)
+	// Build a balanced 4-leaf tree: root = H(H(l0,l1), H(l2,l3)).
+	l0 := types.LeafHash(0, accs[0].String(), "10", map[string]string{"type1": "10"})
+	l1 := types.LeafHash(1, accs[1].String(), "20", map[string]string{"type1": "20"})
+	l2 := types.LeafHash(2, accs[2].String(), "30", map[string]string{"type1": "30"})
+	l3 := types.LeafHash(3, accs[3].String(), "40", map[string]string{"type1": "40"})
+	n01 := types.HashPair(l0, l1)
+	n23 := types.HashPair(l2, l3)
+	root := types.HashPair(n01, n23)
+
+	for _, v := range voters {
+		f.submit(t, v, epoch, root)
+	}
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))   // -> PENDING
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1)) // -> LIVE
+
+	// Claim leaf 2 with its 2-element proof: [sibling l3, opposite subtree n01].
+	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: accs[2].String(), Date: dateOf(epoch), Nonce: 2, Address: accs[2].String(),
+		Total: "30", Categories: map[string]string{"type1": "30"}, Proof: [][]byte{l3, n01},
+	})
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(30), f.bank.balances[accs[2].String()].AmountOf(testDenom))
+
+	// And leaf 0 from the other subtree: [sibling l1, opposite subtree n23].
+	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: accs[0].String(), Date: dateOf(epoch), Nonce: 0, Address: accs[0].String(),
+		Total: "10", Categories: map[string]string{"type1": "10"}, Proof: [][]byte{l1, n23},
+	})
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(10), f.bank.balances[accs[0].String()].AmountOf(testDenom))
+
+	// A correct leaf with the wrong-order proof (subtree before sibling) fails.
+	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: accs[1].String(), Date: dateOf(epoch), Nonce: 1, Address: accs[1].String(),
+		Total: "20", Categories: map[string]string{"type1": "20"}, Proof: [][]byte{n23, l0},
+	})
+	require.ErrorContains(t, err, "invalid merkle proof")
+}
+
+func TestSubmitRejectsDateBeforeStart(t *testing.T) {
+	accs := simtestutil.CreateIncrementalAccounts(2)
+	signer, valOwner := accs[0], accs[1]
+	f := setupDistribution(t,
+		mockStakingKeeper{totalBonded: math.NewInt(100), valAddr: sdk.ValAddress(valOwner), validator: unitValidator(sdk.ValAddress(valOwner))},
+		mockLicensesKeeper{licenses: []licensetypes.License{activeLicense(signer.String())}},
+		3,
+	)
+
+	// The day before the distribution start date is not a valid distribution day.
+	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
+		Signer:     signer.String(),
+		Date:       "2025-07-21", // start date is 2025-07-22 (dateOf(1))
+		MerkleRoot: []byte("root"),
+	})
+	require.ErrorContains(t, err, "before the distribution start date")
+}
+
+func TestSubmitRejectsDateOlderThanWindow(t *testing.T) {
+	accs := simtestutil.CreateIncrementalAccounts(2)
+	signer, valOwner := accs[0], accs[1]
+	// current day is epoch 10; the default voting window is 7 days, so day 1 is
+	// 9 days old and can no longer reach consensus.
+	f := setupDistribution(t,
+		mockStakingKeeper{totalBonded: math.NewInt(100), valAddr: sdk.ValAddress(valOwner), validator: unitValidator(sdk.ValAddress(valOwner))},
+		mockLicensesKeeper{licenses: []licensetypes.License{activeLicense(signer.String())}},
+		10,
+	)
+
+	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
+		Signer:     signer.String(),
+		Date:       dateOf(1),
+		MerkleRoot: []byte("root"),
+	})
+	require.ErrorContains(t, err, "older than the voting window")
+}
+
+// TestCategoryTotalsIsolatedByDate proves the per-category running totals (and
+// the ClaimTotalByCategory query) are scoped to a single day: claims on two
+// different LIVE days do not bleed into each other.
+func TestCategoryTotalsIsolatedByDate(t *testing.T) {
+	accs := simtestutil.CreateIncrementalAccounts(6)
+	voters := accs[0:4]
+	recipient := accs[4]
+	valOwner := accs[5]
+	stake := map[string]math.Int{
+		voters[0].String(): math.NewInt(25), voters[1].String(): math.NewInt(25),
+		voters[2].String(): math.NewInt(25), voters[3].String(): math.NewInt(25),
+	}
+	valAddr := sdk.ValAddress(valOwner)
+	staking := mockStakingKeeper{totalBonded: math.NewInt(100), valAddr: valAddr, validator: unitValidator(valAddr), stake: stake}
+	licenses := mockLicensesKeeper{licenses: []licensetypes.License{
+		activeLicense(voters[0].String()), activeLicense(voters[1].String()),
+		activeLicense(voters[2].String()), activeLicense(voters[3].String()),
+	}}
+	f := setupDistribution(t, staking, licenses, 3) // current day = 3, so days 1 and 2 are open
+
+	// Each day is a single-leaf tree (root == leaf, empty proof).
+	leaf1 := types.LeafHash(0, recipient.String(), "1000", map[string]string{"type1": "1000"})
+	leaf2 := types.LeafHash(0, recipient.String(), "2000", map[string]string{"type1": "2000"})
+	for _, v := range voters {
+		f.submit(t, v, 1, leaf1)
+		f.submit(t, v, 2, leaf2)
+	}
+	// Advance: day1 -> LIVE by epoch 2, day2 -> LIVE by epoch 3 (review delay 1).
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1))
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2))
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 3))
+
+	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(1), Nonce: 0, Address: recipient.String(),
+		Total: "1000", Categories: map[string]string{"type1": "1000"},
+	})
+	require.NoError(t, err)
+	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(2), Nonce: 0, Address: recipient.String(),
+		Total: "2000", Categories: map[string]string{"type1": "2000"},
+	})
+	require.NoError(t, err)
+
+	querier := keeper.NewQuerier(f.k)
+	day1, err := querier.ClaimTotalByCategory(f.ctx, &types.QueryClaimTotalByCategoryRequest{Date: dateOf(1)})
+	require.NoError(t, err)
+	require.Equal(t, map[string]string{"type1": "1000"}, day1.Totals)
+
+	day2, err := querier.ClaimTotalByCategory(f.ctx, &types.QueryClaimTotalByCategoryRequest{Date: dateOf(2)})
+	require.NoError(t, err)
+	require.Equal(t, map[string]string{"type1": "2000"}, day2.Totals)
+}
+
+// TestClaimRespectsMaxSupply exercises the final supply bound: a claim that is
+// within the day's halving budget is still rejected if minting it would push
+// total supply over max_supply.
+func TestClaimRespectsMaxSupply(t *testing.T) {
+	f, voters := fourVoterConsensus(t)
+	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
+
+	const epoch = int64(1)
+	amount := "100000000000000000000" // 1e20, comfortably within day 1's budget
+	leaf := types.LeafHash(0, recipient.String(), amount, map[string]string{"type1": amount})
+	for _, v := range voters {
+		f.submit(t, v, epoch, leaf) // single-leaf tree: root == leaf, empty proof
+	}
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))   // -> PENDING
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1)) // -> LIVE
+
+	// Pre-seed circulating supply at the cap so any mint, even within the day's
+	// budget, pushes total supply over max_supply.
+	maxSupply, ok := math.NewIntFromString(types.DefaultMaxSupply)
+	require.True(t, ok)
+	f.bank.supply[testDenom] = maxSupply
+
+	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(epoch), Nonce: 0, Address: recipient.String(),
+		Total: amount, Categories: map[string]string{"type1": amount},
+	})
+	require.ErrorContains(t, err, "max supply exceeded")
+}
+
 func TestVotingExpiresAfterWindow(t *testing.T) {
 	accs := simtestutil.CreateIncrementalAccounts(2)
 	signer, other := accs[0], accs[1]

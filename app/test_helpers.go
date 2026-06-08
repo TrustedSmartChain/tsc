@@ -31,6 +31,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
+
+	"github.com/TrustedSmartChain/tsc/v3/app/hooks"
 )
 
 // SetupOptions defines arguments that are passed into `Simapp` constructor.
@@ -48,13 +53,22 @@ func init() {
 	cfg := sdk.GetConfig()
 	config.SetBech32Prefixes(cfg)
 	config.SetBip44CoinType(cfg)
+	// config.SetBech32Prefixes seeds the EVM default ("cosmos"); override with
+	// this chain's actual prefixes ("tsc") so genesis addresses validate.
+	cfg.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
+	cfg.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)
+	cfg.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
 }
 
-func setup(withGenesis bool, invCheckPeriod uint, chainID string, evmChainID uint64) (*ChainApp, GenesisState) {
-	db := dbm.NewMemDB()
+func setup(t *testing.T, db *dbm.MemDB, withGenesis bool, invCheckPeriod uint, chainID string, evmChainID uint64) (*ChainApp, GenesisState) {
+	if db == nil {
+		db = dbm.NewMemDB()
+	}
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
-	appOptions[flags.FlagHome] = DefaultNodeHome
+	// Use a per-test home so the wasm VM's lock file does not collide when
+	// several ChainApp instances are created in one test binary.
+	appOptions[flags.FlagHome] = t.TempDir()
 	appOptions[server.FlagInvCheckPeriod] = invCheckPeriod
 
 	app := NewChainApp(log.NewNopLogger(), db, nil, true, appOptions, baseapp.SetChainID(chainID))
@@ -67,6 +81,14 @@ func setup(withGenesis bool, invCheckPeriod uint, chainID string, evmChainID uin
 
 // Setup initializes a new EVMD. A Nop logger is set in EVMD.
 func Setup(t *testing.T, chainID string, evmChainID uint64) *ChainApp {
+	t.Helper()
+	return SetupWithDB(t, dbm.NewMemDB(), chainID, evmChainID)
+}
+
+// SetupWithDB initializes a new EVMD backed by the provided db, so callers that
+// need to reload state from the same db afterwards (e.g. export tests) can do
+// so. A Nop logger is set in EVMD.
+func SetupWithDB(t *testing.T, db *dbm.MemDB, chainID string, evmChainID uint64) *ChainApp {
 	t.Helper()
 
 	privVal := mock.NewPV()
@@ -85,9 +107,7 @@ func Setup(t *testing.T, chainID string, evmChainID uint64) *ChainApp {
 		Coins:   sdk.NewCoins(sdk.NewCoin(types.DefaultEVMExtendedDenom, math.NewInt(100000000000000))),
 	}
 
-	app := SetupWithGenesisValSet(t, chainID, evmChainID, valSet, []authtypes.GenesisAccount{acc}, balance)
-
-	return app
+	return setupWithGenesisValSet(t, db, chainID, evmChainID, valSet, []authtypes.GenesisAccount{acc}, balance)
 }
 
 // SetupWithGenesisValSet initializes a new EVMD with a validator set and genesis accounts
@@ -96,15 +116,50 @@ func Setup(t *testing.T, chainID string, evmChainID uint64) *ChainApp {
 // account. A Nop logger is set in EVMD.
 func SetupWithGenesisValSet(t *testing.T, chainID string, evmChainID uint64, valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *ChainApp {
 	t.Helper()
+	return setupWithGenesisValSet(t, dbm.NewMemDB(), chainID, evmChainID, valSet, genAccs, balances...)
+}
 
-	app, genesisState := setup(true, 5, chainID, evmChainID)
+func setupWithGenesisValSet(t *testing.T, db *dbm.MemDB, chainID string, evmChainID uint64, valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *ChainApp {
+	t.Helper()
+
+	app, genesisState := setup(t, db, true, 5, chainID, evmChainID)
 	genesisState, err := simtestutil.GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, genAccs, balances...)
 	var bankGenesis banktypes.GenesisState
 	app.AppCodec().MustUnmarshalJSON(genesisState[banktypes.ModuleName], &bankGenesis)
 	require.NoError(t, err)
-	bankGenesis.DenomMetadata = network.GenerateBankGenesisMetadata(evmChainID)
+	// The EVM module's InitGenesis derives its coin info from bank denom
+	// metadata for the chain's base denom (aTSC); seed it alongside the EVM
+	// testutil metadata.
+	bankGenesis.DenomMetadata = append(network.GenerateBankGenesisMetadata(evmChainID), banktypes.Metadata{
+		Description: "The native staking and EVM token of Trusted Smart Chain",
+		Base:        BaseDenom,
+		Display:     DisplayDenom,
+		Name:        DisplayDenom,
+		Symbol:      DisplayDenom,
+		DenomUnits: []*banktypes.DenomUnit{
+			{Denom: BaseDenom, Exponent: 0},
+			{Denom: DisplayDenom, Exponent: uint32(BaseDenomUnit)},
+		},
+	})
 	genesisState[banktypes.ModuleName] = app.AppCodec().MustMarshalJSON(&bankGenesis)
 	require.NoError(t, err)
+
+	// The chain enforces a min_self_delegation floor at genesis
+	// (hooks.ValidateStakingGenesis); GenesisStateWithValSet seeds validators
+	// below it, so raise each validator to the floor.
+	var stakingGenesis stakingtypes.GenesisState
+	app.AppCodec().MustUnmarshalJSON(genesisState[stakingtypes.ModuleName], &stakingGenesis)
+	for i := range stakingGenesis.Validators {
+		stakingGenesis.Validators[i].MinSelfDelegation = hooks.MinSelfDelegation
+	}
+	genesisState[stakingtypes.ModuleName] = app.AppCodec().MustMarshalJSON(&stakingGenesis)
+
+	// The licenses module requires a valid owner in its params; seed the gov
+	// module account so InitGenesis validation passes.
+	var licensesGenesis licensestypes.GenesisState
+	app.AppCodec().MustUnmarshalJSON(genesisState[licensestypes.ModuleName], &licensesGenesis)
+	licensesGenesis.Params.Owner = authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	genesisState[licensestypes.ModuleName] = app.AppCodec().MustMarshalJSON(&licensesGenesis)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
 	require.NoError(t, err)

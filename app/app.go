@@ -119,7 +119,6 @@ import (
 	ibccallbackskeeper "github.com/cosmos/evm/x/ibc/callbacks/keeper"
 	"github.com/cosmos/evm/x/ibc/transfer"
 	transferKeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
-	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
 	"github.com/cosmos/evm/x/vm"
 	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -213,7 +212,6 @@ var maccPerms = map[string][]string{
 	feemarkettypes.ModuleName:      nil,
 	erc20types.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	distrotypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
-	precisebanktypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 	wasmtypes.ModuleName:           {authtypes.Burner},
 }
 
@@ -296,6 +294,11 @@ func NewChainApp(
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *ChainApp {
+
+	// Under the `test` build tag, clear cosmos/evm's process-global EVM config so
+	// multiple ChainApp instances can be built in one test binary. No-op in
+	// production builds.
+	resetEVMConfig()
 
 	// Use the EVM chain ID from app options if explicitly set to our chain's
 	// value, otherwise fall back to our hardcoded ID. The cosmos/evm global
@@ -884,7 +887,6 @@ func NewChainApp(
 		nft.ModuleName,
 		genutiltypes.ModuleName, authz.ModuleName, feegrant.ModuleName,
 		consensusparamtypes.ModuleName,
-		precisebanktypes.ModuleName,
 		vestingtypes.ModuleName,
 		// CosmWasm
 		wasmtypes.ModuleName,
@@ -910,7 +912,6 @@ func NewChainApp(
 		nft.ModuleName,
 		feegrant.ModuleName, upgradetypes.ModuleName, consensusparamtypes.ModuleName,
 		epochstypes.ModuleName,
-		precisebanktypes.ModuleName,
 		vestingtypes.ModuleName,
 		// CosmWasm
 		wasmtypes.ModuleName,
@@ -938,7 +939,6 @@ func NewChainApp(
 		evmtypes.ModuleName,
 		feemarkettypes.ModuleName,
 		erc20types.ModuleName,
-		precisebanktypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,

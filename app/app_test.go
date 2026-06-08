@@ -8,38 +8,34 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
-	"cosmossdk.io/log"
-
-	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
 
 func TestAppExport(t *testing.T) {
-	db := dbm.NewMemDB()
-	logger := log.NewTestLogger(t)
-	gapp := NewChainApp(
-		logger.With("instance", "first"),
-		db,
-		nil,
-		false,
-		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+	const (
+		chainID    = "chain-test"
+		evmChainID = uint64(9001)
 	)
 
-	// finalize block so we have CheckTx state set
-	_, err := gapp.FinalizeBlock(&abci.RequestFinalizeBlock{
-		Height: 1,
-	})
-	require.NoError(t, err)
+	// Initialize a chain (InitChain seeds the consensus params and genesis
+	// state), then finalize + commit the first block so that genesis state is
+	// flushed to the committed store, and export it.
+	//
+	// NOTE: InitChain writes genesis to the finalize state; Commit alone does
+	// not flush it — a FinalizeBlock is required first. And because cosmos/evm
+	// keeps a process-global EVM chainConfig that is set once per process (the
+	// non-`test` build), we cannot spin up a second ChainApp to export from a
+	// cold reload, so we export from this same committed app.
+	db := dbm.NewMemDB()
+	gapp := SetupWithDB(t, db, chainID, evmChainID)
 
+	_, err := gapp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: gapp.LastBlockHeight() + 1})
+	require.NoError(t, err)
 	_, err = gapp.Commit()
 	require.NoError(t, err)
 
-	// Making a new app object with the db, so that initchain hasn't been called
-	newGapp := NewChainApp(
-		logger, db, nil, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-	)
-	_, err = newGapp.ExportAppStateAndValidators(false, []string{}, nil)
+	_, err = gapp.ExportAppStateAndValidators(false, []string{}, nil)
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
 }
 
