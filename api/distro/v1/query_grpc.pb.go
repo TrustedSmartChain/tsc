@@ -23,6 +23,7 @@ const (
 	Query_Distribution_FullMethodName         = "/distro.v1.Query/Distribution"
 	Query_DistributionVotes_FullMethodName    = "/distro.v1.Query/DistributionVotes"
 	Query_Claimed_FullMethodName              = "/distro.v1.Query/Claimed"
+	Query_ClaimsByDate_FullMethodName         = "/distro.v1.Query/ClaimsByDate"
 	Query_ClaimTotalByCategory_FullMethodName = "/distro.v1.Query/ClaimTotalByCategory"
 )
 
@@ -38,6 +39,8 @@ type QueryClient interface {
 	DistributionVotes(ctx context.Context, in *QueryDistributionVotesRequest, opts ...grpc.CallOption) (*QueryDistributionVotesResponse, error)
 	// Claimed reports whether a (date, nonce) reward has been claimed.
 	Claimed(ctx context.Context, in *QueryClaimedRequest, opts ...grpc.CallOption) (*QueryClaimedResponse, error)
+	// ClaimsByDate lists the reward nonces claimed for a day (YYYY-MM-DD).
+	ClaimsByDate(ctx context.Context, in *QueryClaimsByDateRequest, opts ...grpc.CallOption) (*QueryClaimsByDateResponse, error)
 	// ClaimTotalByCategory reports the cumulative claimed amount per category for a
 	// day's distribution (YYYY-MM-DD).
 	ClaimTotalByCategory(ctx context.Context, in *QueryClaimTotalByCategoryRequest, opts ...grpc.CallOption) (*QueryClaimTotalByCategoryResponse, error)
@@ -87,6 +90,15 @@ func (c *queryClient) Claimed(ctx context.Context, in *QueryClaimedRequest, opts
 	return out, nil
 }
 
+func (c *queryClient) ClaimsByDate(ctx context.Context, in *QueryClaimsByDateRequest, opts ...grpc.CallOption) (*QueryClaimsByDateResponse, error) {
+	out := new(QueryClaimsByDateResponse)
+	err := c.cc.Invoke(ctx, Query_ClaimsByDate_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) ClaimTotalByCategory(ctx context.Context, in *QueryClaimTotalByCategoryRequest, opts ...grpc.CallOption) (*QueryClaimTotalByCategoryResponse, error) {
 	out := new(QueryClaimTotalByCategoryResponse)
 	err := c.cc.Invoke(ctx, Query_ClaimTotalByCategory_FullMethodName, in, out, opts...)
@@ -108,6 +120,8 @@ type QueryServer interface {
 	DistributionVotes(context.Context, *QueryDistributionVotesRequest) (*QueryDistributionVotesResponse, error)
 	// Claimed reports whether a (date, nonce) reward has been claimed.
 	Claimed(context.Context, *QueryClaimedRequest) (*QueryClaimedResponse, error)
+	// ClaimsByDate lists the reward nonces claimed for a day (YYYY-MM-DD).
+	ClaimsByDate(context.Context, *QueryClaimsByDateRequest) (*QueryClaimsByDateResponse, error)
 	// ClaimTotalByCategory reports the cumulative claimed amount per category for a
 	// day's distribution (YYYY-MM-DD).
 	ClaimTotalByCategory(context.Context, *QueryClaimTotalByCategoryRequest) (*QueryClaimTotalByCategoryResponse, error)
@@ -129,6 +143,9 @@ func (UnimplementedQueryServer) DistributionVotes(context.Context, *QueryDistrib
 }
 func (UnimplementedQueryServer) Claimed(context.Context, *QueryClaimedRequest) (*QueryClaimedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Claimed not implemented")
+}
+func (UnimplementedQueryServer) ClaimsByDate(context.Context, *QueryClaimsByDateRequest) (*QueryClaimsByDateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimsByDate not implemented")
 }
 func (UnimplementedQueryServer) ClaimTotalByCategory(context.Context, *QueryClaimTotalByCategoryRequest) (*QueryClaimTotalByCategoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimTotalByCategory not implemented")
@@ -218,6 +235,24 @@ func _Query_Claimed_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ClaimsByDate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryClaimsByDateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ClaimsByDate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ClaimsByDate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ClaimsByDate(ctx, req.(*QueryClaimsByDateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_ClaimTotalByCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryClaimTotalByCategoryRequest)
 	if err := dec(in); err != nil {
@@ -258,6 +293,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Claimed",
 			Handler:    _Query_Claimed_Handler,
+		},
+		{
+			MethodName: "ClaimsByDate",
+			Handler:    _Query_ClaimsByDate_Handler,
 		},
 		{
 			MethodName: "ClaimTotalByCategory",

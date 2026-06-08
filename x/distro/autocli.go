@@ -35,6 +35,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}, {ProtoField: "nonce"}},
 				},
 				{
+					RpcMethod:      "ClaimsByDate",
+					Use:            "claims-by-date [date]",
+					Short:          "List the reward nonces claimed for a day (YYYY-MM-DD)",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}},
+				},
+				{
 					RpcMethod:      "ClaimTotalByCategory",
 					Use:            "claim-total-by-category [date]",
 					Short:          "Query cumulative claimed totals by category for a day (YYYY-MM-DD)",

@@ -78,6 +78,28 @@ func (k Querier) Claimed(goCtx context.Context, req *types.QueryClaimedRequest) 
 	return &types.QueryClaimedResponse{Claimed: claimed}, nil
 }
 
+// ClaimsByDate lists the reward nonces claimed for a day (YYYY-MM-DD), in
+// ascending order.
+func (k Querier) ClaimsByDate(goCtx context.Context, req *types.QueryClaimsByDateRequest) (*types.QueryClaimsByDateResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+	if req.Date == "" {
+		return nil, status.Error(codes.InvalidArgument, "date is required")
+	}
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	var nonces []uint64
+	rng := collections.NewPrefixedPairRange[string, uint64](req.Date)
+	if err := k.Keeper.Claimed.Walk(ctx, rng, func(key collections.Pair[string, uint64]) (bool, error) {
+		nonces = append(nonces, key.K2())
+		return false, nil
+	}); err != nil {
+		return nil, err
+	}
+	return &types.QueryClaimsByDateResponse{Nonces: nonces}, nil
+}
+
 // ClaimTotalByCategory returns the cumulative claimed amount per category for a
 // day's distribution (YYYY-MM-DD).
 func (k Querier) ClaimTotalByCategory(goCtx context.Context, req *types.QueryClaimTotalByCategoryRequest) (*types.QueryClaimTotalByCategoryResponse, error) {

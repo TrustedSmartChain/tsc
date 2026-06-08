@@ -443,6 +443,16 @@ func TestClaimCategoryTotals(t *testing.T) {
 
 	// dateOf(1) is exactly the default start date.
 	require.Equal(t, types.DefaultDistributionStartDate, dateOf(epoch))
+
+	// Both nonces were claimed; ClaimsByDate lists them in ascending order.
+	claims, err := querier.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(epoch)})
+	require.NoError(t, err)
+	require.Equal(t, []uint64{0, 1}, claims.Nonces)
+
+	// A day with no claims returns an empty list.
+	empty, err := querier.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(epoch + 1)})
+	require.NoError(t, err)
+	require.Empty(t, empty.Nonces)
 }
 
 func TestClaimRejectsInconsistentCategories(t *testing.T) {
