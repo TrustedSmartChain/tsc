@@ -19,9 +19,6 @@ service Msg {
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {
     option (google.api.http).post = "/tsc/distro/v1/tx/update_params";
   }
-  rpc Mint(MsgMint) returns (MsgMintResponse) {
-    option (google.api.http).post = "/tsc/distro/v1/tx/mint";
-  }
   // SubmitDistributionRoot records a node's merkle root for an epoch (day).
   rpc SubmitDistributionRoot(MsgSubmitDistributionRoot) returns (MsgSubmitDistributionRootResponse) {
     option (google.api.http).post = "/tsc/distro/v1/tx/submit_distribution_root";
@@ -58,15 +55,6 @@ message MsgUpdateParams {
 //
 // Since: cosmos-sdk 0.47
 message MsgUpdateParamsResponse {}
-
-message MsgMint {
-  option (cosmos.msg.v1.signer) = "minter";
-
-  string amount = 1;
-  string minter = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-}
-
-message MsgMintResponse {}
 
 // MsgSubmitDistributionRoot submits the merkle root of a node's deterministic
 // daily distribution calculation for a given epoch. The signer must hold >= 1

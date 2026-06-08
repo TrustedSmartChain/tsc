@@ -24,6 +24,7 @@ func NewMsgUpdateParams(
 	epochIdentifier string,
 	distributionReviewDelay uint64,
 	challengeBond string,
+	voteWindowEpochs uint64,
 ) *MsgUpdateParams {
 	return &MsgUpdateParams{
 		Authority: sender.String(),
@@ -40,6 +41,7 @@ func NewMsgUpdateParams(
 			epochIdentifier,
 			distributionReviewDelay,
 			challengeBond,
+			voteWindowEpochs,
 		),
 	}
 }

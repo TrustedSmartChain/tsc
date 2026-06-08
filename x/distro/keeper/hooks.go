@@ -66,73 +66,106 @@ func (k Keeper) advanceDistributions(ctx context.Context, upTo int64, params typ
 	reviewDelay := int64(params.DistributionReviewDelay)
 
 	for _, ed := range candidates {
-		switch ed.Status {
-		case types.DISTRIBUTION_STATUS_VOTING:
-			result, err := k.tallyEpoch(ctx, ed.Epoch, params)
-			if err != nil {
-				return err
-			}
-			if result == nil {
-				continue // no consensus yet
-			}
-			ed.MerkleRoot = result.root
-			ed.LicenseTally = result.licenseTally.String()
-			ed.StakeTally = result.stakeTally.String()
-			ed.Status = types.DISTRIBUTION_STATUS_PENDING
-			ed.PendingSinceEpoch = upTo
-			if err := k.EpochDistributions.Set(ctx, ed.Epoch, ed); err != nil {
-				return err
-			}
-			emitPending(sdkCtx, ed)
-
-		case types.DISTRIBUTION_STATUS_UNDER_REVIEW:
-			result, err := k.tallyEpoch(ctx, ed.Epoch, params)
-			if err != nil {
-				return err
-			}
-			if result == nil {
-				continue // re-vote has not reached consensus; stay under review
-			}
-			// The re-vote is the judge of the challenge: if it re-confirms the
-			// challenged root, the challenge was frivolous and the bond is burned;
-			// otherwise the challenge surfaced a real problem and the bond is refunded.
-			frivolous := bytes.Equal(result.root, ed.MerkleRoot)
-			if err := k.resolveChallengeBond(ctx, ed, params.Denom, frivolous); err != nil {
-				return err
-			}
-			ed.MerkleRoot = result.root
-			ed.LicenseTally = result.licenseTally.String()
-			ed.StakeTally = result.stakeTally.String()
-			ed.Status = types.DISTRIBUTION_STATUS_PENDING
-			ed.PendingSinceEpoch = upTo
-			ed.Challenger = ""
-			ed.ChallengeBond = ""
-			if err := k.EpochDistributions.Set(ctx, ed.Epoch, ed); err != nil {
-				return err
-			}
-			sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-				types.EventTypeChallengeResolved,
-				sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatInt(ed.Epoch, 10)),
-				sdk.NewAttribute(types.AttributeKeyFrivolous, strconv.FormatBool(frivolous)),
-			))
-			emitPending(sdkCtx, ed)
-
-		case types.DISTRIBUTION_STATUS_PENDING:
-			if upTo-ed.PendingSinceEpoch < reviewDelay {
-				continue // still within the review-delay window
-			}
-			ed.Status = types.DISTRIBUTION_STATUS_LIVE
-			ed.FinalizedHeight = sdkCtx.BlockHeight()
-			if err := k.EpochDistributions.Set(ctx, ed.Epoch, ed); err != nil {
-				return err
-			}
-			sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-				types.EventTypeEpochFinalized,
-				sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatInt(ed.Epoch, 10)),
-				sdk.NewAttribute(types.AttributeKeyLicenseTally, ed.LicenseTally),
-				sdk.NewAttribute(types.AttributeKeyStakeTally, ed.StakeTally),
-			))
+		// Isolate each epoch in its own cache context: a single failing epoch
+		// (e.g. an un-refundable challenger, a transient keeper error) must not
+		// roll back the other epochs' transitions, and must not wedge the module
+		// by failing the whole epoch-end forever. On error we log and skip; the
+		// epoch is retried on the next epoch boundary.
+		cacheCtx, write := sdkCtx.CacheContext()
+		if err := k.advanceOne(cacheCtx, ed, upTo, reviewDelay, params); err != nil {
+			sdkCtx.Logger().Error("distro: failed to advance epoch distribution",
+				"epoch", ed.Epoch, "status", ed.Status.String(), "error", err)
+			continue
 		}
+		write()
+		sdkCtx.EventManager().EmitEvents(cacheCtx.EventManager().Events())
+	}
+	return nil
+}
+
+// advanceOne performs the lifecycle transition for a single epoch distribution.
+// It is run inside a per-epoch cache context by advanceDistributions.
+func (k Keeper) advanceOne(ctx sdk.Context, ed types.EpochDistribution, upTo, reviewDelay int64, params types.Params) error {
+	switch ed.Status {
+	case types.DISTRIBUTION_STATUS_VOTING:
+		result, err := k.tallyEpoch(ctx, ed.Epoch, params)
+		if err != nil {
+			return err
+		}
+		if result == nil {
+			// No consensus yet. Expire the epoch once its voting window has
+			// elapsed so it stops being (expensively) re-tallied every epoch end.
+			if upTo-ed.Epoch >= int64(params.VoteWindowEpochs) {
+				ed.Status = types.DISTRIBUTION_STATUS_EXPIRED
+				if err := k.EpochDistributions.Set(ctx, ed.Epoch, ed); err != nil {
+					return err
+				}
+				ctx.EventManager().EmitEvent(sdk.NewEvent(
+					types.EventTypeEpochExpired,
+					sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatInt(ed.Epoch, 10)),
+				))
+			}
+			return nil
+		}
+		ed.MerkleRoot = result.root
+		ed.LicenseTally = result.licenseTally.String()
+		ed.StakeTally = result.stakeTally.String()
+		ed.Status = types.DISTRIBUTION_STATUS_PENDING
+		ed.PendingSinceEpoch = upTo
+		if err := k.EpochDistributions.Set(ctx, ed.Epoch, ed); err != nil {
+			return err
+		}
+		emitPending(ctx, ed)
+
+	case types.DISTRIBUTION_STATUS_UNDER_REVIEW:
+		result, err := k.tallyEpoch(ctx, ed.Epoch, params)
+		if err != nil {
+			return err
+		}
+		if result == nil {
+			return nil // re-vote has not reached consensus; stay under review
+		}
+		// The re-vote is the judge of the challenge: if it re-confirms the
+		// challenged root, the challenge was frivolous and the bond is burned;
+		// otherwise the challenge surfaced a real problem and the bond is refunded.
+		frivolous := bytes.Equal(result.root, ed.MerkleRoot)
+		if err := k.resolveChallengeBond(ctx, ed, params.Denom, frivolous); err != nil {
+			return err
+		}
+		ed.MerkleRoot = result.root
+		ed.LicenseTally = result.licenseTally.String()
+		ed.StakeTally = result.stakeTally.String()
+		ed.Status = types.DISTRIBUTION_STATUS_PENDING
+		// NOTE: PendingSinceEpoch is intentionally NOT reset here. Resuming the
+		// original review timer (rather than restarting it) prevents repeated
+		// challenges from indefinitely delaying finalization.
+		ed.Challenger = ""
+		ed.ChallengeBond = ""
+		if err := k.EpochDistributions.Set(ctx, ed.Epoch, ed); err != nil {
+			return err
+		}
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeChallengeResolved,
+			sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatInt(ed.Epoch, 10)),
+			sdk.NewAttribute(types.AttributeKeyFrivolous, strconv.FormatBool(frivolous)),
+		))
+		emitPending(ctx, ed)
+
+	case types.DISTRIBUTION_STATUS_PENDING:
+		if upTo-ed.PendingSinceEpoch < reviewDelay {
+			return nil // still within the review-delay window
+		}
+		ed.Status = types.DISTRIBUTION_STATUS_LIVE
+		ed.FinalizedHeight = ctx.BlockHeight()
+		if err := k.EpochDistributions.Set(ctx, ed.Epoch, ed); err != nil {
+			return err
+		}
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeEpochFinalized,
+			sdk.NewAttribute(types.AttributeKeyEpoch, strconv.FormatInt(ed.Epoch, 10)),
+			sdk.NewAttribute(types.AttributeKeyLicenseTally, ed.LicenseTally),
+			sdk.NewAttribute(types.AttributeKeyStakeTally, ed.StakeTally),
+		))
 	}
 	return nil
 }

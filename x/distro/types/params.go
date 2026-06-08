@@ -29,6 +29,10 @@ const DefaultDistributionReviewDelay uint64 = 3
 // (10 tokens at 18 decimals). Tune per economic policy.
 const DefaultChallengeBond string = "10000000000000000000"
 
+// DefaultVoteWindowEpochs is how many epochs a VOTING distribution may remain
+// open (without reaching consensus) before it expires and stops being tallied.
+const DefaultVoteWindowEpochs uint64 = 7
+
 // NewParams creates a new Params instance.
 func NewParams(
 	minting_address string,
@@ -42,7 +46,8 @@ func NewParams(
 	stake_tally_threshold string,
 	epoch_identifier string,
 	distribution_review_delay uint64,
-	challenge_bond string) Params {
+	challenge_bond string,
+	vote_window_epochs uint64) Params {
 	return Params{
 		MintingAddress:            minting_address,
 		ReceivingAddress:          receiving_address,
@@ -56,6 +61,7 @@ func NewParams(
 		EpochIdentifier:           epoch_identifier,
 		DistributionReviewDelay:   distribution_review_delay,
 		ChallengeBond:             challenge_bond,
+		VoteWindowEpochs:          vote_window_epochs,
 	}
 }
 
@@ -73,6 +79,7 @@ func DefaultParams() Params {
 		DefaultEpochIdentifier,
 		DefaultDistributionReviewDelay,
 		DefaultChallengeBond,
+		DefaultVoteWindowEpochs,
 	)
 }
 
@@ -110,6 +117,9 @@ func (p Params) Validate() error {
 	}
 	if err := validateChallengeBond(p.ChallengeBond); err != nil {
 		return err
+	}
+	if p.VoteWindowEpochs == 0 {
+		return fmt.Errorf("vote window epochs must be greater than zero")
 	}
 
 	return nil

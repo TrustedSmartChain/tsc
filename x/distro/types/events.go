@@ -7,6 +7,7 @@ const (
 	EventTypeEpochUnderReview  = "epoch_distribution_under_review"
 	EventTypeChallengeResolved = "epoch_distribution_challenge_resolved"
 	EventTypeEpochFinalized    = "epoch_distribution_finalized"
+	EventTypeEpochExpired      = "epoch_distribution_expired"
 	EventTypeClaim             = "claim_distribution"
 
 	AttributeKeyEpoch        = "epoch"

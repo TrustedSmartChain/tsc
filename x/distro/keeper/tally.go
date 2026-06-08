@@ -2,11 +2,13 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"sort"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	licensetypes "github.com/webstack-sdk/webstack/x/licenses/types"
 
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
@@ -61,13 +63,22 @@ func (k Keeper) voterStake(ctx context.Context, addr sdk.AccAddress) (math.Int, 
 	valAddr := sdk.ValAddress(addr)
 
 	// If the address operates a validator, count only its self-delegation.
-	if validator, err := k.stakingKeeper.GetValidator(ctx, valAddr); err == nil {
+	validator, err := k.stakingKeeper.GetValidator(ctx, valAddr)
+	switch {
+	case err == nil:
 		del, err := k.stakingKeeper.GetDelegation(ctx, addr, valAddr)
 		if err != nil {
-			// Validator with no self-delegation contributes nothing.
-			return math.ZeroInt(), nil
+			if errors.Is(err, stakingtypes.ErrNoDelegation) {
+				// Validator with no self-delegation contributes nothing.
+				return math.ZeroInt(), nil
+			}
+			return math.ZeroInt(), err
 		}
 		return validator.TokensFromShares(del.Shares).TruncateInt(), nil
+	case errors.Is(err, stakingtypes.ErrNoValidatorFound):
+		// Not a validator operator; fall through to the delegator path.
+	default:
+		return math.ZeroInt(), err
 	}
 
 	// Otherwise sum the tokens backing all of this delegator's delegations.
@@ -83,8 +94,11 @@ func (k Keeper) voterStake(ctx context.Context, addr sdk.AccAddress) (math.Int, 
 		}
 		validator, err := k.stakingKeeper.GetValidator(ctx, valAddr)
 		if err != nil {
-			// Validator no longer exists; skip.
-			continue
+			if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+				// Validator no longer exists; skip this delegation.
+				continue
+			}
+			return math.ZeroInt(), err
 		}
 		total = total.Add(validator.TokensFromShares(del.Shares).TruncateInt())
 	}
@@ -192,7 +206,8 @@ func uintFraction(num, den uint64) math.LegacyDec {
 	if den == 0 {
 		return math.LegacyZeroDec()
 	}
-	return math.LegacyNewDec(int64(num)).Quo(math.LegacyNewDec(int64(den)))
+	// Use NewIntFromUint64 (not int64()) so large counts cannot wrap negative.
+	return intFraction(math.NewIntFromUint64(num), math.NewIntFromUint64(den))
 }
 
 func intFraction(num, den math.Int) math.LegacyDec {

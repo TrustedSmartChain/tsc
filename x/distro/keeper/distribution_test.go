@@ -368,6 +368,101 @@ func TestTallyBelowThresholdStaysVoting(t *testing.T) {
 	require.Equal(t, types.DISTRIBUTION_STATUS_VOTING, ed.Status)
 }
 
+func TestClaimRespectsEpochBudget(t *testing.T) {
+	f, voters := fourVoterConsensus(t)
+	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
+
+	// leaf0 claims more than a single day's halving allocation; leaf1 is small.
+	const epoch = int64(1)
+	overBudget := "1000000000000000000000000" // 1e24, far above one day's budget but below MaxSupply
+	leafBig := types.LeafHash(0, recipient.String(), overBudget)
+	leafSmall := types.LeafHash(1, recipient.String(), "1000")
+	root := types.HashPair(leafBig, leafSmall)
+
+	for _, v := range voters {
+		f.submit(t, v, epoch, root)
+	}
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))   // -> PENDING
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1)) // -> LIVE
+
+	// A within-budget claim succeeds.
+	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Epoch: epoch, Nonce: 1, Address: recipient.String(), Amount: "1000", Proof: [][]byte{leafBig},
+	})
+	require.NoError(t, err)
+
+	// A claim exceeding the epoch's halving budget is rejected (before max supply).
+	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Epoch: epoch, Nonce: 0, Address: recipient.String(), Amount: overBudget, Proof: [][]byte{leafSmall},
+	})
+	require.ErrorContains(t, err, "budget")
+
+	// The cumulative claimed amount reflects only the successful claim.
+	ed, err := f.k.EpochDistributions.Get(f.ctx, epoch)
+	require.NoError(t, err)
+	require.Equal(t, "1000", ed.ClaimedAmount)
+}
+
+func TestVotingExpiresAfterWindow(t *testing.T) {
+	accs := simtestutil.CreateIncrementalAccounts(2)
+	signer, other := accs[0], accs[1]
+	// Two licensed holders but only one votes => never reaches consensus.
+	f := setupDistribution(t,
+		mockStakingKeeper{totalBonded: math.NewInt(100), valAddr: sdk.ValAddress(other), validator: unitValidator(sdk.ValAddress(other)), stake: map[string]math.Int{signer.String(): math.NewInt(10)}},
+		mockLicensesKeeper{licenses: []licensetypes.License{activeLicense(signer.String()), activeLicense(other.String())}},
+		1,
+	)
+	f.submit(t, signer, 1, []byte("lonely-root---------------------"))
+
+	// Within the voting window it stays VOTING.
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1))
+	ed, err := f.k.EpochDistributions.Get(f.ctx, 1)
+	require.NoError(t, err)
+	require.Equal(t, types.DISTRIBUTION_STATUS_VOTING, ed.Status)
+
+	// Once the window (default 7) has elapsed it expires and is no longer tallied.
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1+int64(types.DefaultVoteWindowEpochs)))
+	ed, err = f.k.EpochDistributions.Get(f.ctx, 1)
+	require.NoError(t, err)
+	require.Equal(t, types.DISTRIBUTION_STATUS_EXPIRED, ed.Status)
+}
+
+func TestChallengeDoesNotResetReviewDelay(t *testing.T) {
+	f, voters := fourVoterConsensus(t)
+	params, err := f.k.Params.Get(f.ctx)
+	require.NoError(t, err)
+	params.DistributionReviewDelay = 2 // longer delay so a reset would be observable
+	require.NoError(t, f.k.Params.Set(f.ctx, params))
+
+	const epoch = int64(1)
+	root := []byte("review-delay-root---------------")
+	for _, v := range voters {
+		f.submit(t, v, epoch, root)
+	}
+
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1)) // VOTING -> PENDING (since=1)
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2)) // still PENDING (2-1 < 2)
+
+	// Challenge during the window; the retained votes re-confirm the same root.
+	f.bank.balances[voters[0].String()] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
+	_, err = f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Epoch: epoch})
+	require.NoError(t, err)
+
+	// Re-tally resolves back to PENDING but must NOT restart the review timer.
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 3))
+	ed, err := f.k.EpochDistributions.Get(f.ctx, epoch)
+	require.NoError(t, err)
+	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status)
+	require.Equal(t, int64(1), ed.PendingSinceEpoch, "review timer must resume, not reset")
+
+	// With the original timer (since=1, delay=2) it promotes at epoch 4; a reset
+	// (since=3) would leave it PENDING here.
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 4))
+	ed, err = f.k.EpochDistributions.Get(f.ctx, epoch)
+	require.NoError(t, err)
+	require.Equal(t, types.DISTRIBUTION_STATUS_LIVE, ed.Status)
+}
+
 // fourVoterConsensus sets up four equally-staked, licensed voters (25 stake
 // each of 100 bonded) and returns the fixture and the voters.
 func fourVoterConsensus(t *testing.T) (*distFixture, []sdk.AccAddress) {

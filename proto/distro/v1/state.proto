@@ -24,6 +24,9 @@ enum DistributionStatus {
   // DISTRIBUTION_STATUS_UNDER_REVIEW means a licensed holder challenged the
   // pending root; voting has reopened and the re-tally will resolve it.
   DISTRIBUTION_STATUS_UNDER_REVIEW = 3;
+  // DISTRIBUTION_STATUS_EXPIRED means the epoch never reached consensus within
+  // the voting window; it is no longer tallied.
+  DISTRIBUTION_STATUS_EXPIRED = 4;
 }
 
 // DistributionVote is a single node's submitted merkle root for an epoch.
@@ -53,6 +56,9 @@ message EpochDistribution {
   // challenge_bond is the amount (in the module denom) escrowed by the
   // challenger while UNDER_REVIEW.
   string challenge_bond = 9;
+  // claimed_amount is the cumulative amount (in the module denom) already
+  // claimed for this epoch, capped by the epoch's halving budget.
+  string claimed_amount = 10;
 }
 
 // ClaimedReward is the genesis representation of the claimed nonces for an epoch.

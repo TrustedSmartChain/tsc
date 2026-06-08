@@ -81,6 +81,9 @@ func migrateDistroParams(ctx context.Context, app *ChainApp) error {
 	if params.ChallengeBond == "" {
 		params.ChallengeBond = distrotypes.DefaultChallengeBond
 	}
+	if params.VoteWindowEpochs == 0 {
+		params.VoteWindowEpochs = distrotypes.DefaultVoteWindowEpochs
+	}
 
 	return app.DistroKeeper.Params.Set(ctx, params)
 }

@@ -63,7 +63,25 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 		return nil, errorsmod.Wrap(sdkerrors.ErrUnauthorized, "invalid merkle proof")
 	}
 
-	// Mint on demand, respecting max supply.
+	// Enforce the per-epoch emission budget derived from the halving schedule:
+	// the cumulative amount claimed for this epoch may not exceed the epoch's
+	// allocation. This bounds on-demand minting to the emission curve so a
+	// finalized root cannot mint beyond the day's budget.
+	budget, err := epochBudget(params, msg.Epoch)
+	if err != nil {
+		return nil, err
+	}
+	claimed, ok := math.NewIntFromString(ed.ClaimedAmount)
+	if !ok || ed.ClaimedAmount == "" {
+		claimed = math.ZeroInt()
+	}
+	newClaimed := claimed.Add(amount)
+	if newClaimed.GT(budget) {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest,
+			"claim would exceed epoch %d budget: claimed %s + %s > %s", msg.Epoch, claimed, amount, budget)
+	}
+
+	// Mint on demand, respecting max supply as a final safety bound.
 	supply := ms.k.bankKeeper.GetSupply(ctx, params.Denom)
 	maxSupply, ok := math.NewIntFromString(params.MaxSupply)
 	if !ok {
@@ -81,8 +99,12 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 		return nil, err
 	}
 
-	// Record the claimed nonce.
+	// Record the claimed nonce and the updated per-epoch claimed total.
 	if err := ms.k.Claimed.Set(ctx, claimedKey); err != nil {
+		return nil, err
+	}
+	ed.ClaimedAmount = newClaimed.String()
+	if err := ms.k.EpochDistributions.Set(ctx, msg.Epoch, ed); err != nil {
 		return nil, err
 	}
 

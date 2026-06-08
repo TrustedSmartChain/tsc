@@ -43,6 +43,12 @@ func (ms msgServer) SubmitDistributionRoot(goCtx context.Context, msg *types.Msg
 	if msg.Epoch > epochInfo.CurrentEpoch {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "epoch %d is in the future (current %d)", msg.Epoch, epochInfo.CurrentEpoch)
 	}
+	// Reject epochs older than the voting window: they can no longer reach
+	// consensus (they would be expired at the next epoch end), so opening them
+	// for voting only creates dead state.
+	if epochInfo.CurrentEpoch-msg.Epoch > int64(params.VoteWindowEpochs) {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "epoch %d is older than the voting window (current %d, window %d)", msg.Epoch, epochInfo.CurrentEpoch, params.VoteWindowEpochs)
+	}
 
 	// License gate: signer must hold >= 1 active license of the required type.
 	licenses, err := ms.k.activeLicenseCount(ctx, msg.Signer, params.DistributionLicenseTypeId)

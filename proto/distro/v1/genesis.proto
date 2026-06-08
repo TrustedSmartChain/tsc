@@ -60,4 +60,9 @@ message Params {
   // to place a PENDING distribution UNDER_REVIEW. Burned if the challenge is
   // frivolous (re-vote re-confirms the same root), refunded otherwise.
   string challenge_bond = 12;
+
+  // vote_window_epochs is how many epochs after an epoch (day) a VOTING
+  // distribution has to reach consensus before it expires and is no longer
+  // tallied. Bounds epoch-end work.
+  uint64 vote_window_epochs = 13;
 }

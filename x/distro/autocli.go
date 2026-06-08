@@ -40,16 +40,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			Service: modulev1.Msg_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
-					RpcMethod: "Mint",
-					Use:       "mint [amount]",
-					Short:     "Mint tokens",
-					Long:      "Mint tokens to the minting address",
-					Example:   "mint [amount]",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "amount"},
-					},
-				},
-				{
 					RpcMethod: "SubmitDistributionRoot",
 					Use:       "submit-distribution-root [epoch] [merkle-root]",
 					Short:     "Submit a node's merkle root for an epoch",
