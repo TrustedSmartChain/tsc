@@ -8,6 +8,7 @@ const (
 	EventTypeChallengeResolved       = "distribution_challenge_resolved"
 	EventTypeDistributionFinalized   = "distribution_finalized"
 	EventTypeDistributionExpired     = "distribution_expired"
+	EventTypeDistributionRevived     = "distribution_revived"
 	EventTypeClaim                   = "claim_distribution"
 
 	AttributeKeyDate         = "date"

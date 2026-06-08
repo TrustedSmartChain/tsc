@@ -41,8 +41,7 @@ func (ms msgServer) SubmitDistributionRoot(goCtx context.Context, msg *types.Msg
 	}
 
 	// The submitted date must be a valid day on or after the distribution start
-	// date (and not after the current day). daysBetween validates the format and
-	// rejects dates before the start date implicitly via the bounds below.
+	// date (and not after the current day).
 	age, err := daysBetween(msg.Date, currentDate)
 	if err != nil {
 		return nil, err
@@ -57,12 +56,6 @@ func (ms msgServer) SubmitDistributionRoot(goCtx context.Context, msg *types.Msg
 	if age < 0 {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is in the future (current %q)", msg.Date, currentDate)
 	}
-	// Reject days older than the voting window: they can no longer reach
-	// consensus (they would be expired at the next epoch end), so opening them
-	// for voting only creates dead state.
-	if age > int64(params.VoteWindowDays) {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is older than the voting window (current %q, window %d days)", msg.Date, currentDate, params.VoteWindowDays)
-	}
 
 	// License gate: signer must hold >= 1 active license of the required type.
 	licenses, err := ms.k.activeLicenseCount(ctx, msg.Signer, params.DistributionLicenseTypeId)
@@ -74,8 +67,11 @@ func (ms msgServer) SubmitDistributionRoot(goCtx context.Context, msg *types.Msg
 	}
 
 	// Submissions are only accepted while the day is open for voting: either
-	// VOTING (pre-consensus) or UNDER_REVIEW (voting reopened by a challenge).
-	// A PENDING (consensus reached, in delay) or LIVE day is closed.
+	// VOTING (pre-consensus) or UNDER_REVIEW (voting reopened by a challenge or a
+	// governance revival). A PENDING (consensus reached, in delay), LIVE or
+	// EXPIRED day is closed. An already-open day is accepted regardless of age:
+	// its voting window is tracked by VotingSinceDate and enforced at epoch end,
+	// so a governance-revived day (older than the window) can still be voted on.
 	existing, err := ms.k.Distributions.Get(ctx, msg.Date)
 	switch {
 	case err == nil:
@@ -86,10 +82,18 @@ func (ms msgServer) SubmitDistributionRoot(goCtx context.Context, msg *types.Msg
 			return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is not open for voting (status %s)", msg.Date, existing.Status)
 		}
 	case errors.Is(err, collections.ErrNotFound):
-		// First submission for this day: open it for voting.
+		// First submission for this day. Reject days older than the voting window:
+		// a fresh entry that distant can no longer reach consensus (it would expire
+		// at the next epoch end), so opening it only creates dead state. Reviving a
+		// lapsed day is the authority-gated MsgReviveDistribution path instead.
+		if age > int64(params.VoteWindowDays) {
+			return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is older than the voting window (current %q, window %d days)", msg.Date, currentDate, params.VoteWindowDays)
+		}
+		// Open it for voting, stamping the window start at the current day.
 		if err := ms.k.Distributions.Set(ctx, msg.Date, types.Distribution{
-			Date:   msg.Date,
-			Status: types.DISTRIBUTION_STATUS_VOTING,
+			Date:            msg.Date,
+			Status:          types.DISTRIBUTION_STATUS_VOTING,
+			VotingSinceDate: currentDate,
 		}); err != nil {
 			return nil, err
 		}

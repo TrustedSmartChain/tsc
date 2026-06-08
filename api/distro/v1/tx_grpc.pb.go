@@ -23,6 +23,7 @@ const (
 	Msg_SubmitDistributionRoot_FullMethodName = "/distro.v1.Msg/SubmitDistributionRoot"
 	Msg_Claim_FullMethodName                  = "/distro.v1.Msg/Claim"
 	Msg_ChallengeDistribution_FullMethodName  = "/distro.v1.Msg/ChallengeDistribution"
+	Msg_ReviveDistribution_FullMethodName     = "/distro.v1.Msg/ReviveDistribution"
 )
 
 // MsgClient is the client API for Msg service.
@@ -41,6 +42,9 @@ type MsgClient interface {
 	// reopening voting. The challenger must hold an active license and escrows a
 	// bond that is refunded if the re-vote changes the root, or burned otherwise.
 	ChallengeDistribution(ctx context.Context, in *MsgChallengeDistribution, opts ...grpc.CallOption) (*MsgChallengeDistributionResponse, error)
+	// ReviveDistribution reopens an EXPIRED day for voting with a fresh window.
+	// Governance-gated, since it un-forfeits a day's rewards.
+	ReviveDistribution(ctx context.Context, in *MsgReviveDistribution, opts ...grpc.CallOption) (*MsgReviveDistributionResponse, error)
 }
 
 type msgClient struct {
@@ -87,6 +91,15 @@ func (c *msgClient) ChallengeDistribution(ctx context.Context, in *MsgChallengeD
 	return out, nil
 }
 
+func (c *msgClient) ReviveDistribution(ctx context.Context, in *MsgReviveDistribution, opts ...grpc.CallOption) (*MsgReviveDistributionResponse, error) {
+	out := new(MsgReviveDistributionResponse)
+	err := c.cc.Invoke(ctx, Msg_ReviveDistribution_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -103,6 +116,9 @@ type MsgServer interface {
 	// reopening voting. The challenger must hold an active license and escrows a
 	// bond that is refunded if the re-vote changes the root, or burned otherwise.
 	ChallengeDistribution(context.Context, *MsgChallengeDistribution) (*MsgChallengeDistributionResponse, error)
+	// ReviveDistribution reopens an EXPIRED day for voting with a fresh window.
+	// Governance-gated, since it un-forfeits a day's rewards.
+	ReviveDistribution(context.Context, *MsgReviveDistribution) (*MsgReviveDistributionResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -121,6 +137,9 @@ func (UnimplementedMsgServer) Claim(context.Context, *MsgClaim) (*MsgClaimRespon
 }
 func (UnimplementedMsgServer) ChallengeDistribution(context.Context, *MsgChallengeDistribution) (*MsgChallengeDistributionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChallengeDistribution not implemented")
+}
+func (UnimplementedMsgServer) ReviveDistribution(context.Context, *MsgReviveDistribution) (*MsgReviveDistributionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReviveDistribution not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -207,6 +226,24 @@ func _Msg_ChallengeDistribution_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_ReviveDistribution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgReviveDistribution)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ReviveDistribution(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ReviveDistribution_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ReviveDistribution(ctx, req.(*MsgReviveDistribution))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -229,6 +266,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ChallengeDistribution",
 			Handler:    _Msg_ChallengeDistribution_Handler,
+		},
+		{
+			MethodName: "ReviveDistribution",
+			Handler:    _Msg_ReviveDistribution_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

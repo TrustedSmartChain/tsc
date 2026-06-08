@@ -20,18 +20,22 @@ Each day moves through:
 
 ```
 VOTING ──consensus──▶ PENDING ──review delay──▶ LIVE (claimable)
-  │                      │
-  │ no consensus         │ challenge (bond escrowed)
-  │ within window        ▼
-  ▼                 UNDER_REVIEW ──re-vote──▶ PENDING (timer resumes, not reset)
-EXPIRED                 • same root  → bond burned (frivolous)
-                        • new root   → bond refunded, corrected root adopted
+  │   ▲                  │
+  │   │ gov revival      │ challenge (bond escrowed)
+  │   │ (fresh window)   ▼
+  │   │             UNDER_REVIEW ──re-vote──▶ PENDING (timer resumes, not reset)
+  │ no consensus         • same root  → bond burned (frivolous)
+  │ within window        • new root   → bond refunded, corrected root adopted
+  ▼
+EXPIRED ──MsgReviveDistribution (gov)──▶ VOTING
 ```
 
 Each day's transition runs in its own cache context, so a single failing day
 can neither roll back the others nor wedge the module — it is logged and
 retried. A VOTING day that does not reach consensus within `vote_window_days`
-is marked `EXPIRED` and stops being tallied.
+is marked `EXPIRED` and stops being tallied. The voting window is measured from
+`voting_since_date` (the day voting last opened), so a revived day gets a fresh
+full window rather than being measured from its stale calendar date.
 
 - **Submit** — each node runs the deterministic daily calculation and submits its
   merkle root via `MsgSubmitDistributionRoot`. The signer must hold ≥1 active
@@ -47,6 +51,13 @@ is marked `EXPIRED` and stops being tallied.
   `MsgChallengeDistribution`, escrowing `challenge_bond` and reopening voting. The
   re-vote is the judge: re-confirming the same root burns the bond (frivolous);
   a corrected root refunds it and is adopted.
+- **Revival** — an `EXPIRED` day (one that never reached consensus and forfeited
+  its rewards) can be reopened by governance via `MsgReviveDistribution`. This is
+  authority-gated because it un-forfeits a lapsed day. The day returns to
+  `VOTING` with a fresh full `vote_window_days` window measured from the revival
+  day; if it still fails to reach consensus it simply re-expires, and may be
+  revived again. A revived day that reaches consensus mints from its original
+  calendar day's halving budget.
 - **Claim** — users call `MsgClaim` with a merkle proof of
   `(nonce, address, total, categories)` against the canonical root. `total` must
   equal the sum of the `categories` amounts, and the leaf commits to the full
@@ -87,7 +98,8 @@ Collections (all under the `distro` store key):
 - `Distributions` — `Map[date string → Distribution]`. The canonical per-day
   record: `merkle_root`, `status`, `license_tally`, `stake_tally`,
   `finalized_height`, `pending_since_date`, `challenger`, `challenge_bond`,
-  `claimed_amount`.
+  `claimed_amount`, `voting_since_date` (when voting last (re)opened; the voting
+  window is measured from this).
 - `Claimed` — `KeySet[(date string, nonce uint64)]`. Spent reward nonces.
 - `ClaimTotals` — `Map[(date string, category string) → CategoryClaimTotal]`.
   The cumulative amount claimed per reward category for a day, accumulated as
@@ -105,6 +117,7 @@ challenger on `UNDER_REVIEW`, parseable bond/claimed amounts, and that
 | `MsgSubmitDistributionRoot` | `signer` | License-gated; `date` must be in `[current − vote_window_days, current]` and ≥ the start date. Opens/updates a `VOTING` day. |
 | `MsgChallengeDistribution` | `challenger` | License-gated; only on a `PENDING` day; escrows `challenge_bond`. |
 | `MsgClaim` | `claimer` | Permissionless (proof-gated); pays the leaf's `address` the `total`, broken down by `categories` (which must sum to `total`). Requires `LIVE`. |
+| `MsgReviveDistribution` | gov authority | Reopens an `EXPIRED` day for voting with a fresh window. Authority-gated (submitted via a gov proposal). |
 | `MsgUpdateParams` | gov authority | Updates `Params`. |
 
 ## Queries

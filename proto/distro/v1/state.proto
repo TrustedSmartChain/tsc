@@ -62,6 +62,11 @@ message Distribution {
   // claimed_amount is the cumulative amount (in the module denom) already
   // claimed for this day, capped by the day's halving budget.
   string claimed_amount = 10;
+  // voting_since_date is the date (YYYY-MM-DD) at which this distribution last
+  // (re)opened for VOTING. The voting window is measured from this date, so a
+  // governance-revived day gets a fresh full window rather than being measured
+  // from its (now stale) calendar date.
+  string voting_since_date = 11;
 }
 
 // ClaimedReward is the genesis representation of the claimed nonces for a day.

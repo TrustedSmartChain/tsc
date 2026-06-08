@@ -84,6 +84,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "UpdateParams",
 					Skip:      true,
 				},
+				{
+					// Authority-gated (governance); submitted via a gov proposal
+					// rather than a direct CLI tx, like UpdateParams.
+					RpcMethod: "ReviveDistribution",
+					Skip:      true,
+				},
 			},
 		},
 	}

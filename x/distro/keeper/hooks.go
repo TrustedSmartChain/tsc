@@ -101,7 +101,14 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 		if result == nil {
 			// No consensus yet. Expire the day once its voting window has
 			// elapsed so it stops being (expensively) re-tallied every epoch end.
-			age, err := daysBetween(d.Date, upTo)
+			// The window is measured from when voting (re)opened (VotingSinceDate),
+			// so a governance-revived day gets a fresh full window; fall back to the
+			// distribution's own date for entries predating that field.
+			windowStart := d.VotingSinceDate
+			if windowStart == "" {
+				windowStart = d.Date
+			}
+			age, err := daysBetween(windowStart, upTo)
 			if err != nil {
 				return err
 			}
