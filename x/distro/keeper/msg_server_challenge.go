@@ -29,6 +29,18 @@ func (ms msgServer) ChallengeDistribution(goCtx context.Context, msg *types.MsgC
 		return nil, err
 	}
 
+	// Resolve the current day so the re-vote window can be bounded from here: a
+	// challenge reopens voting, and if the re-vote never reaches consensus the day
+	// must not stay UNDER_REVIEW (bond + distribution locked) forever.
+	epochInfo, err := ms.k.epochsKeeper.GetEpochInfo(ctx, params.EpochIdentifier)
+	if err != nil {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "unknown epoch identifier %q", params.EpochIdentifier)
+	}
+	currentDate, err := dateForEpoch(params.DistributionStartDate, epochInfo.CurrentEpoch)
+	if err != nil {
+		return nil, err
+	}
+
 	// Challenger must hold >= 1 active license of the required type.
 	licenses, err := ms.k.activeLicenseCount(ctx, msg.Challenger, params.DistributionLicenseTypeId)
 	if err != nil {
@@ -63,6 +75,10 @@ func (ms msgServer) ChallengeDistribution(goCtx context.Context, msg *types.MsgC
 	ed.Status = types.DISTRIBUTION_STATUS_UNDER_REVIEW
 	ed.Challenger = msg.Challenger
 	ed.ChallengeBond = bond.String()
+	// Mark the re-vote's opening day so the review window can time out (see
+	// advanceOne's UNDER_REVIEW handling). The original PENDING root is left in
+	// ed.MerkleRoot so it can be restored if the challenge does not overturn it.
+	ed.VotingSinceDate = currentDate
 	if err := ms.k.Distributions.Set(ctx, msg.Date, ed); err != nil {
 		return nil, err
 	}

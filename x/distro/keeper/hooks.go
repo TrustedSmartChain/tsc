@@ -140,7 +140,42 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 			return err
 		}
 		if result == nil {
-			return nil // re-vote has not reached consensus; stay under review
+			// The re-vote has not reached consensus. Bound how long a challenge can
+			// hold a day UNDER_REVIEW: once the re-vote window (vote_window_days)
+			// elapses, resolve deterministically rather than locking the bond and
+			// the distribution forever. The pre-challenge consensus root is
+			// unchanged, so this is treated like a frivolous challenge — the bond is
+			// burned and the day returns to PENDING, resuming its original review
+			// timer (which has typically already elapsed, so it promotes to LIVE at
+			// the next epoch).
+			windowStart := d.VotingSinceDate
+			if windowStart == "" {
+				windowStart = d.Date
+			}
+			age, err := daysBetween(windowStart, upTo)
+			if err != nil {
+				return err
+			}
+			if age < int64(params.VoteWindowDays) {
+				return nil // still within the re-vote window; stay under review
+			}
+			if err := k.resolveChallengeBond(ctx, d, params.Denom, true); err != nil {
+				return err
+			}
+			d.Status = types.DISTRIBUTION_STATUS_PENDING
+			d.Challenger = ""
+			d.ChallengeBond = ""
+			if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
+				return err
+			}
+			ctx.EventManager().EmitEvent(sdk.NewEvent(
+				types.EventTypeChallengeResolved,
+				sdk.NewAttribute(types.AttributeKeyDate, d.Date),
+				sdk.NewAttribute(types.AttributeKeyFrivolous, strconv.FormatBool(true)),
+				sdk.NewAttribute(types.AttributeKeyTimedOut, strconv.FormatBool(true)),
+			))
+			emitPending(ctx, d)
+			return nil
 		}
 		// The re-vote is the judge of the challenge: if it re-confirms the
 		// challenged root, the challenge was frivolous and the bond is burned;

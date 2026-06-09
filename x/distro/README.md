@@ -24,10 +24,12 @@ VOTING ──consensus──▶ PENDING ──review delay──▶ LIVE (claima
   │   │ gov revival      │ challenge (bond escrowed)
   │   │ (fresh window)   ▼
   │   │             UNDER_REVIEW ──re-vote──▶ PENDING (timer resumes, not reset)
-  │ no consensus         • same root  → bond burned (frivolous)
-  │ within window        • new root   → bond refunded, corrected root adopted
-  ▼
-EXPIRED ──MsgReviveDistribution (gov)──▶ VOTING
+  │ no consensus         • same root         → bond burned (frivolous)
+  │ within window        • new root          → bond refunded, corrected root adopted
+  ▼                      • no re-consensus   → times out after vote_window_days:
+EXPIRED                    bond burned, original root restored, back to PENDING
+  │
+  └──MsgReviveDistribution (gov)──▶ VOTING
 ```
 
 Each day's transition runs in its own cache context, so a single failing day
@@ -50,7 +52,12 @@ full window rather than being measured from its stale calendar date.
   `review_delay_days` days. During that window any license holder may
   `MsgChallengeDistribution`, escrowing `challenge_bond` and reopening voting. The
   re-vote is the judge: re-confirming the same root burns the bond (frivolous);
-  a corrected root refunds it and is adopted.
+  a corrected root refunds it and is adopted. If the re-vote never reaches
+  consensus, the review **times out** after `vote_window_days` (measured from the
+  challenge): the pre-challenge root is restored, the bond is burned, and the day
+  returns to `PENDING` (resuming its original review timer). This bounds how long
+  a challenge can hold a day under review, so a stalled re-vote can never lock the
+  bond or the distribution permanently.
 - **Revival** — an `EXPIRED` day (one that never reached consensus and forfeited
   its rewards) can be reopened by governance via `MsgReviveDistribution`. This is
   authority-gated because it un-forfeits a lapsed day. The day returns to

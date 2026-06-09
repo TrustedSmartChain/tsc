@@ -23,4 +23,5 @@ const (
 	AttributeKeyChallenger   = "challenger"
 	AttributeKeyBond         = "bond"
 	AttributeKeyFrivolous    = "frivolous"
+	AttributeKeyTimedOut     = "timed_out"
 )
