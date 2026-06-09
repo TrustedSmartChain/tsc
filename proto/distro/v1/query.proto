@@ -74,10 +74,12 @@ message QueryDistributionResponse {
 message QueryDistributionVotesRequest {
   // date is the distribution day in YYYY-MM-DD form.
   string date = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
 message QueryDistributionVotesResponse {
   repeated DistributionVote votes = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 message QueryClaimedRequest {
@@ -93,11 +95,13 @@ message QueryClaimedResponse {
 message QueryClaimsByDateRequest {
   // date is the distribution day in YYYY-MM-DD form.
   string date = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
 message QueryClaimsByDateResponse {
   // nonces are the claimed reward nonces for the day, in ascending order.
   repeated uint64 nonces = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 message QueryClaimTotalByCategoryRequest {
@@ -140,8 +144,11 @@ message QueryDistributionsResponse {
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
-message QueryActiveDistributionsRequest {}
+message QueryActiveDistributionsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
 
 message QueryActiveDistributionsResponse {
   repeated Distribution distributions = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

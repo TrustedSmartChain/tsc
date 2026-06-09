@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"errors"
 
 	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -55,15 +54,17 @@ func (k Querier) DistributionVotes(goCtx context.Context, req *types.QueryDistri
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	var votes []types.DistributionVote
-	rng := collections.NewPrefixedPairRange[string, string](req.Date)
-	if err := k.Keeper.Votes.Walk(ctx, rng, func(_ collections.Pair[string, string], v types.DistributionVote) (bool, error) {
-		votes = append(votes, v)
-		return false, nil
-	}); err != nil {
+	votes, pageResp, err := query.CollectionPaginate(
+		ctx, k.Keeper.Votes, req.Pagination,
+		func(_ collections.Pair[string, string], v types.DistributionVote) (types.DistributionVote, error) {
+			return v, nil
+		},
+		query.WithCollectionPaginationPairPrefix[string, string](req.Date),
+	)
+	if err != nil {
 		return nil, err
 	}
-	return &types.QueryDistributionVotesResponse{Votes: votes}, nil
+	return &types.QueryDistributionVotesResponse{Votes: votes, Pagination: pageResp}, nil
 }
 
 // Claimed reports whether a (date, nonce) reward has been claimed.
@@ -91,15 +92,17 @@ func (k Querier) ClaimsByDate(goCtx context.Context, req *types.QueryClaimsByDat
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	var nonces []uint64
-	rng := collections.NewPrefixedPairRange[string, uint64](req.Date)
-	if err := k.Keeper.Claimed.Walk(ctx, rng, func(key collections.Pair[string, uint64]) (bool, error) {
-		nonces = append(nonces, key.K2())
-		return false, nil
-	}); err != nil {
+	nonces, pageResp, err := query.CollectionPaginate(
+		ctx, k.Keeper.Claimed, req.Pagination,
+		func(key collections.Pair[string, uint64], _ collections.NoValue) (uint64, error) {
+			return key.K2(), nil
+		},
+		query.WithCollectionPaginationPairPrefix[string, uint64](req.Date),
+	)
+	if err != nil {
 		return nil, err
 	}
-	return &types.QueryClaimsByDateResponse{Nonces: nonces}, nil
+	return &types.QueryClaimsByDateResponse{Nonces: nonces, Pagination: pageResp}, nil
 }
 
 // ClaimTotalByCategory returns the cumulative claimed amount per category for a
@@ -175,20 +178,22 @@ func (k Querier) ActiveDistributions(goCtx context.Context, req *types.QueryActi
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	var distributions []types.Distribution
-	if err := k.Keeper.ActiveDistributions.Walk(ctx, nil, func(date string) (bool, error) {
-		d, err := k.Keeper.Distributions.Get(ctx, date)
-		if err != nil {
-			if errors.Is(err, collections.ErrNotFound) {
-				// Stale index entry (no backing distribution); skip it.
-				return false, nil
+	distributions, pageResp, err := query.CollectionFilteredPaginate(
+		ctx, k.Keeper.ActiveDistributions, req.Pagination,
+		// Filter out any stale index entry with no backing distribution.
+		func(date string, _ collections.NoValue) (bool, error) {
+			has, err := k.Keeper.Distributions.Has(ctx, date)
+			if err != nil {
+				return false, err
 			}
-			return true, err
-		}
-		distributions = append(distributions, d)
-		return false, nil
-	}); err != nil {
+			return has, nil
+		},
+		func(date string, _ collections.NoValue) (types.Distribution, error) {
+			return k.Keeper.Distributions.Get(ctx, date)
+		},
+	)
+	if err != nil {
 		return nil, err
 	}
-	return &types.QueryActiveDistributionsResponse{Distributions: distributions}, nil
+	return &types.QueryActiveDistributionsResponse{Distributions: distributions, Pagination: pageResp}, nil
 }

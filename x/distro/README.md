@@ -139,14 +139,14 @@ challenger on `UNDER_REVIEW`, parseable bond/claimed amounts, and that
 
 - `Params` — module parameters.
 - `Distribution(date)` — the canonical record for a day.
-- `DistributionVotes(date)` — all submitted votes for a day.
+- `DistributionVotes(date)` — submitted votes for a day (paginated).
 - `Claimed(date, nonce)` — whether a reward nonce has been claimed.
-- `ClaimsByDate(date)` — the reward nonces claimed for a day (ascending order).
+- `ClaimsByDate(date)` — the reward nonces claimed for a day, ascending (paginated).
 - `ClaimTotalByCategory(date)` — the cumulative claimed amount per category for a
   day.
 - `Distributions` — all distributions, date-ordered and paginated.
 - `ActiveDistributions` — the in-flight (`VOTING`/`PENDING`/`UNDER_REVIEW`) days,
-  resolved from the active index; bounded by the open windows.
+  resolved from the active index (paginated).
 - `Audit` — runs the module invariants against current state and returns each
   result (see Invariants).
 
