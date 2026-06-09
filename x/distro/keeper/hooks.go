@@ -75,6 +75,10 @@ func (k Keeper) advanceDistributions(ctx context.Context, upTo string, params ty
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	reviewDelay := int64(params.ReviewDelayDays)
 
+	// One cache for the whole pass: the license/stake reads it memoizes are
+	// invariant across every day tallied in this (single-block) epoch end.
+	cache := newTallyCache(k, params.DistributionLicenseTypeId)
+
 	for _, date := range dates {
 		d, err := k.Distributions.Get(ctx, date)
 		if err != nil {
@@ -95,7 +99,7 @@ func (k Keeper) advanceDistributions(ctx context.Context, upTo string, params ty
 		// by failing the whole epoch-end forever. On error we log and skip; the
 		// day is retried on the next epoch boundary.
 		cacheCtx, write := sdkCtx.CacheContext()
-		if err := k.advanceOne(cacheCtx, d, upTo, reviewDelay, params); err != nil {
+		if err := k.advanceOne(cacheCtx, d, upTo, reviewDelay, params, cache); err != nil {
 			sdkCtx.Logger().Error("distro: failed to advance distribution",
 				"date", d.Date, "status", d.Status.String(), "error", err)
 			continue
@@ -109,10 +113,10 @@ func (k Keeper) advanceDistributions(ctx context.Context, upTo string, params ty
 // advanceOne performs the lifecycle transition for a single day's distribution.
 // It is run inside a per-day cache context by advanceDistributions. upTo is the
 // day (YYYY-MM-DD) that just ended; reviewDelay is in days.
-func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, reviewDelay int64, params types.Params) error {
+func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, reviewDelay int64, params types.Params, cache *tallyCache) error {
 	switch d.Status {
 	case types.DISTRIBUTION_STATUS_VOTING:
-		result, err := k.tallyDistribution(ctx, d.Date, params)
+		result, err := k.tallyDistribution(ctx, d.Date, params, cache)
 		if err != nil {
 			return err
 		}
@@ -157,7 +161,7 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 		emitPending(ctx, d)
 
 	case types.DISTRIBUTION_STATUS_UNDER_REVIEW:
-		result, err := k.tallyDistribution(ctx, d.Date, params)
+		result, err := k.tallyDistribution(ctx, d.Date, params, cache)
 		if err != nil {
 			return err
 		}

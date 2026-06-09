@@ -119,9 +119,15 @@ type mockStakingKeeper struct {
 	valAddr     sdk.ValAddress
 	validator   stakingtypes.Validator
 	stake       map[string]math.Int // delegator bech32 -> stake amount
+	// optional call counters (nil = not counting) for the memoization test.
+	totalBondedCalls *int
+	delegationsCalls *int
 }
 
 func (m mockStakingKeeper) TotalBondedTokens(context.Context) (math.Int, error) {
+	if m.totalBondedCalls != nil {
+		*m.totalBondedCalls++
+	}
 	return m.totalBonded, nil
 }
 func (m mockStakingKeeper) GetValidator(_ context.Context, addr sdk.ValAddress) (stakingtypes.Validator, error) {
@@ -134,6 +140,9 @@ func (m mockStakingKeeper) GetDelegation(context.Context, sdk.AccAddress, sdk.Va
 	return stakingtypes.Delegation{}, stakingtypes.ErrNoDelegation
 }
 func (m mockStakingKeeper) GetDelegatorDelegations(_ context.Context, delegator sdk.AccAddress, _ uint16) ([]stakingtypes.Delegation, error) {
+	if m.delegationsCalls != nil {
+		*m.delegationsCalls++
+	}
 	amt, ok := m.stake[delegator.String()]
 	if !ok || !amt.IsPositive() {
 		return nil, nil
@@ -147,6 +156,8 @@ func (m mockStakingKeeper) GetDelegatorDelegations(_ context.Context, delegator 
 
 type mockLicensesKeeper struct {
 	licenses []licensetypes.License
+	// optional call counter (nil = not counting) for the memoization test.
+	byTypeCalls *int
 }
 
 func (m mockLicensesKeeper) LicensesByHolderAndType(_ context.Context, req *licensetypes.QueryLicensesByHolderAndTypeRequest) (*licensetypes.QueryLicensesByHolderAndTypeResponse, error) {
@@ -159,6 +170,9 @@ func (m mockLicensesKeeper) LicensesByHolderAndType(_ context.Context, req *lice
 	return &licensetypes.QueryLicensesByHolderAndTypeResponse{Licenses: out}, nil
 }
 func (m mockLicensesKeeper) LicensesByType(_ context.Context, req *licensetypes.QueryLicensesByTypeRequest) (*licensetypes.QueryLicensesByTypeResponse, error) {
+	if m.byTypeCalls != nil {
+		*m.byTypeCalls++
+	}
 	var out []licensetypes.License
 	for _, l := range m.licenses {
 		if l.Type == req.TypeId {
@@ -220,8 +234,16 @@ func setupDistribution(t *testing.T, staking mockStakingKeeper, licenses mockLic
 	}
 }
 
+// activeLicense issues a license valid from well before any test day (open
+// ended), so it is eligible on every date the tests use.
 func activeLicense(holder string) licensetypes.License {
-	return licensetypes.License{Type: testLicenseType, Holder: holder, Status: "active"}
+	return licenseFrom(holder, "2000-01-01", "")
+}
+
+// licenseFrom issues a license with an explicit [start, end] validity window
+// (empty end = open ended), for exercising as-of-day-D eligibility.
+func licenseFrom(holder, startDate, endDate string) licensetypes.License {
+	return licensetypes.License{Type: testLicenseType, Holder: holder, Status: "active", StartDate: startDate, EndDate: endDate}
 }
 
 // ---- tests -----------------------------------------------------------------
@@ -240,7 +262,7 @@ func TestSubmitRequiresActiveLicense(t *testing.T) {
 		Date:       dateOf(1),
 		MerkleRoot: []byte("root"),
 	})
-	require.ErrorContains(t, err, "no active license")
+	require.ErrorContains(t, err, "no license")
 }
 
 func TestSubmitRejectsFutureEpoch(t *testing.T) {

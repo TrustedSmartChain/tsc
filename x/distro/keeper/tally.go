@@ -14,16 +14,34 @@ import (
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
 
-// licenseStatusActive is the x/licenses status string for an active license.
-const licenseStatusActive = "active"
-
 // maxDelegationsPerVoter caps how many of a delegator's delegations we sum when
 // computing stake weight. Validators are limited to far fewer delegations than
 // this in practice.
 const maxDelegationsPerVoter = uint16(65535)
 
-// activeLicenseCount returns how many active licenses of typeID holder owns.
-func (k Keeper) activeLicenseCount(ctx context.Context, holder, typeID string) (uint64, error) {
+// licenseValidOn reports whether a license's validity window [start_date,
+// end_date] contains day (all YYYY-MM-DD; an empty end_date is open-ended).
+//
+// Eligibility is judged by this historical window rather than the license's
+// current status. The x/licenses module sets end_date to the revocation day when
+// a license is revoked, so the window alone fully captures "was this license
+// valid on day D" — including revocations. Crucially, a license issued after day
+// D (start_date > D) does NOT count for day D, so a freshly minted license cannot
+// retroactively vote on or challenge an earlier day's distribution.
+func licenseValidOn(l licensetypes.License, day string) bool {
+	if l.StartDate == "" || l.StartDate > day {
+		return false
+	}
+	if l.EndDate != "" && l.EndDate < day {
+		return false
+	}
+	return true
+}
+
+// licensesValidOnForHolder returns how many of holder's licenses of typeID were
+// valid on day (YYYY-MM-DD). Used by the submit and challenge gates so a license
+// minted after a given day cannot act on that day's distribution.
+func (k Keeper) licensesValidOnForHolder(ctx context.Context, holder, typeID, day string) (uint64, error) {
 	resp, err := k.licensesKeeper.LicensesByHolderAndType(ctx, &licensetypes.QueryLicensesByHolderAndTypeRequest{
 		Holder: holder,
 		TypeId: typeID,
@@ -33,27 +51,101 @@ func (k Keeper) activeLicenseCount(ctx context.Context, holder, typeID string) (
 	}
 	var n uint64
 	for _, l := range resp.Licenses {
-		if l.Status == licenseStatusActive {
+		if licenseValidOn(l, day) {
 			n++
 		}
 	}
 	return n, nil
 }
 
-// totalActiveLicensesOfType returns the network-wide count of active licenses of
-// typeID. This is the denominator of the license-based tally.
-func (k Keeper) totalActiveLicensesOfType(ctx context.Context, typeID string) (uint64, error) {
-	resp, err := k.licensesKeeper.LicensesByType(ctx, &licensetypes.QueryLicensesByTypeRequest{TypeId: typeID})
+// tallyCache memoizes the external keeper reads that are invariant across a
+// single epoch-end pass: the licenses of the distribution type, each voter's
+// bonded stake, and the total bonded tokens. It MUST be created fresh per
+// advanceDistributions call and never persisted — its validity relies on
+// licenses and staking being immutable for the duration of the pass (the tally
+// only reads them, and a bond burn/refund touches neither). The day-specific
+// part — which licenses were valid on a given day — is a cheap in-memory filter
+// (licenseValidOn) applied per day over the cached, day-agnostic license list,
+// so the optimization survives the as-of-day-D eligibility rule.
+type tallyCache struct {
+	k      Keeper
+	typeID string
+
+	typeLicenses   []licensetypes.License
+	licensesLoaded bool
+
+	stakes      map[string]math.Int
+	totalBonded *math.Int
+}
+
+func newTallyCache(k Keeper, typeID string) *tallyCache {
+	return &tallyCache{k: k, typeID: typeID, stakes: map[string]math.Int{}}
+}
+
+func (c *tallyCache) loadLicenses(ctx context.Context) error {
+	if c.licensesLoaded {
+		return nil
+	}
+	resp, err := c.k.licensesKeeper.LicensesByType(ctx, &licensetypes.QueryLicensesByTypeRequest{TypeId: c.typeID})
 	if err != nil {
+		return err
+	}
+	c.typeLicenses = resp.Licenses
+	c.licensesLoaded = true
+	return nil
+}
+
+// licensesValidOn counts holder's licenses (of the cached type) valid on day.
+func (c *tallyCache) licensesValidOn(ctx context.Context, holder, day string) (uint64, error) {
+	if err := c.loadLicenses(ctx); err != nil {
 		return 0, err
 	}
 	var n uint64
-	for _, l := range resp.Licenses {
-		if l.Status == licenseStatusActive {
+	for _, l := range c.typeLicenses {
+		if l.Holder == holder && licenseValidOn(l, day) {
 			n++
 		}
 	}
 	return n, nil
+}
+
+// totalValidOn counts all licenses of the cached type valid on day — the
+// license-tally denominator for that day.
+func (c *tallyCache) totalValidOn(ctx context.Context, day string) (uint64, error) {
+	if err := c.loadLicenses(ctx); err != nil {
+		return 0, err
+	}
+	var n uint64
+	for _, l := range c.typeLicenses {
+		if licenseValidOn(l, day) {
+			n++
+		}
+	}
+	return n, nil
+}
+
+func (c *tallyCache) stake(ctx context.Context, addr sdk.AccAddress) (math.Int, error) {
+	if s, ok := c.stakes[addr.String()]; ok {
+		return s, nil
+	}
+	s, err := c.k.voterStake(ctx, addr)
+	if err != nil {
+		return math.ZeroInt(), err
+	}
+	c.stakes[addr.String()] = s
+	return s, nil
+}
+
+func (c *tallyCache) totalBondedTokens(ctx context.Context) (math.Int, error) {
+	if c.totalBonded != nil {
+		return *c.totalBonded, nil
+	}
+	t, err := c.k.stakingKeeper.TotalBondedTokens(ctx)
+	if err != nil {
+		return math.ZeroInt(), err
+	}
+	c.totalBonded = &t
+	return t, nil
 }
 
 // voterStake returns the bonded stake weight of a voting address. A
@@ -116,7 +208,12 @@ type tallyResult struct {
 // license-weighted and stake-weighted fractions for each, and returns the
 // winning root if any passes BOTH configured thresholds. Returns (nil, nil) if
 // no root reaches consensus. Iteration is deterministic (sorted by root bytes).
-func (k Keeper) tallyDistribution(ctx context.Context, date string, params types.Params) (*tallyResult, error) {
+//
+// Eligibility is judged as of `date`: only votes from signers whose license was
+// valid on that day are counted, and the license denominator is the licenses
+// valid on that day. The cache memoizes the underlying keeper reads across the
+// whole epoch-end pass; the day-specific filter is applied on top.
+func (k Keeper) tallyDistribution(ctx context.Context, date string, params types.Params, cache *tallyCache) (*tallyResult, error) {
 	type group struct {
 		licenseWeight uint64
 		stakeWeight   math.Int
@@ -127,8 +224,8 @@ func (k Keeper) tallyDistribution(ctx context.Context, date string, params types
 	err := k.Votes.Walk(ctx, rng, func(key collections.Pair[string, string], vote types.DistributionVote) (bool, error) {
 		signer := key.K2()
 
-		// A vote only counts while its signer still holds an active license.
-		lc, err := k.activeLicenseCount(ctx, signer, params.DistributionLicenseTypeId)
+		// A vote only counts while its signer held a license valid on this day.
+		lc, err := cache.licensesValidOn(ctx, signer, date)
 		if err != nil {
 			return true, err
 		}
@@ -140,7 +237,7 @@ func (k Keeper) tallyDistribution(ctx context.Context, date string, params types
 		if err != nil {
 			return true, err
 		}
-		stake, err := k.voterStake(ctx, accAddr)
+		stake, err := cache.stake(ctx, accAddr)
 		if err != nil {
 			return true, err
 		}
@@ -162,11 +259,11 @@ func (k Keeper) tallyDistribution(ctx context.Context, date string, params types
 		return nil, nil
 	}
 
-	totalLicenses, err := k.totalActiveLicensesOfType(ctx, params.DistributionLicenseTypeId)
+	totalLicenses, err := cache.totalValidOn(ctx, date)
 	if err != nil {
 		return nil, err
 	}
-	totalBonded, err := k.stakingKeeper.TotalBondedTokens(ctx)
+	totalBonded, err := cache.totalBondedTokens(ctx)
 	if err != nil {
 		return nil, err
 	}

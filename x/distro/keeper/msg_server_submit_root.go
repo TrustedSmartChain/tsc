@@ -57,13 +57,15 @@ func (ms msgServer) SubmitDistributionRoot(goCtx context.Context, msg *types.Msg
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is in the future (current %q)", msg.Date, currentDate)
 	}
 
-	// License gate: signer must hold >= 1 active license of the required type.
-	licenses, err := ms.k.activeLicenseCount(ctx, msg.Signer, params.DistributionLicenseTypeId)
+	// License gate: signer must hold a license of the required type that was valid
+	// on the submitted day. Eligibility is judged as of msg.Date, so a license
+	// minted after that day cannot be used to vote on it.
+	licenses, err := ms.k.licensesValidOnForHolder(ctx, msg.Signer, params.DistributionLicenseTypeId, msg.Date)
 	if err != nil {
 		return nil, err
 	}
 	if licenses == 0 {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrUnauthorized, "signer holds no active license of type %q", params.DistributionLicenseTypeId)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrUnauthorized, "signer holds no license of type %q valid on %q", params.DistributionLicenseTypeId, msg.Date)
 	}
 
 	// Submissions are only accepted while the day is open for voting: either

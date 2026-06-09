@@ -40,14 +40,23 @@ is marked `EXPIRED` and stops being tallied. The voting window is measured from
 full window rather than being measured from its stale calendar date.
 
 - **Submit** — each node runs the deterministic daily calculation and submits its
-  merkle root via `MsgSubmitDistributionRoot`. The signer must hold ≥1 active
-  license of `params.distribution_license_type_id`. Votes are stored by
-  `(date, signer)` and retained.
+  merkle root via `MsgSubmitDistributionRoot`. The signer must hold a license of
+  `params.distribution_license_type_id` that was **valid on the submitted day**.
+  Votes are stored by `(date, signer)` and retained.
 - **Tally** — at each epoch end the votes are tallied two ways: license-weighted
   and stake-weighted (per-address stake; a validator operator counts only its
   self-delegation). A root passing **both** thresholds (`license_tally_threshold`,
   `stake_tally_threshold`, default `0.667`) becomes the canonical root and enters
   `PENDING`.
+
+  **License eligibility is judged as of the distribution day**, not the current
+  block: a vote counts (and the license denominator includes a holder) only if the
+  license's `[start_date, end_date]` window contains that day. So a license minted
+  *after* a day cannot retroactively vote on, or challenge, that day's
+  distribution. (Revocation closes `end_date` at the revocation day, so the window
+  alone captures historical validity.) **Stake weight, by contrast, is read at the
+  current block** — there is no per-day stake snapshot — so within the (bounded)
+  voting window a voter's stake weight reflects its live bonded amount.
 - **Review delay / challenge** — a `PENDING` root auto-promotes to `LIVE` after
   `review_delay_days` days. During that window any license holder may
   `MsgChallengeDistribution`, escrowing `challenge_bond` and reopening voting. The

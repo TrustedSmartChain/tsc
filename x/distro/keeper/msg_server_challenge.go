@@ -41,13 +41,14 @@ func (ms msgServer) ChallengeDistribution(goCtx context.Context, msg *types.MsgC
 		return nil, err
 	}
 
-	// Challenger must hold >= 1 active license of the required type.
-	licenses, err := ms.k.activeLicenseCount(ctx, msg.Challenger, params.DistributionLicenseTypeId)
+	// Challenger must hold a license of the required type that was valid on the
+	// challenged day (eligibility as of msg.Date), matching the submit/tally gate.
+	licenses, err := ms.k.licensesValidOnForHolder(ctx, msg.Challenger, params.DistributionLicenseTypeId, msg.Date)
 	if err != nil {
 		return nil, err
 	}
 	if licenses == 0 {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrUnauthorized, "challenger holds no active license of type %q", params.DistributionLicenseTypeId)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrUnauthorized, "challenger holds no license of type %q valid on %q", params.DistributionLicenseTypeId, msg.Date)
 	}
 
 	// Only a PENDING distribution (consensus reached, in the review window) can
