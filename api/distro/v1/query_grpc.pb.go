@@ -26,6 +26,8 @@ const (
 	Query_ClaimsByDate_FullMethodName         = "/distro.v1.Query/ClaimsByDate"
 	Query_ClaimTotalByCategory_FullMethodName = "/distro.v1.Query/ClaimTotalByCategory"
 	Query_Audit_FullMethodName                = "/distro.v1.Query/Audit"
+	Query_Distributions_FullMethodName        = "/distro.v1.Query/Distributions"
+	Query_ActiveDistributions_FullMethodName  = "/distro.v1.Query/ActiveDistributions"
 )
 
 // QueryClient is the client API for Query service.
@@ -49,6 +51,11 @@ type QueryClient interface {
 	// current state and reports the result. Lets operators verify module health on
 	// a live node, since no crisis module is wired for runtime invariant checks.
 	Audit(ctx context.Context, in *QueryAuditRequest, opts ...grpc.CallOption) (*QueryAuditResponse, error)
+	// Distributions lists all distributions, date-ordered and paginated.
+	Distributions(ctx context.Context, in *QueryDistributionsRequest, opts ...grpc.CallOption) (*QueryDistributionsResponse, error)
+	// ActiveDistributions lists the non-terminal (VOTING/PENDING/UNDER_REVIEW)
+	// distributions — the days currently in flight. Bounded by the open windows.
+	ActiveDistributions(ctx context.Context, in *QueryActiveDistributionsRequest, opts ...grpc.CallOption) (*QueryActiveDistributionsResponse, error)
 }
 
 type queryClient struct {
@@ -122,6 +129,24 @@ func (c *queryClient) Audit(ctx context.Context, in *QueryAuditRequest, opts ...
 	return out, nil
 }
 
+func (c *queryClient) Distributions(ctx context.Context, in *QueryDistributionsRequest, opts ...grpc.CallOption) (*QueryDistributionsResponse, error) {
+	out := new(QueryDistributionsResponse)
+	err := c.cc.Invoke(ctx, Query_Distributions_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ActiveDistributions(ctx context.Context, in *QueryActiveDistributionsRequest, opts ...grpc.CallOption) (*QueryActiveDistributionsResponse, error) {
+	out := new(QueryActiveDistributionsResponse)
+	err := c.cc.Invoke(ctx, Query_ActiveDistributions_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
@@ -143,6 +168,11 @@ type QueryServer interface {
 	// current state and reports the result. Lets operators verify module health on
 	// a live node, since no crisis module is wired for runtime invariant checks.
 	Audit(context.Context, *QueryAuditRequest) (*QueryAuditResponse, error)
+	// Distributions lists all distributions, date-ordered and paginated.
+	Distributions(context.Context, *QueryDistributionsRequest) (*QueryDistributionsResponse, error)
+	// ActiveDistributions lists the non-terminal (VOTING/PENDING/UNDER_REVIEW)
+	// distributions — the days currently in flight. Bounded by the open windows.
+	ActiveDistributions(context.Context, *QueryActiveDistributionsRequest) (*QueryActiveDistributionsResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -170,6 +200,12 @@ func (UnimplementedQueryServer) ClaimTotalByCategory(context.Context, *QueryClai
 }
 func (UnimplementedQueryServer) Audit(context.Context, *QueryAuditRequest) (*QueryAuditResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Audit not implemented")
+}
+func (UnimplementedQueryServer) Distributions(context.Context, *QueryDistributionsRequest) (*QueryDistributionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Distributions not implemented")
+}
+func (UnimplementedQueryServer) ActiveDistributions(context.Context, *QueryActiveDistributionsRequest) (*QueryActiveDistributionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ActiveDistributions not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -310,6 +346,42 @@ func _Query_Audit_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_Distributions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryDistributionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Distributions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Distributions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Distributions(ctx, req.(*QueryDistributionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ActiveDistributions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryActiveDistributionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ActiveDistributions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ActiveDistributions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ActiveDistributions(ctx, req.(*QueryActiveDistributionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -344,6 +416,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Audit",
 			Handler:    _Query_Audit_Handler,
+		},
+		{
+			MethodName: "Distributions",
+			Handler:    _Query_Distributions_Handler,
+		},
+		{
+			MethodName: "ActiveDistributions",
+			Handler:    _Query_ActiveDistributions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

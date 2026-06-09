@@ -3,6 +3,7 @@ package distro.v1;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "distro/v1/genesis.proto";
 import "distro/v1/state.proto";
 
@@ -40,6 +41,15 @@ service Query {
   // a live node, since no crisis module is wired for runtime invariant checks.
   rpc Audit(QueryAuditRequest) returns (QueryAuditResponse) {
     option (google.api.http).get = "/tsc/distro/v1/audit";
+  }
+  // Distributions lists all distributions, date-ordered and paginated.
+  rpc Distributions(QueryDistributionsRequest) returns (QueryDistributionsResponse) {
+    option (google.api.http).get = "/tsc/distro/v1/distributions";
+  }
+  // ActiveDistributions lists the non-terminal (VOTING/PENDING/UNDER_REVIEW)
+  // distributions — the days currently in flight. Bounded by the open windows.
+  rpc ActiveDistributions(QueryActiveDistributionsRequest) returns (QueryActiveDistributionsResponse) {
+    option (google.api.http).get = "/tsc/distro/v1/active_distributions";
   }
 }
 
@@ -119,4 +129,19 @@ message QueryAuditResponse {
   bool broken = 1;
   // results holds the outcome of each invariant check.
   repeated AuditResult results = 2 [(gogoproto.nullable) = false];
+}
+
+message QueryDistributionsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryDistributionsResponse {
+  repeated Distribution distributions = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryActiveDistributionsRequest {}
+
+message QueryActiveDistributionsResponse {
+  repeated Distribution distributions = 1 [(gogoproto.nullable) = false];
 }

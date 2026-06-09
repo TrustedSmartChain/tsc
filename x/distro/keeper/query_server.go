@@ -2,9 +2,11 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -143,4 +145,50 @@ func (k Querier) Audit(goCtx context.Context, req *types.QueryAuditRequest) (*ty
 		})
 	}
 	return resp, nil
+}
+
+// Distributions lists all distributions, date-ordered and paginated.
+func (k Querier) Distributions(goCtx context.Context, req *types.QueryDistributionsRequest) (*types.QueryDistributionsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	distributions, pageResp, err := query.CollectionPaginate(
+		ctx, k.Keeper.Distributions, req.Pagination,
+		func(_ string, d types.Distribution) (types.Distribution, error) {
+			return d, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &types.QueryDistributionsResponse{Distributions: distributions, Pagination: pageResp}, nil
+}
+
+// ActiveDistributions lists the non-terminal (VOTING/PENDING/UNDER_REVIEW)
+// distributions by resolving the active index. The set is bounded by the open
+// voting/review windows, so it is returned unpaginated.
+func (k Querier) ActiveDistributions(goCtx context.Context, req *types.QueryActiveDistributionsRequest) (*types.QueryActiveDistributionsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	var distributions []types.Distribution
+	if err := k.Keeper.ActiveDistributions.Walk(ctx, nil, func(date string) (bool, error) {
+		d, err := k.Keeper.Distributions.Get(ctx, date)
+		if err != nil {
+			if errors.Is(err, collections.ErrNotFound) {
+				// Stale index entry (no backing distribution); skip it.
+				return false, nil
+			}
+			return true, err
+		}
+		distributions = append(distributions, d)
+		return false, nil
+	}); err != nil {
+		return nil, err
+	}
+	return &types.QueryActiveDistributionsResponse{Distributions: distributions}, nil
 }

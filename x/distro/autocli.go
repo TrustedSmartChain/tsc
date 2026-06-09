@@ -51,6 +51,16 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "audit",
 					Short:     "Run the module's invariants (claim budget, bond solvency) against current state",
 				},
+				{
+					RpcMethod: "Distributions",
+					Use:       "distributions",
+					Short:     "List all distributions (date-ordered, paginated)",
+				},
+				{
+					RpcMethod: "ActiveDistributions",
+					Use:       "active-distributions",
+					Short:     "List the in-flight (VOTING/PENDING/UNDER_REVIEW) distributions",
+				},
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{

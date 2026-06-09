@@ -144,6 +144,9 @@ challenger on `UNDER_REVIEW`, parseable bond/claimed amounts, and that
 - `ClaimsByDate(date)` — the reward nonces claimed for a day (ascending order).
 - `ClaimTotalByCategory(date)` — the cumulative claimed amount per category for a
   day.
+- `Distributions` — all distributions, date-ordered and paginated.
+- `ActiveDistributions` — the in-flight (`VOTING`/`PENDING`/`UNDER_REVIEW`) days,
+  resolved from the active index; bounded by the open windows.
 - `Audit` — runs the module invariants against current state and returns each
   result (see Invariants).
 
