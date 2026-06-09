@@ -129,7 +129,8 @@ func (a AppModule) ExportGenesis(ctx sdk.Context, marshaler codec.JSONCodec) jso
 	return marshaler.MustMarshalJSON(genState)
 }
 
-func (a AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
+func (a AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
+	keeper.RegisterInvariants(ir, a.keeper)
 }
 
 func (a AppModule) QuerierRoute() string {

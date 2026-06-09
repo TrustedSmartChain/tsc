@@ -144,6 +144,20 @@ challenger on `UNDER_REVIEW`, parseable bond/claimed amounts, and that
 - `ClaimsByDate(date)` — the reward nonces claimed for a day (ascending order).
 - `ClaimTotalByCategory(date)` — the cumulative claimed amount per category for a
   day.
+- `Audit` — runs the module invariants against current state and returns each
+  result (see Invariants).
+
+## Invariants
+
+The module registers two invariants (exercised by the simulation runner; no
+crisis module is wired, so there is no runtime halt-on-break). The same checks
+are exposed at runtime through `Query/Audit` so operators can verify a live node:
+
+- **claim-budget** — for every day, cumulative `claimed_amount ≤ dateBudget(date)`.
+  Guards against minting beyond the halving emission for any day.
+- **bond-solvency** — the module account's balance is `≥` the sum of all
+  outstanding (`UNDER_REVIEW`) `challenge_bond`s, i.e. every escrowed bond is
+  fully backed and refundable.
 
 ## Merkle scheme
 

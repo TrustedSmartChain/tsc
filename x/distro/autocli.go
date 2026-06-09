@@ -46,6 +46,11 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Query cumulative claimed totals by category for a day (YYYY-MM-DD)",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}},
 				},
+				{
+					RpcMethod: "Audit",
+					Use:       "audit",
+					Short:     "Run the module's invariants (claim budget, bond solvency) against current state",
+				},
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{

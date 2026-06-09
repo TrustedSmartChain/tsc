@@ -103,6 +103,17 @@ func (m *mockBankKeeper) GetSupply(_ context.Context, denom string) sdk.Coin {
 	return sdk.NewCoin(denom, cur)
 }
 
+func (m *mockBankKeeper) GetBalance(_ context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+	// This mock keys the distro module account's balance by module name (matching
+	// the module string passed to Mint/Send), so translate the module address
+	// back to that key; all other accounts are keyed by their bech32 address.
+	key := addr.String()
+	if addr.Equals(authtypes.NewModuleAddress(types.ModuleName)) {
+		key = types.ModuleName
+	}
+	return sdk.NewCoin(denom, m.balances[key].AmountOf(denom))
+}
+
 type mockStakingKeeper struct {
 	totalBonded math.Int
 	valAddr     sdk.ValAddress

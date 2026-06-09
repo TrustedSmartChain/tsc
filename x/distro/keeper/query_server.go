@@ -121,3 +121,26 @@ func (k Querier) ClaimTotalByCategory(goCtx context.Context, req *types.QueryCla
 	}
 	return &types.QueryClaimTotalByCategoryResponse{Date: req.Date, Totals: totals}, nil
 }
+
+// Audit runs the module's invariants against current state and reports the
+// result, so operators can verify module health on a live node.
+func (k Querier) Audit(goCtx context.Context, req *types.QueryAuditRequest) (*types.QueryAuditResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	results := k.Keeper.CheckInvariants(ctx)
+	resp := &types.QueryAuditResponse{Results: make([]types.AuditResult, 0, len(results))}
+	for _, r := range results {
+		if r.Broken {
+			resp.Broken = true
+		}
+		resp.Results = append(resp.Results, types.AuditResult{
+			Name:    r.Name,
+			Broken:  r.Broken,
+			Message: r.Message,
+		})
+	}
+	return resp, nil
+}

@@ -25,6 +25,7 @@ const (
 	Query_Claimed_FullMethodName              = "/distro.v1.Query/Claimed"
 	Query_ClaimsByDate_FullMethodName         = "/distro.v1.Query/ClaimsByDate"
 	Query_ClaimTotalByCategory_FullMethodName = "/distro.v1.Query/ClaimTotalByCategory"
+	Query_Audit_FullMethodName                = "/distro.v1.Query/Audit"
 )
 
 // QueryClient is the client API for Query service.
@@ -44,6 +45,10 @@ type QueryClient interface {
 	// ClaimTotalByCategory reports the cumulative claimed amount per category for a
 	// day's distribution (YYYY-MM-DD).
 	ClaimTotalByCategory(ctx context.Context, in *QueryClaimTotalByCategoryRequest, opts ...grpc.CallOption) (*QueryClaimTotalByCategoryResponse, error)
+	// Audit runs the module's invariants (claim budget, bond solvency) against the
+	// current state and reports the result. Lets operators verify module health on
+	// a live node, since no crisis module is wired for runtime invariant checks.
+	Audit(ctx context.Context, in *QueryAuditRequest, opts ...grpc.CallOption) (*QueryAuditResponse, error)
 }
 
 type queryClient struct {
@@ -108,6 +113,15 @@ func (c *queryClient) ClaimTotalByCategory(ctx context.Context, in *QueryClaimTo
 	return out, nil
 }
 
+func (c *queryClient) Audit(ctx context.Context, in *QueryAuditRequest, opts ...grpc.CallOption) (*QueryAuditResponse, error) {
+	out := new(QueryAuditResponse)
+	err := c.cc.Invoke(ctx, Query_Audit_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
@@ -125,6 +139,10 @@ type QueryServer interface {
 	// ClaimTotalByCategory reports the cumulative claimed amount per category for a
 	// day's distribution (YYYY-MM-DD).
 	ClaimTotalByCategory(context.Context, *QueryClaimTotalByCategoryRequest) (*QueryClaimTotalByCategoryResponse, error)
+	// Audit runs the module's invariants (claim budget, bond solvency) against the
+	// current state and reports the result. Lets operators verify module health on
+	// a live node, since no crisis module is wired for runtime invariant checks.
+	Audit(context.Context, *QueryAuditRequest) (*QueryAuditResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -149,6 +167,9 @@ func (UnimplementedQueryServer) ClaimsByDate(context.Context, *QueryClaimsByDate
 }
 func (UnimplementedQueryServer) ClaimTotalByCategory(context.Context, *QueryClaimTotalByCategoryRequest) (*QueryClaimTotalByCategoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimTotalByCategory not implemented")
+}
+func (UnimplementedQueryServer) Audit(context.Context, *QueryAuditRequest) (*QueryAuditResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Audit not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -271,6 +292,24 @@ func _Query_ClaimTotalByCategory_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_Audit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAuditRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Audit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Audit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Audit(ctx, req.(*QueryAuditRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -301,6 +340,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClaimTotalByCategory",
 			Handler:    _Query_ClaimTotalByCategory_Handler,
+		},
+		{
+			MethodName: "Audit",
+			Handler:    _Query_Audit_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -35,6 +35,12 @@ service Query {
   rpc ClaimTotalByCategory(QueryClaimTotalByCategoryRequest) returns (QueryClaimTotalByCategoryResponse) {
     option (google.api.http).get = "/tsc/distro/v1/claim_total_by_category/{date}";
   }
+  // Audit runs the module's invariants (claim budget, bond solvency) against the
+  // current state and reports the result. Lets operators verify module health on
+  // a live node, since no crisis module is wired for runtime invariant checks.
+  rpc Audit(QueryAuditRequest) returns (QueryAuditResponse) {
+    option (google.api.http).get = "/tsc/distro/v1/audit";
+  }
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
@@ -94,4 +100,23 @@ message QueryClaimTotalByCategoryResponse {
   string date = 1;
   // totals maps each reward category to its cumulative claimed amount.
   map<string, string> totals = 2;
+}
+
+message QueryAuditRequest {}
+
+// AuditResult is the outcome of a single module invariant check.
+message AuditResult {
+  // name identifies the invariant (e.g. "claim-budget", "bond-solvency").
+  string name = 1;
+  // broken is true when the invariant does not hold for the current state.
+  bool broken = 2;
+  // message is a human-readable description of the result.
+  string message = 3;
+}
+
+message QueryAuditResponse {
+  // broken is true if any invariant is broken.
+  bool broken = 1;
+  // results holds the outcome of each invariant check.
+  repeated AuditResult results = 2 [(gogoproto.nullable) = false];
 }
