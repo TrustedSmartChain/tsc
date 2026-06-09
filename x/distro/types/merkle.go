@@ -31,6 +31,13 @@ const (
 // is not gas-metered per sibling.
 const MaxProofDepth = 64
 
+// MaxCategories bounds how many reward categories a single claim leaf may carry.
+// The leaf commits to the category map, so an over-sized map cannot make a claim
+// succeed — but the handler validates and sorts the map (in LeafHash) before the
+// proof is verified, so the cap stops a bogus claim from forcing that work. Real
+// distributions use a small, fixed set of categories; 100 is a generous bound.
+const MaxCategories = 100
+
 // LeafHash returns the leaf hash for a single reward entry.
 //
 // The leaf preimage is:

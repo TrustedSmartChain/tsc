@@ -129,6 +129,9 @@ func (msg *MsgClaim) ValidateBasic() error {
 	if len(msg.Categories) == 0 {
 		return fmt.Errorf("categories must not be empty")
 	}
+	if len(msg.Categories) > MaxCategories {
+		return fmt.Errorf("too many categories: %d exceeds max %d", len(msg.Categories), MaxCategories)
+	}
 	sum := math.ZeroInt()
 	for category, raw := range msg.Categories {
 		if category == "" {

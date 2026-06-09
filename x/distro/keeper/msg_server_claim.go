@@ -43,6 +43,9 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 	if len(msg.Categories) == 0 {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "categories must not be empty")
 	}
+	if len(msg.Categories) > types.MaxCategories {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "too many categories: %d exceeds max %d", len(msg.Categories), types.MaxCategories)
+	}
 	categorySum := math.ZeroInt()
 	for category, raw := range msg.Categories {
 		if category == "" {

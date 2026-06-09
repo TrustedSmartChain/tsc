@@ -79,7 +79,9 @@ full window rather than being measured from its stale calendar date.
 - **Claim** — users call `MsgClaim` with a merkle proof of
   `(nonce, address, total, categories)` against the canonical root. `total` must
   equal the sum of the `categories` amounts, and the leaf commits to the full
-  category breakdown, so it cannot be tampered with. Rewards are minted on demand
+  category breakdown, so it cannot be tampered with. The proof length and the
+  category count are bounded (`MaxProofDepth`, `MaxCategories`) so a malformed
+  claim cannot force unbounded pre-verification work. Rewards are minted on demand
   and each `(date, nonce)` can be claimed once. The cumulative amount claimed per
   day is capped at that day's halving budget (with `max_supply` as a final bound),
   so a finalized root can never mint beyond the day's emission allocation. Each

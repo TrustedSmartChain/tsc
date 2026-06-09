@@ -1,12 +1,24 @@
 package types_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
+
+// manyCategories builds a category map with n distinct entries (used to exceed
+// the MaxCategories bound). The count check fires before the sum check, so the
+// values are immaterial.
+func manyCategories(n int) map[string]string {
+	m := make(map[string]string, n)
+	for i := 0; i < n; i++ {
+		m["cat"+strconv.Itoa(i)] = "1"
+	}
+	return m
+}
 
 // valid tsc addresses (the default params' addresses are well-formed).
 var (
@@ -46,6 +58,7 @@ func TestMsgClaimValidateBasic(t *testing.T) {
 		{"non-positive category", func(m *types.MsgClaim) { m.Categories = map[string]string{"type1": "0"} }, "must be positive"},
 		{"sum mismatch", func(m *types.MsgClaim) { m.Categories = map[string]string{"type1": "1"} }, "does not equal total"},
 		{"proof too long", func(m *types.MsgClaim) { m.Proof = make([][]byte, types.MaxProofDepth+1) }, "merkle proof too long"},
+		{"too many categories", func(m *types.MsgClaim) { m.Categories = manyCategories(types.MaxCategories + 1) }, "too many categories"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
