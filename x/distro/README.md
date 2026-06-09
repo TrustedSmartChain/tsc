@@ -57,7 +57,9 @@ full window rather than being measured from its stale calendar date.
   challenge): the pre-challenge root is restored, the bond is burned, and the day
   returns to `PENDING` (resuming its original review timer). This bounds how long
   a challenge can hold a day under review, so a stalled re-vote can never lock the
-  bond or the distribution permanently.
+  bond or the distribution permanently. If an upheld challenge's refund cannot be
+  delivered (an unparseable or send-blocked challenger address), the bond is
+  burned rather than erroring, so the day's transition always completes.
 - **Revival** — an `EXPIRED` day (one that never reached consensus and forfeited
   its rewards) can be reopened by governance via `MsgReviveDistribution`. This is
   authority-gated because it un-forfeits a lapsed day. The day returns to

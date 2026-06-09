@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -56,10 +57,13 @@ func (mockAccountKeeper) SetModuleAccount(context.Context, sdk.ModuleAccountI) {
 type mockBankKeeper struct {
 	supply   map[string]math.Int
 	balances map[string]sdk.Coins
+	// blocked simulates x/bank's blocked-address guard: a send to one of these
+	// recipients fails, mirroring a blocked module account.
+	blocked map[string]bool
 }
 
 func newMockBank() *mockBankKeeper {
-	return &mockBankKeeper{supply: map[string]math.Int{}, balances: map[string]sdk.Coins{}}
+	return &mockBankKeeper{supply: map[string]math.Int{}, balances: map[string]sdk.Coins{}, blocked: map[string]bool{}}
 }
 func (m *mockBankKeeper) SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins { return nil }
 func (m *mockBankKeeper) MintCoins(_ context.Context, module string, amt sdk.Coins) error {
@@ -79,6 +83,9 @@ func (m *mockBankKeeper) BurnCoins(_ context.Context, module string, amt sdk.Coi
 	return nil
 }
 func (m *mockBankKeeper) SendCoinsFromModuleToAccount(_ context.Context, module string, recipient sdk.AccAddress, amt sdk.Coins) error {
+	if m.blocked[recipient.String()] {
+		return fmt.Errorf("%s is not allowed to receive funds", recipient.String())
+	}
 	m.balances[module] = m.balances[module].Sub(amt...)
 	m.balances[recipient.String()] = m.balances[recipient.String()].Add(amt...)
 	return nil

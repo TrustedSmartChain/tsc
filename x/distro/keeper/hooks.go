@@ -228,6 +228,13 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 
 // resolveChallengeBond burns the escrowed bond when a challenge was frivolous,
 // or refunds it to the challenger otherwise. A no-op when nothing is escrowed.
+//
+// A refund that cannot be delivered — an unparseable or send-blocked challenger
+// address — must NOT propagate an error: doing so would discard the day's cache
+// context every epoch and wedge it UNDER_REVIEW forever with the bond locked. So
+// an undeliverable refund falls back to burning the bond, guaranteeing the
+// transition completes. This is pathological (legitimate challengers use normal,
+// unblocked addresses); the fallback is logged for visibility.
 func (k Keeper) resolveChallengeBond(ctx context.Context, d types.Distribution, denom string, frivolous bool) error {
 	if d.Challenger == "" || d.ChallengeBond == "" {
 		return nil
@@ -240,11 +247,17 @@ func (k Keeper) resolveChallengeBond(ctx context.Context, d types.Distribution, 
 	if frivolous {
 		return k.bankKeeper.BurnCoins(ctx, types.ModuleName, coins)
 	}
+
 	challenger, err := sdk.AccAddressFromBech32(d.Challenger)
-	if err != nil {
-		return err
+	if err == nil {
+		err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, challenger, coins)
 	}
-	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, challenger, coins)
+	if err == nil {
+		return nil
+	}
+	k.Logger().Error("distro: challenge bond refund failed; burning bond instead",
+		"date", d.Date, "challenger", d.Challenger, "bond", d.ChallengeBond, "error", err)
+	return k.bankKeeper.BurnCoins(ctx, types.ModuleName, coins)
 }
 
 func emitPending(sdkCtx sdk.Context, d types.Distribution) {
