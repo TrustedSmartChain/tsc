@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	lockupkeeper "github.com/TrustedSmartChain/tsc/v2/x/lockup/keeper"
+	lockupkeeper "github.com/TrustedSmartChain/tsc/v3/x/lockup/keeper"
 )
 
 // RedelegationMarkerDecorator annotates the context for every MsgBeginRedelegate

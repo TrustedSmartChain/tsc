@@ -13,7 +13,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/TrustedSmartChain/tsc/v2/app/hooks"
+	"github.com/TrustedSmartChain/tsc/v3/app/hooks"
 )
 
 // mockTx is a minimal sdk.Tx that only carries a message slice — the decorator
@@ -22,7 +22,7 @@ type mockTx struct {
 	msgs []sdk.Msg
 }
 
-func (m mockTx) GetMsgs() []sdk.Msg                { return m.msgs }
+func (m mockTx) GetMsgs() []sdk.Msg                    { return m.msgs }
 func (m mockTx) GetMsgsV2() ([]protov2.Message, error) { return nil, nil }
 
 func noopNext(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
@@ -91,13 +91,13 @@ func TestMinSelfDelegationDecorator(t *testing.T) {
 			msgs: []sdk.Msg{mustExec(t, &stakingtypes.MsgCreateValidator{MinSelfDelegation: floor})},
 		},
 		{
-			name: "authz wrapping bad create rejected",
-			msgs: []sdk.Msg{mustExec(t, &stakingtypes.MsgCreateValidator{MinSelfDelegation: below})},
+			name:    "authz wrapping bad create rejected",
+			msgs:    []sdk.Msg{mustExec(t, &stakingtypes.MsgCreateValidator{MinSelfDelegation: below})},
 			wantErr: "below the required minimum",
 		},
 		{
-			name: "authz wrapping bad edit rejected",
-			msgs: []sdk.Msg{mustExec(t, &stakingtypes.MsgEditValidator{MinSelfDelegation: intPtr(below)})},
+			name:    "authz wrapping bad edit rejected",
+			msgs:    []sdk.Msg{mustExec(t, &stakingtypes.MsgEditValidator{MinSelfDelegation: intPtr(below)})},
 			wantErr: "below the required minimum",
 		},
 		{
@@ -112,8 +112,8 @@ func TestMinSelfDelegationDecorator(t *testing.T) {
 			wantErr: "below the required minimum",
 		},
 		{
-			name: "deep nesting beyond cap rejected",
-			msgs: []sdk.Msg{deeplyNestedExec(t, maxNestedMsgs+1, &stakingtypes.MsgCreateValidator{MinSelfDelegation: floor})},
+			name:    "deep nesting beyond cap rejected",
+			msgs:    []sdk.Msg{deeplyNestedExec(t, maxNestedMsgs+1, &stakingtypes.MsgCreateValidator{MinSelfDelegation: floor})},
 			wantErr: "more nested msgs than permitted",
 		},
 	}

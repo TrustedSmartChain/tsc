@@ -1,0 +1,103 @@
+package app
+
+import (
+	"context"
+
+	storetypes "cosmossdk.io/store/types"
+	upgradetypes "cosmossdk.io/x/upgrade/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
+	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
+	"github.com/cosmos/cosmos-sdk/x/group"
+	"github.com/ethereum/go-ethereum/common"
+
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	lockupprecompile "github.com/TrustedSmartChain/tsc/v3/precompiles/lockup"
+	lockuptypes "github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
+	evmtypes "github.com/cosmos/evm/x/vm/types"
+)
+
+const UpgradeNameV2 = "v2"
+
+func (app *ChainApp) registerV2UpgradeHandler() {
+	app.UpgradeKeeper.SetUpgradeHandler(
+		UpgradeNameV2,
+		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+			sdkCtx.Logger().Info("Setting denom metadata for upgrade", "denom", BaseDenom)
+			app.BankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
+				Description: "The native staking token of Trusted Smart Chain",
+				DenomUnits: []*banktypes.DenomUnit{
+					{
+						Denom:    BaseDenom,
+						Exponent: 0,
+						Aliases:  []string{"atsc"},
+					},
+					{
+						Denom:    DisplayDenom,
+						Exponent: uint32(BaseDenomUnit),
+						Aliases:  nil,
+					},
+				},
+				Base:    BaseDenom,
+				Display: DisplayDenom,
+				Name:    "Trusted Smart Chain",
+				Symbol:  DisplayDenom,
+				URI:     "",
+				URIHash: "",
+			})
+
+			sdkCtx.Logger().Info("Migrating EVM params for v0.5.1", "denom", BaseDenom)
+			evmParams := app.EVMKeeper.GetParams(sdkCtx)
+			evmParams.EvmDenom = BaseDenom
+			evmParams.ExtendedDenomOptions = &evmtypes.ExtendedDenomOptions{ExtendedDenom: BaseDenom}
+			evmParams.ExtraEIPs = evmtypes.DefaultExtraEIPs
+			// Reset precompiles: the v0.1 proto layout deserialises as
+			// invalid binary in v0.5.1. Start from the v0.5.1 defaults;
+			// EnableStaticPrecompiles below will add the lockup precompile.
+			evmParams.ActiveStaticPrecompiles = evmtypes.AvailableStaticPrecompiles
+			if err := app.EVMKeeper.SetParams(sdkCtx, evmParams); err != nil {
+				return nil, err
+			}
+
+			sdkCtx.Logger().Info("Initializing EVM coin info from denom metadata")
+			if err := app.EVMKeeper.InitEvmCoinInfo(sdkCtx); err != nil {
+				return nil, err
+			}
+			sdkCtx.Logger().Info("EVM coin info initialized successfully")
+
+			// Enable the lockup precompile for existing chains
+			sdkCtx.Logger().Info("Enabling lockup precompile", "address", lockupprecompile.LockupPrecompileAddress)
+			if err := app.EVMKeeper.EnableStaticPrecompiles(sdkCtx, common.HexToAddress(lockupprecompile.LockupPrecompileAddress)); err != nil {
+				return nil, err
+			}
+			sdkCtx.Logger().Info("Lockup precompile enabled successfully")
+
+			return app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
+		},
+	)
+}
+
+func v2StoreUpgrades() storetypes.StoreUpgrades {
+	return storetypes.StoreUpgrades{
+		Added: []string{
+			epochstypes.StoreKey,
+			wasmtypes.StoreKey,
+			lockuptypes.StoreKey,
+		},
+		Deleted: []string{
+			crisistypes.StoreKey,
+			group.StoreKey,
+			"circuit",
+			"feeibc",
+			"capability",
+			"tokenfactory",
+			"packetforwardmiddleware",
+			"08-wasm",
+			"ratelimit",
+		},
+	}
+}
