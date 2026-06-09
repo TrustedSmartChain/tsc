@@ -165,6 +165,41 @@ func TestGenesisValidate(t *testing.T) {
 			},
 			errStr: "vote window days",
 		},
+		{
+			name: "malformed distribution date",
+			mutate: func(gs *types.GenesisState) {
+				gs.Distributions[2].Date = "2025/07/24" // dateOf(3), wrong format
+			},
+			errStr: "YYYY-MM-DD",
+		},
+		{
+			name: "invalid voting_since_date",
+			mutate: func(gs *types.GenesisState) {
+				gs.Distributions[2].VotingSinceDate = "nope" // dateOf(3) is VOTING
+			},
+			errStr: "voting_since_date",
+		},
+		{
+			name: "category total references unknown date",
+			mutate: func(gs *types.GenesisState) {
+				gs.CategoryClaimTotals[0].Date = dateOf(99)
+			},
+			errStr: "unknown date",
+		},
+		{
+			name: "category total references non-live date",
+			mutate: func(gs *types.GenesisState) {
+				gs.CategoryClaimTotals[0].Date = dateOf(3) // VOTING, not LIVE
+			},
+			errStr: "non-live",
+		},
+		{
+			name: "category total with invalid amount",
+			mutate: func(gs *types.GenesisState) {
+				gs.CategoryClaimTotals[0].Total = "not-a-number"
+			},
+			errStr: "invalid total",
+		},
 	}
 
 	for _, tc := range tests {

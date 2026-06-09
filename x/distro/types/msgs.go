@@ -28,6 +28,46 @@ func validateDateString(date string) error {
 	return nil
 }
 
+// ValidateClaimAmounts checks the total/categories consistency shared by
+// MsgClaim.ValidateBasic and the claim handler: total is a positive integer; the
+// categories are non-empty, within MaxCategories, each named and a positive
+// integer; and they sum to total. It returns the parsed total so callers don't
+// re-parse it. This is the single source of truth for the rule, so the stateless
+// and stateful paths cannot drift apart.
+func ValidateClaimAmounts(total string, categories map[string]string) (math.Int, error) {
+	t, ok := math.NewIntFromString(total)
+	if !ok {
+		return math.ZeroInt(), fmt.Errorf("total is not a valid integer")
+	}
+	if !t.IsPositive() {
+		return math.ZeroInt(), fmt.Errorf("total must be positive")
+	}
+	if len(categories) == 0 {
+		return math.ZeroInt(), fmt.Errorf("categories must not be empty")
+	}
+	if len(categories) > MaxCategories {
+		return math.ZeroInt(), fmt.Errorf("too many categories: %d exceeds max %d", len(categories), MaxCategories)
+	}
+	sum := math.ZeroInt()
+	for category, raw := range categories {
+		if category == "" {
+			return math.ZeroInt(), fmt.Errorf("category name must not be empty")
+		}
+		amount, ok := math.NewIntFromString(raw)
+		if !ok {
+			return math.ZeroInt(), fmt.Errorf("category %q amount is not a valid integer", category)
+		}
+		if !amount.IsPositive() {
+			return math.ZeroInt(), fmt.Errorf("category %q amount must be positive", category)
+		}
+		sum = sum.Add(amount)
+	}
+	if !sum.Equal(t) {
+		return math.ZeroInt(), fmt.Errorf("categories sum %s does not equal total %s", sum, t)
+	}
+	return t, nil
+}
+
 // NewMsgUpdateParams creates new instance of MsgUpdateParams
 func NewMsgUpdateParams(
 	sender sdk.Address,
@@ -119,35 +159,8 @@ func (msg *MsgClaim) ValidateBasic() error {
 	if err := validateDateString(msg.Date); err != nil {
 		return err
 	}
-	total, ok := math.NewIntFromString(msg.Total)
-	if !ok {
-		return fmt.Errorf("total is not a valid integer")
-	}
-	if !total.IsPositive() {
-		return fmt.Errorf("total must be positive")
-	}
-	if len(msg.Categories) == 0 {
-		return fmt.Errorf("categories must not be empty")
-	}
-	if len(msg.Categories) > MaxCategories {
-		return fmt.Errorf("too many categories: %d exceeds max %d", len(msg.Categories), MaxCategories)
-	}
-	sum := math.ZeroInt()
-	for category, raw := range msg.Categories {
-		if category == "" {
-			return fmt.Errorf("category name must not be empty")
-		}
-		amount, ok := math.NewIntFromString(raw)
-		if !ok {
-			return fmt.Errorf("category %q amount is not a valid integer", category)
-		}
-		if !amount.IsPositive() {
-			return fmt.Errorf("category %q amount must be positive", category)
-		}
-		sum = sum.Add(amount)
-	}
-	if !sum.Equal(total) {
-		return fmt.Errorf("categories sum %s does not equal total %s", sum, total)
+	if _, err := ValidateClaimAmounts(msg.Total, msg.Categories); err != nil {
+		return err
 	}
 	if len(msg.Proof) > MaxProofDepth {
 		return fmt.Errorf("merkle proof too long: %d exceeds max depth %d", len(msg.Proof), MaxProofDepth)

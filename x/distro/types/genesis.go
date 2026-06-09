@@ -27,6 +27,9 @@ func (gs GenesisState) Validate() error {
 	// Validate distributions and index them for cross-checks.
 	dateStatus := make(map[string]DistributionStatus, len(gs.Distributions))
 	for _, d := range gs.Distributions {
+		if err := validateDateString(d.Date); err != nil {
+			return fmt.Errorf("distribution: %w", err)
+		}
 		if _, dup := dateStatus[d.Date]; dup {
 			return fmt.Errorf("duplicate distribution for date %q", d.Date)
 		}
@@ -56,10 +59,24 @@ func (gs GenesisState) Validate() error {
 				return fmt.Errorf("distribution %q has invalid claimed amount %q", d.Date, d.ClaimedAmount)
 			}
 		}
+		// The lifecycle timestamps, when set, must be valid days.
+		if d.VotingSinceDate != "" {
+			if err := validateDateString(d.VotingSinceDate); err != nil {
+				return fmt.Errorf("distribution %q has invalid voting_since_date: %w", d.Date, err)
+			}
+		}
+		if d.PendingSinceDate != "" {
+			if err := validateDateString(d.PendingSinceDate); err != nil {
+				return fmt.Errorf("distribution %q has invalid pending_since_date: %w", d.Date, err)
+			}
+		}
 	}
 
-	// Votes must carry a non-empty root.
+	// Votes must carry a valid date and a non-empty root.
 	for _, v := range gs.Votes {
+		if err := validateDateString(v.Date); err != nil {
+			return fmt.Errorf("vote: %w", err)
+		}
 		if len(v.MerkleRoot) == 0 {
 			return fmt.Errorf("vote for date %q signer %s has empty merkle root", v.Date, v.Signer)
 		}
@@ -73,6 +90,27 @@ func (gs GenesisState) Validate() error {
 		}
 		if status != DISTRIBUTION_STATUS_LIVE {
 			return fmt.Errorf("claimed rewards reference non-live date %q (status %s)", cr.Date, status)
+		}
+	}
+
+	// Per-category claim totals must reference a known LIVE day, name a category,
+	// and carry a non-negative integer total.
+	for _, ct := range gs.CategoryClaimTotals {
+		if err := validateDateString(ct.Date); err != nil {
+			return fmt.Errorf("category claim total: %w", err)
+		}
+		status, ok := dateStatus[ct.Date]
+		if !ok {
+			return fmt.Errorf("category claim total references unknown date %q", ct.Date)
+		}
+		if status != DISTRIBUTION_STATUS_LIVE {
+			return fmt.Errorf("category claim total references non-live date %q (status %s)", ct.Date, status)
+		}
+		if ct.Category == "" {
+			return fmt.Errorf("category claim total for date %q has empty category", ct.Date)
+		}
+		if total, ok := math.NewIntFromString(ct.Total); !ok || total.IsNegative() {
+			return fmt.Errorf("category claim total for date %q category %q has invalid total %q", ct.Date, ct.Category, ct.Total)
 		}
 	}
 

@@ -28,41 +28,14 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 	if err != nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "invalid reward address")
 	}
-	total, ok := math.NewIntFromString(msg.Total)
-	if !ok {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "total is not a valid integer")
-	}
-	if !total.IsPositive() {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "total must be positive")
-	}
-
-	// Validate the category breakdown: every amount must be a positive integer
-	// and the categories must sum to total. The merkle leaf commits to this map,
-	// so the canonical root already pins the expected breakdown — this check
-	// rejects internally inconsistent claims before proof verification.
-	if len(msg.Categories) == 0 {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "categories must not be empty")
-	}
-	if len(msg.Categories) > types.MaxCategories {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "too many categories: %d exceeds max %d", len(msg.Categories), types.MaxCategories)
-	}
-	categorySum := math.ZeroInt()
-	for category, raw := range msg.Categories {
-		if category == "" {
-			return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "category name must not be empty")
-		}
-		catAmount, ok := math.NewIntFromString(raw)
-		if !ok {
-			return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "category %q amount is not a valid integer", category)
-		}
-		if !catAmount.IsPositive() {
-			return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "category %q amount must be positive", category)
-		}
-		categorySum = categorySum.Add(catAmount)
-	}
-	if !categorySum.Equal(total) {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest,
-			"categories sum %s does not equal total %s", categorySum, total)
+	// Validate total/categories consistency (positive total, non-empty bounded
+	// categories each positive, summing to total). The merkle leaf commits to this
+	// map, so the canonical root already pins the expected breakdown — this rejects
+	// internally inconsistent claims before proof verification. Shared with
+	// MsgClaim.ValidateBasic so the two cannot drift.
+	total, err := types.ValidateClaimAmounts(msg.Total, msg.Categories)
+	if err != nil {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
 	// amount is the value minted and budget-checked for this claim.
