@@ -3,7 +3,7 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/TrustedSmartChain/tsc/v2/x/distro/types"
+	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 	"github.com/stretchr/testify/require"
 )
 

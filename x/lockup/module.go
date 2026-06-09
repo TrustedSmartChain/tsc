@@ -18,9 +18,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/TrustedSmartChain/tsc/v2/x/lockup/client/cli"
-	"github.com/TrustedSmartChain/tsc/v2/x/lockup/keeper"
-	"github.com/TrustedSmartChain/tsc/v2/x/lockup/types"
+	"github.com/TrustedSmartChain/tsc/v3/x/lockup/client/cli"
+	"github.com/TrustedSmartChain/tsc/v3/x/lockup/keeper"
+	"github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
 )
 
 const (

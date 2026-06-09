@@ -1,0 +1,58 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "TSC - gRPC Gateway docs",
+    "description": "A REST interface for state queries and transactions.",
+    "version": "1.0.0"
+  },
+  "apis": [
+    {
+      "url": "./tmp-swagger-gen/distro/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "DistroParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/distro/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "DistroUpdateParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/lockup/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "LockupParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/lockup/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "LockupUpdateParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/licenses/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "LicensesParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/licenses/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "LicensesUpdateParams"
+        }
+      }
+    }
+  ]
+}
