@@ -87,6 +87,13 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "reward %d for date %q already claimed", msg.Nonce, msg.Date)
 	}
 
+	// Bound the proof length: a valid proof is at most the tree depth, so an
+	// over-long proof is malformed and its (un-gas-metered) hash folding should
+	// not be performed.
+	if len(msg.Proof) > types.MaxProofDepth {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "merkle proof too long: %d exceeds max depth %d", len(msg.Proof), types.MaxProofDepth)
+	}
+
 	// Verify the merkle proof against the canonical root.
 	leaf := types.LeafHash(msg.Nonce, msg.Address, msg.Total, msg.Categories)
 	if !types.VerifyProof(ed.MerkleRoot, leaf, msg.Proof) {

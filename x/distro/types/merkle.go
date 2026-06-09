@@ -24,6 +24,13 @@ const (
 	innerPrefix byte = 0x01
 )
 
+// MaxProofDepth bounds the number of sibling hashes a claim proof may carry. A
+// proof's length equals the tree depth (log2 of the leaf count), so 64 supports
+// up to 2^64 leaves — far beyond any real distribution. The cap rejects
+// pathologically long proofs whose hash folding would otherwise be CPU work that
+// is not gas-metered per sibling.
+const MaxProofDepth = 64
+
 // LeafHash returns the leaf hash for a single reward entry.
 //
 // The leaf preimage is:

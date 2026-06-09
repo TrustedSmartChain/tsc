@@ -121,6 +121,13 @@ func (p Params) Validate() error {
 	if p.VoteWindowDays == 0 {
 		return fmt.Errorf("vote window days must be greater than zero")
 	}
+	// A zero review delay promotes a consensus root to LIVE at the very next epoch,
+	// leaving no window in which a faulty root can be challenged. The challenge /
+	// bond / review machinery is a core safety mechanism, so require a non-zero
+	// window.
+	if p.ReviewDelayDays == 0 {
+		return fmt.Errorf("review delay days must be greater than zero (a zero delay removes the challenge window)")
+	}
 
 	return nil
 }

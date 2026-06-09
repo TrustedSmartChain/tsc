@@ -90,3 +90,33 @@ func TestDateBudgetRejectsMalformedDate(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorContains(t, err, "YYYY-MM-DD")
 }
+
+// PeriodAllocation must not panic for large periods: 1<<period overflows a
+// uint64 at period 64 (wrapping to 0) and would divide by zero. The big.Int
+// divisor keeps it correct — periods past ~84 round to zero.
+func TestPeriodAllocationLargePeriodDoesNotPanic(t *testing.T) {
+	sched, err := newHalvingSchedule(types.DefaultParams())
+	require.NoError(t, err)
+
+	// Around the uint64-shift boundary it must stay well-defined.
+	require.True(t, sched.PeriodAllocation(63).IsPositive())
+	require.NotPanics(t, func() { sched.PeriodAllocation(64) })
+	require.NotPanics(t, func() { sched.PeriodAllocation(200) })
+	// Far beyond the supply's bit-width the allocation is exactly zero.
+	require.True(t, sched.PeriodAllocation(200).IsZero())
+	// Allocations are monotonically non-increasing across the boundary.
+	require.True(t, sched.PeriodAllocation(64).LTE(sched.PeriodAllocation(63)))
+}
+
+// CurrentPeriod returns an error (rather than silently returning an
+// out-of-schedule period) for a date beyond the supported horizon.
+func TestCurrentPeriodBeyondHorizonErrors(t *testing.T) {
+	sched, err := newHalvingSchedule(types.DefaultParams())
+	require.NoError(t, err)
+
+	// maxHalvingPeriods * MonthsPerPeriod months out is past the supported range.
+	farFuture := sched.StartDate.AddDate(0, int((maxHalvingPeriods+2)*sched.MonthsPerPeriod), 0)
+	_, err = sched.CurrentPeriod(farFuture)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "beyond the supported halving schedule")
+}

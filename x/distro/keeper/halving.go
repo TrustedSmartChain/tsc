@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"math/big"
 	"time"
 
 	errorsmod "cosmossdk.io/errors"
@@ -9,6 +10,11 @@ import (
 
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
+
+// maxHalvingPeriods bounds the period search so a far-future (or malformed) date
+// cannot spin CurrentPeriod's loop. At the default 48-month period this is ~4000
+// years out, well past the point period allocations round to zero.
+const maxHalvingPeriods = uint64(1000)
 
 // dateBudget returns the maximum total amount distributable for a single day,
 // derived from the halving schedule:
@@ -121,8 +127,10 @@ func (h *HalvingSchedule) PeriodAllocation(period uint64) math.Int {
 		return math.ZeroInt()
 	}
 
-	// Period n allocation = MaxSupply / 2^n
-	divisor := math.NewIntFromUint64(1 << period) // 2^period using bit shift
+	// Period n allocation = MaxSupply / 2^n. Build the divisor with big.Int so a
+	// large period cannot overflow a uint64 shift: 1<<64 wraps to 0, which would
+	// panic on Quo (division by zero). Beyond ~84 the quotient is simply zero.
+	divisor := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), uint(period)))
 	return h.MaxSupply.Quo(divisor)
 }
 
@@ -152,8 +160,8 @@ func (h *HalvingSchedule) CurrentPeriod(targetDate time.Time) (uint64, error) {
 		}
 
 		period++
-		if period > 1000 { // prevent infinite loop
-			return period, nil
+		if period > maxHalvingPeriods {
+			return 0, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "target date is beyond the supported halving schedule (> %d periods)", maxHalvingPeriods)
 		}
 	}
 }

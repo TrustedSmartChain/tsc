@@ -92,7 +92,7 @@ Distribution `status` values: `VOTING` (0), `LIVE` (1), `PENDING` (2),
 | `license_tally_threshold` | string dec (0,1] | `0.667` | License-weighted fraction a root must reach. |
 | `stake_tally_threshold` | string dec (0,1] | `0.667` | Stake-weighted fraction (of total bonded) a root must reach. |
 | `epoch_identifier` | string | `day` | x/epochs identifier whose `AfterEpochEnd` drives the lifecycle. |
-| `review_delay_days` | uint64 | `3` | Days a root stays `PENDING` (challengeable) before auto-promoting to `LIVE`. `0` = instant. |
+| `review_delay_days` | uint64 | `3` | Days a root stays `PENDING` (challengeable) before auto-promoting to `LIVE`. Must be ≥ 1 (a zero delay would remove the challenge window). |
 | `challenge_bond` | string int | `10000000000000000000` | Bond escrowed to challenge a `PENDING` root; burned if frivolous, else refunded. |
 | `vote_window_days` | uint64 | `7` | Days a `VOTING` day may stay open before it `EXPIRED`s. |
 | `minting_address`, `receiving_address` | string | — | Legacy; retained for genesis/param compatibility, unused since `MsgMint` was retired. |
