@@ -3,8 +3,10 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"errors"
 	"strconv"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
@@ -55,12 +57,15 @@ func (h EpochHooks) AfterEpochEnd(ctx context.Context, identifier string, epochN
 }
 
 func (k Keeper) advanceDistributions(ctx context.Context, upTo string, params types.Params) error {
-	// Snapshot the candidate days first (ascending date order — YYYY-MM-DD sorts
-	// chronologically) so we don't mutate the map while iterating it.
-	var candidates []types.Distribution
-	if err := k.Distributions.Walk(ctx, nil, func(date string, d types.Distribution) (bool, error) {
+	// Snapshot only the active (non-terminal) days, not every distribution ever
+	// created. The active index is maintained as days open and reach a terminal
+	// state, so this is O(open days) per epoch rather than O(all days). Keys are
+	// walked in ascending date order (YYYY-MM-DD sorts chronologically); snapshot
+	// first so we don't mutate the set while iterating it.
+	var dates []string
+	if err := k.ActiveDistributions.Walk(ctx, nil, func(date string) (bool, error) {
 		if date <= upTo {
-			candidates = append(candidates, d)
+			dates = append(dates, date)
 		}
 		return false, nil
 	}); err != nil {
@@ -70,7 +75,20 @@ func (k Keeper) advanceDistributions(ctx context.Context, upTo string, params ty
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	reviewDelay := int64(params.ReviewDelayDays)
 
-	for _, d := range candidates {
+	for _, date := range dates {
+		d, err := k.Distributions.Get(ctx, date)
+		if err != nil {
+			// The active index points to a missing distribution — an invariant
+			// violation. Self-heal by dropping the stale entry and move on.
+			if errors.Is(err, collections.ErrNotFound) {
+				sdkCtx.Logger().Error("distro: active index references missing distribution; removing", "date", date)
+				if rmErr := k.ActiveDistributions.Remove(ctx, date); rmErr != nil {
+					return rmErr
+				}
+				continue
+			}
+			return err
+		}
 		// Isolate each day in its own cache context: a single failing day
 		// (e.g. an un-refundable challenger, a transient keeper error) must not
 		// roll back the other days' transitions, and must not wedge the module
@@ -115,6 +133,10 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 			if age >= int64(params.VoteWindowDays) {
 				d.Status = types.DISTRIBUTION_STATUS_EXPIRED
 				if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
+					return err
+				}
+				// Terminal state: drop it from the active index.
+				if err := k.ActiveDistributions.Remove(ctx, d.Date); err != nil {
 					return err
 				}
 				ctx.EventManager().EmitEvent(sdk.NewEvent(
@@ -214,6 +236,10 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 		d.Status = types.DISTRIBUTION_STATUS_LIVE
 		d.FinalizedHeight = ctx.BlockHeight()
 		if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
+			return err
+		}
+		// Terminal state: drop it from the active index.
+		if err := k.ActiveDistributions.Remove(ctx, d.Date); err != nil {
 			return err
 		}
 		ctx.EventManager().EmitEvent(sdk.NewEvent(

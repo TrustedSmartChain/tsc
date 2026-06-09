@@ -63,6 +63,10 @@ func (ms msgServer) ReviveDistribution(goCtx context.Context, msg *types.MsgRevi
 	if err := ms.k.Distributions.Set(ctx, msg.Date, d); err != nil {
 		return nil, err
 	}
+	// Reopened: re-add to the active index so the epoch hook processes it again.
+	if err := ms.k.ActiveDistributions.Set(ctx, msg.Date); err != nil {
+		return nil, err
+	}
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeDistributionRevived,

@@ -89,12 +89,16 @@ func (ms msgServer) SubmitDistributionRoot(goCtx context.Context, msg *types.Msg
 		if age > int64(params.VoteWindowDays) {
 			return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is older than the voting window (current %q, window %d days)", msg.Date, currentDate, params.VoteWindowDays)
 		}
-		// Open it for voting, stamping the window start at the current day.
+		// Open it for voting, stamping the window start at the current day, and
+		// add it to the active index so the epoch hook will process it.
 		if err := ms.k.Distributions.Set(ctx, msg.Date, types.Distribution{
 			Date:            msg.Date,
 			Status:          types.DISTRIBUTION_STATUS_VOTING,
 			VotingSinceDate: currentDate,
 		}); err != nil {
+			return nil, err
+		}
+		if err := ms.k.ActiveDistributions.Set(ctx, msg.Date); err != nil {
 			return nil, err
 		}
 	default:

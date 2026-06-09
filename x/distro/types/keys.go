@@ -19,6 +19,11 @@ var (
 
 	// ClaimTotalsKeyPrefix accumulates the claimed amount per (date, category).
 	ClaimTotalsKeyPrefix = collections.NewPrefix(4)
+
+	// ActiveDistributionsKeyPrefix indexes the dates of non-terminal
+	// (VOTING/PENDING/UNDER_REVIEW) distributions, so the epoch hook iterates only
+	// days that still need processing instead of scanning every day ever created.
+	ActiveDistributionsKeyPrefix = collections.NewPrefix(5)
 )
 
 const (

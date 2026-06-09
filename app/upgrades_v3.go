@@ -48,6 +48,14 @@ func (app *ChainApp) registerV3UpgradeHandler() {
 				return nil, err
 			}
 
+			// Backfill the active-distribution index from any existing non-terminal
+			// days so the epoch hook can find them. No-op on a fresh introduction
+			// (the decentralized-distribution state starts empty).
+			sdkCtx.Logger().Info("Rebuilding distro active-distribution index")
+			if err := app.DistroKeeper.RebuildActiveDistributions(ctx); err != nil {
+				return nil, err
+			}
+
 			return versionMap, nil
 		},
 	)

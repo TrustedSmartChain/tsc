@@ -33,6 +33,12 @@ type Keeper struct {
 	Claimed collections.KeySet[collections.Pair[string, uint64]]
 	// ClaimTotals accumulates the claimed amount per (date, category).
 	ClaimTotals collections.Map[collections.Pair[string, string], types.CategoryClaimTotal]
+	// ActiveDistributions is the set of dates whose distribution is non-terminal
+	// (VOTING/PENDING/UNDER_REVIEW). The epoch hook iterates this set instead of
+	// scanning every distribution ever created. Maintained incrementally: a date
+	// is added when it first opens for voting (or is revived) and removed when it
+	// reaches a terminal state (LIVE/EXPIRED).
+	ActiveDistributions collections.KeySet[string]
 
 	authority string
 
@@ -87,6 +93,10 @@ func NewKeeper(
 			collections.PairKeyCodec(collections.StringKey, collections.StringKey),
 			codec.CollValue[types.CategoryClaimTotal](cdc),
 		),
+		ActiveDistributions: collections.NewKeySet(
+			sb, types.ActiveDistributionsKeyPrefix, "active_distributions",
+			collections.StringKey,
+		),
 
 		authority:      authority,
 		accountKeeper:  accountKeeper,
@@ -130,6 +140,13 @@ func (k *Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) erro
 	for _, d := range data.Distributions {
 		if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
 			return err
+		}
+		// Index non-terminal days so the epoch hook can find them. The active set
+		// is derived state, so it is not part of GenesisState.
+		if isActiveStatus(d.Status) {
+			if err := k.ActiveDistributions.Set(ctx, d.Date); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -206,4 +223,32 @@ func (k *Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		ClaimedRewards:      claimedRewards,
 		CategoryClaimTotals: categoryClaimTotals,
 	}
+}
+
+// isActiveStatus reports whether a distribution status is non-terminal and so
+// still needs processing by the epoch hook.
+func isActiveStatus(s types.DistributionStatus) bool {
+	switch s {
+	case types.DISTRIBUTION_STATUS_VOTING,
+		types.DISTRIBUTION_STATUS_PENDING,
+		types.DISTRIBUTION_STATUS_UNDER_REVIEW:
+		return true
+	default:
+		return false
+	}
+}
+
+// RebuildActiveDistributions repopulates the active-distribution index from the
+// Distributions map. New days maintain the index incrementally; this is for the
+// one-time backfill at the upgrade that introduces the index, so any pre-existing
+// non-terminal days are picked up by the epoch hook.
+func (k *Keeper) RebuildActiveDistributions(ctx context.Context) error {
+	return k.Distributions.Walk(ctx, nil, func(date string, d types.Distribution) (bool, error) {
+		if isActiveStatus(d.Status) {
+			if err := k.ActiveDistributions.Set(ctx, date); err != nil {
+				return true, err
+			}
+		}
+		return false, nil
+	})
 }

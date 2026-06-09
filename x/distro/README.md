@@ -113,6 +113,12 @@ Collections (all under the `distro` store key):
 - `ClaimTotals` — `Map[(date string, category string) → CategoryClaimTotal]`.
   The cumulative amount claimed per reward category for a day, accumulated as
   rewards are claimed.
+- `ActiveDistributions` — `KeySet[date string]`. The set of non-terminal
+  (`VOTING`/`PENDING`/`UNDER_REVIEW`) days. The epoch hook iterates this set
+  instead of scanning every distribution ever created, so per-epoch work is
+  `O(open days)` rather than `O(all days)`. It is derived state (rebuilt from
+  distribution statuses on genesis import and at the introducing upgrade), so it
+  is **not** part of `GenesisState`.
 
 All five are imported/exported via genesis; `GenesisState.Validate` enforces
 structural consistency (roots present for non-`VOTING`/`EXPIRED` days, a
