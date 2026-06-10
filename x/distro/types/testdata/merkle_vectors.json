@@ -1,0 +1,212 @@
+{
+  "description": [
+    "Golden test vectors for the x/distro merkle scheme. Generated from the canonical",
+    "implementation in x/distro/types/merkle.go (`go test ./x/distro/types/ -run TestMerkleVectors -update-merkle-vectors`);",
+    "merkle_vectors_test.go re-derives every value from the inputs on each run, so this",
+    "file cannot drift from the code. Off-chain workers must reproduce all of it exactly.",
+    "",
+    "Leaf hash:  sha256(0x00 || uint64BE(nonce) || lp(address) || lp(total) || uint32BE(numCategories)",
+    "            || for each (key,value) sorted ascending by raw byte order of key: lp(key) || lp(value))",
+    "            where lp(x) = uint32BE(len(x)) || x.",
+    "Inner node: sha256(0x01 || min(a,b) || max(a,b))  (children sorted bytewise, so proofs need no direction bits).",
+    "",
+    "Tree construction: leaves are hashed in the order given; each level pairs adjacent",
+    "nodes left to right, and an unpaired trailing node is promoted to the next level",
+    "unchanged (no duplication). A leaf's proof is the bottom-up list of sibling hashes;",
+    "a level where the node was promoted contributes no sibling. Verification folds the",
+    "proof into the leaf with the inner-node rule and compares to the root.",
+    "",
+    "Empty categories are NOT a valid leaf: the chain rejects claims with an empty",
+    "category map (types.ValidateClaimAmounts: 'categories must not be empty'), and the",
+    "total must equal the sum of the category amounts. No vector covers an empty map",
+    "because no such leaf can ever be claimed."
+  ],
+  "cases": [
+    {
+      "name": "single_leaf",
+      "note": "A single-leaf tree: the root is the leaf hash itself and the proof is empty.",
+      "leaves": [
+        {
+          "nonce": 0,
+          "address": "tsc1alice",
+          "total": "42",
+          "categories": {
+            "node": "42"
+          }
+        }
+      ],
+      "leaf_hashes": [
+        "540223311a49c48cde22543951434e146a4b3d67af7b00437ef43a6bc68cc0a7"
+      ],
+      "root": "540223311a49c48cde22543951434e146a4b3d67af7b00437ef43a6bc68cc0a7",
+      "proofs": [
+        []
+      ]
+    },
+    {
+      "name": "two_leaves",
+      "leaves": [
+        {
+          "nonce": 0,
+          "address": "tsc1alice",
+          "total": "100",
+          "categories": {
+            "node": "100"
+          }
+        },
+        {
+          "nonce": 1,
+          "address": "tsc1bob",
+          "total": "200",
+          "categories": {
+            "node": "200"
+          }
+        }
+      ],
+      "leaf_hashes": [
+        "619cc937c692b2b2a6ed2ca452b3632c46cbeab8ca9a9cf55aa7a3ac80cfb863",
+        "431167c55f25b932e2b11f00ec9595d3a0422e0f3c455e8d453ac006146988c2"
+      ],
+      "root": "fdd7d4375d7281165460978d293223415015cadb2abe0f31d560bfe86c3ebf57",
+      "proofs": [
+        [
+          "431167c55f25b932e2b11f00ec9595d3a0422e0f3c455e8d453ac006146988c2"
+        ],
+        [
+          "619cc937c692b2b2a6ed2ca452b3632c46cbeab8ca9a9cf55aa7a3ac80cfb863"
+        ]
+      ]
+    },
+    {
+      "name": "five_leaves",
+      "note": "Odd leaf count: the unpaired trailing node at a level is promoted to the next level unchanged (no duplication), so proofs have unequal lengths.",
+      "leaves": [
+        {
+          "nonce": 0,
+          "address": "tsc1alice",
+          "total": "10",
+          "categories": {
+            "node": "10"
+          }
+        },
+        {
+          "nonce": 1,
+          "address": "tsc1bob",
+          "total": "20",
+          "categories": {
+            "node": "20"
+          }
+        },
+        {
+          "nonce": 2,
+          "address": "tsc1carol",
+          "total": "30",
+          "categories": {
+            "node": "30"
+          }
+        },
+        {
+          "nonce": 3,
+          "address": "tsc1dave",
+          "total": "40",
+          "categories": {
+            "node": "40"
+          }
+        },
+        {
+          "nonce": 4,
+          "address": "tsc1erin",
+          "total": "50",
+          "categories": {
+            "node": "50"
+          }
+        }
+      ],
+      "leaf_hashes": [
+        "0d394115f9e1b91aad5435fbf6144d694bcc938756e1392b3137e9cb5454b6d9",
+        "754a5d8aa041b1a6c5b78037ef0f8eb113dbcfc99da8a12e44111941b8c56f08",
+        "d0588c01a97be97a652fbc7569d29163a6528419289d5291bbf018a465076221",
+        "aa7a1985133186f17df6dffe7f816e5945ef17ee38c90f12129de8a7c989c4b3",
+        "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+      ],
+      "root": "b6d2164d6075d0646fc25275949893f22f19f0eeffba19aa492b78720346b6df",
+      "proofs": [
+        [
+          "754a5d8aa041b1a6c5b78037ef0f8eb113dbcfc99da8a12e44111941b8c56f08",
+          "40146c1f29900708000a2b0e4ffa8c510da9caef285195b6dc3d7e9a7616783f",
+          "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+        ],
+        [
+          "0d394115f9e1b91aad5435fbf6144d694bcc938756e1392b3137e9cb5454b6d9",
+          "40146c1f29900708000a2b0e4ffa8c510da9caef285195b6dc3d7e9a7616783f",
+          "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+        ],
+        [
+          "aa7a1985133186f17df6dffe7f816e5945ef17ee38c90f12129de8a7c989c4b3",
+          "31aea395b391e92e40c560069c09c008f8bccfe33db05e3315c30c4e90dad6fe",
+          "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+        ],
+        [
+          "d0588c01a97be97a652fbc7569d29163a6528419289d5291bbf018a465076221",
+          "31aea395b391e92e40c560069c09c008f8bccfe33db05e3315c30c4e90dad6fe",
+          "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+        ],
+        [
+          "01fbfbb928aaae53db8abb1c738abe79f4bd6cb2bd5d89782a78664f42bd2c25"
+        ]
+      ]
+    },
+    {
+      "name": "multi_category",
+      "note": "Categories are encoded sorted ascending by raw byte order: 'Zeta' (0x5A...) sorts before 'alpha' (0x61...), and 'a10' sorts before 'a2'. Encoding them in any other order produces a different leaf hash.",
+      "leaves": [
+        {
+          "nonce": 7,
+          "address": "tsc1alice",
+          "total": "600",
+          "categories": {
+            "Zeta": "100",
+            "alpha": "200",
+            "beta": "300"
+          }
+        },
+        {
+          "nonce": 8,
+          "address": "tsc1bob",
+          "total": "33",
+          "categories": {
+            "a10": "11",
+            "a2": "22"
+          }
+        },
+        {
+          "nonce": 9,
+          "address": "tsc1carol",
+          "total": "5",
+          "categories": {
+            "node": "5"
+          }
+        }
+      ],
+      "leaf_hashes": [
+        "ca02151b871c76de092e38bc13677d7dacc32ce2b80314d25838554e3c56d4bf",
+        "734c83879ea8cff40d4dc8ce04275daa7c260464ce461cbe2f233e705eb1ff8b",
+        "8a8c5a1d0d87daa2b477b31d5f225226de7bfb7f739a87089c8e60b5ba9b8e1d"
+      ],
+      "root": "71d6430a9160598b2cfc51404b05ba815573d3d1604eca060a828312b34eef3a",
+      "proofs": [
+        [
+          "734c83879ea8cff40d4dc8ce04275daa7c260464ce461cbe2f233e705eb1ff8b",
+          "8a8c5a1d0d87daa2b477b31d5f225226de7bfb7f739a87089c8e60b5ba9b8e1d"
+        ],
+        [
+          "ca02151b871c76de092e38bc13677d7dacc32ce2b80314d25838554e3c56d4bf",
+          "8a8c5a1d0d87daa2b477b31d5f225226de7bfb7f739a87089c8e60b5ba9b8e1d"
+        ],
+        [
+          "272e3f94f6955f701799950225fd578b2d9f1197158ab465522abf5d0136255d"
+        ]
+      ]
+    }
+  ]
+}

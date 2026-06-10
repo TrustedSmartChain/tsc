@@ -8,6 +8,12 @@ each day's claimable total is capped at that day's halving allocation, and
 claims mint on demand. (The legacy centralized `MsgMint` mint-to-receiving-address
 flow has been retired in favor of this mechanism.)
 
+The halving/budget math is implemented once, as pure store-free functions in
+`x/distro/types` (`types.DateBudget`, `types.TotalDistributableAt` in
+[types/halving.go](types/halving.go)); the keeper delegates to them. Off-chain
+workers that compute daily distributions should import these functions rather
+than reimplementing the schedule, so their per-day cap matches consensus exactly.
+
 All distribution state is keyed by **date** (`YYYY-MM-DD`). The `x/epochs` daily
 hook is the time trigger; the module translates the fired epoch number into its
 calendar day (`distribution_start_date` is day 1) and keys everything by that
@@ -189,6 +195,17 @@ emitted in ascending key order so the leaf is independent of map iteration order
   compare to the canonical root.
 
 See [types/merkle.go](types/merkle.go) (and `merkle_test.go` for vectors).
+
+**Golden vectors for external implementations** — machine-readable test vectors
+live in [types/testdata/merkle_vectors.json](types/testdata/merkle_vectors.json):
+for each case, the input leaves, every leaf hash, the root, and every proof, plus
+the tree-construction rules (adjacent pairing, odd trailing node promoted
+unchanged). The file is generated from the canonical implementation
+(`go test ./x/distro/types/ -run TestMerkleVectors -update-merkle-vectors`) and
+`TestMerkleVectors` re-derives every value on each run, so it cannot drift from
+the code. Off-chain worker implementations (in Go or any other language) should
+validate against this file; Go workers can instead import
+`x/distro/types` directly (`LeafHash`, `HashPair`, `VerifyProof`).
 
 ## Vote delegation via x/authz
 

@@ -108,14 +108,50 @@ func TestPeriodAllocationLargePeriodDoesNotPanic(t *testing.T) {
 	require.True(t, sched.PeriodAllocation(64).LTE(sched.PeriodAllocation(63)))
 }
 
+// The keeper must be a pure delegate of the x/distro/types halving functions:
+// for any date, dateBudget(params, date) must equal types.DateBudget with the
+// params spelled out, and the schedule's cumulative curve must equal
+// types.TotalDistributableAt. This guards against the keeper ever growing its
+// own copy of the math and drifting from what off-chain workers compute.
+func TestKeeperHalvingMatchesTypesAcrossDates(t *testing.T) {
+	p := types.DefaultParams()
+	maxSupply, ok := math.NewIntFromString(p.MaxSupply)
+	require.True(t, ok)
+
+	sched, err := newHalvingSchedule(p)
+	require.NoError(t, err)
+
+	// Sample the schedule: early days, both sides of the period 1 → 2 boundary,
+	// mid-period days, and a date many periods in the future.
+	_, p1End := sched.PeriodBounds(1)
+	boundary := int(p1End.Sub(sched.StartDate).Hours()/24) + 1 // day index of period 1's last day
+	days := []int{1, 2, 30, 365, boundary - 1, boundary, boundary + 1, boundary + 2, boundary + 400, 365 * 20}
+
+	for _, n := range days {
+		date := dayString(p, n)
+
+		keeperBudget, err := dateBudget(p, date)
+		require.NoError(t, err, date)
+		typesBudget, err := types.DateBudget(date, maxSupply, p.DistributionStartDate, p.MonthsInHalvingPeriod)
+		require.NoError(t, err, date)
+		require.Equal(t, typesBudget, keeperBudget, "DateBudget mismatch on %s", date)
+
+		keeperCum, err := sched.TotalDistributableAt(sched.StartDate.AddDate(0, 0, n-1))
+		require.NoError(t, err, date)
+		typesCum, err := types.TotalDistributableAt(date, maxSupply, p.DistributionStartDate, p.MonthsInHalvingPeriod)
+		require.NoError(t, err, date)
+		require.Equal(t, typesCum, keeperCum, "TotalDistributableAt mismatch on %s", date)
+	}
+}
+
 // CurrentPeriod returns an error (rather than silently returning an
 // out-of-schedule period) for a date beyond the supported horizon.
 func TestCurrentPeriodBeyondHorizonErrors(t *testing.T) {
 	sched, err := newHalvingSchedule(types.DefaultParams())
 	require.NoError(t, err)
 
-	// maxHalvingPeriods * MonthsPerPeriod months out is past the supported range.
-	farFuture := sched.StartDate.AddDate(0, int((maxHalvingPeriods+2)*sched.MonthsPerPeriod), 0)
+	// MaxHalvingPeriods * MonthsPerPeriod months out is past the supported range.
+	farFuture := sched.StartDate.AddDate(0, int((types.MaxHalvingPeriods+2)*sched.MonthsPerPeriod), 0)
 	_, err = sched.CurrentPeriod(farFuture)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "beyond the supported halving schedule")
