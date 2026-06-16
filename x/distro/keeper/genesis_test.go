@@ -20,12 +20,13 @@ func fullGenesis() *types.GenesisState {
 	return &types.GenesisState{
 		Params: types.DefaultParams(),
 		Votes: []types.DistributionVote{
-			{Date: dateOf(1), Signer: signerA, MerkleRoot: []byte("root-day-1-signerA-padded-to-32!")},
-			{Date: dateOf(3), Signer: signerB, MerkleRoot: []byte("root-day-3-signerB-padded-to-32!")},
+			{Date: dateOf(1), DistroType: defaultType, Signer: signerA, MerkleRoot: []byte("root-day-1-signerA-padded-to-32!")},
+			{Date: dateOf(3), DistroType: defaultType, Signer: signerB, MerkleRoot: []byte("root-day-3-signerB-padded-to-32!")},
 		},
 		Distributions: []types.Distribution{
 			{
 				Date:            dateOf(1),
+				DistroType:      defaultType,
 				MerkleRoot:      []byte("canonical-day-1-root-padded-32!!"),
 				Status:          types.DISTRIBUTION_STATUS_LIVE,
 				LicenseTally:    "0.75",
@@ -35,6 +36,7 @@ func fullGenesis() *types.GenesisState {
 			},
 			{
 				Date:             dateOf(2),
+				DistroType:       defaultType,
 				MerkleRoot:       []byte("canonical-day-2-root-padded-32!!"),
 				Status:           types.DISTRIBUTION_STATUS_PENDING,
 				LicenseTally:     "0.80",
@@ -42,11 +44,13 @@ func fullGenesis() *types.GenesisState {
 				PendingSinceDate: dateOf(2),
 			},
 			{
-				Date:   dateOf(3),
-				Status: types.DISTRIBUTION_STATUS_VOTING,
+				Date:       dateOf(3),
+				DistroType: defaultType,
+				Status:     types.DISTRIBUTION_STATUS_VOTING,
 			},
 			{
 				Date:          dateOf(4),
+				DistroType:    defaultType,
 				MerkleRoot:    []byte("canonical-day-4-root-padded-32!!"),
 				Status:        types.DISTRIBUTION_STATUS_UNDER_REVIEW,
 				LicenseTally:  "0.90",
@@ -58,11 +62,11 @@ func fullGenesis() *types.GenesisState {
 		// Only the LIVE day may carry claimed rewards. Nonces ascending to match
 		// the export order.
 		ClaimedRewards: []types.ClaimedReward{
-			{Date: dateOf(1), Nonces: []uint64{0, 1, 2}},
+			{Date: dateOf(1), DistroType: defaultType, Nonces: []uint64{0, 1, 2}},
 		},
 		CategoryClaimTotals: []types.CategoryClaimTotal{
-			{Date: dateOf(1), Category: "type1", Total: "600"},
-			{Date: dateOf(1), Category: "type2", Total: "400"},
+			{Date: dateOf(1), DistroType: defaultType, Category: "type1", Total: "600"},
+			{Date: dateOf(1), DistroType: defaultType, Category: "type2", Total: "400"},
 		},
 	}
 }
@@ -103,8 +107,9 @@ func TestGenesisValidate(t *testing.T) {
 			name: "duplicate distribution date",
 			mutate: func(gs *types.GenesisState) {
 				gs.Distributions = append(gs.Distributions, types.Distribution{
-					Date:   dateOf(1),
-					Status: types.DISTRIBUTION_STATUS_VOTING,
+					Date:       dateOf(1),
+					DistroType: defaultType,
+					Status:     types.DISTRIBUTION_STATUS_VOTING,
 				})
 			},
 			errStr: "duplicate distribution",

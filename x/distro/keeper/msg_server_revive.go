@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -40,12 +41,17 @@ func (ms msgServer) ReviveDistribution(goCtx context.Context, msg *types.MsgRevi
 		return nil, err
 	}
 
-	d, err := ms.k.Distributions.Get(ctx, msg.Date)
+	if _, ok := params.FindDistributionType(msg.DistroType); !ok {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "unknown distribution type %q", msg.DistroType)
+	}
+
+	distKey := collections.Join(msg.Date, msg.DistroType)
+	d, err := ms.k.Distributions.Get(ctx, distKey)
 	if err != nil {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for date %q", msg.Date)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for date %q type %q", msg.Date, msg.DistroType)
 	}
 	if d.Status != types.DISTRIBUTION_STATUS_EXPIRED {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is not expired (status %s)", msg.Date, d.Status)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q type %q is not expired (status %s)", msg.Date, msg.DistroType, d.Status)
 	}
 
 	// Reopen for voting with a fresh window. An expired day never reached
@@ -60,17 +66,20 @@ func (ms msgServer) ReviveDistribution(goCtx context.Context, msg *types.MsgRevi
 	d.PendingSinceDate = ""
 	d.Challenger = ""
 	d.ChallengeBond = ""
-	if err := ms.k.Distributions.Set(ctx, msg.Date, d); err != nil {
+	d.ValidatorTally = ""
+	d.Header = nil
+	if err := ms.k.Distributions.Set(ctx, distKey, d); err != nil {
 		return nil, err
 	}
 	// Reopened: re-add to the active index so the epoch hook processes it again.
-	if err := ms.k.ActiveDistributions.Set(ctx, msg.Date); err != nil {
+	if err := ms.k.ActiveDistributions.Set(ctx, distKey); err != nil {
 		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeDistributionRevived,
 		sdk.NewAttribute(types.AttributeKeyDate, msg.Date),
+		sdk.NewAttribute(types.AttributeKeyDistroType, msg.DistroType),
 	))
 
 	return &types.MsgReviveDistributionResponse{}, nil

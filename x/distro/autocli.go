@@ -18,33 +18,33 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod:      "Distribution",
-					Use:            "distribution [date]",
-					Short:          "Query the canonical distribution for a day (YYYY-MM-DD)",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}},
+					Use:            "distribution [date] [distro-type]",
+					Short:          "Query the canonical distribution for a (day, type)",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}, {ProtoField: "distro_type"}},
 				},
 				{
 					RpcMethod:      "DistributionVotes",
-					Use:            "distribution-votes [date]",
-					Short:          "Query all submitted votes for a day (YYYY-MM-DD)",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}},
+					Use:            "distribution-votes [date] [distro-type]",
+					Short:          "Query all submitted votes for a (day, type)",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}, {ProtoField: "distro_type"}},
 				},
 				{
 					RpcMethod:      "Claimed",
-					Use:            "claimed [date] [nonce]",
+					Use:            "claimed [date] [distro-type] [nonce]",
 					Short:          "Report whether a reward nonce has been claimed",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}, {ProtoField: "nonce"}},
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}, {ProtoField: "distro_type"}, {ProtoField: "nonce"}},
 				},
 				{
 					RpcMethod:      "ClaimsByDate",
-					Use:            "claims-by-date [date]",
-					Short:          "List the reward nonces claimed for a day (YYYY-MM-DD)",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}},
+					Use:            "claims-by-date [date] [distro-type]",
+					Short:          "List the reward nonces claimed for a (day, type)",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}, {ProtoField: "distro_type"}},
 				},
 				{
 					RpcMethod:      "ClaimTotalByCategory",
-					Use:            "claim-total-by-category [date]",
-					Short:          "Query cumulative claimed totals by category for a day (YYYY-MM-DD)",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}},
+					Use:            "claim-total-by-category [date] [distro-type]",
+					Short:          "Query cumulative claimed totals by category for a (day, type)",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "date"}, {ProtoField: "distro_type"}},
 				},
 				{
 					RpcMethod: "Audit",
@@ -68,19 +68,21 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
 					RpcMethod: "SubmitDistributionRoot",
-					Use:       "submit-distribution-root [date] [merkle-root]",
-					Short:     "Submit a node's merkle root for a day (YYYY-MM-DD)",
+					Use:       "submit-distribution-root [date] [distro-type] [merkle-root]",
+					Short:     "Submit a node's merkle root for a (day, type). Provide the header leaf with --version and --totals-by-category key=amount and its inclusion proof with --header-proof",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "date"},
+						{ProtoField: "distro_type"},
 						{ProtoField: "merkle_root"},
 					},
 				},
 				{
 					RpcMethod: "Claim",
-					Use:       "claim [date] [nonce] [address] [total] [proof]",
+					Use:       "claim [date] [distro-type] [nonce] [address] [total] [proof]",
 					Short:     "Claim a distribution reward via a merkle proof (pass the category breakdown with --categories key=amount)",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "date"},
+						{ProtoField: "distro_type"},
 						{ProtoField: "nonce"},
 						{ProtoField: "address"},
 						{ProtoField: "total"},
@@ -89,10 +91,11 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod: "ChallengeDistribution",
-					Use:       "challenge-distribution [date]",
+					Use:       "challenge-distribution [date] [distro-type]",
 					Short:     "Challenge a pending day's distribution (escrows the challenge bond)",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "date"},
+						{ProtoField: "distro_type"},
 					},
 				},
 				{

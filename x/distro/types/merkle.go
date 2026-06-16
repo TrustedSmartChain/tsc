@@ -18,10 +18,13 @@ import (
 // The leaf preimage and hashing rules below are the canonical specification;
 // the merkle_test.go vectors pin them down.
 const (
-	// leafPrefix domain-separates leaf hashes from inner-node hashes.
+	// leafPrefix domain-separates reward-leaf hashes from inner-node hashes.
 	leafPrefix byte = 0x00
 	// innerPrefix domain-separates inner-node hashes from leaf hashes.
 	innerPrefix byte = 0x01
+	// headerPrefix domain-separates header-leaf hashes from reward leaves and
+	// inner nodes, so a header leaf can never be reinterpreted as a reward leaf.
+	headerPrefix byte = 0x02
 )
 
 // MaxProofDepth bounds the number of sibling hashes a claim proof may carry. A
@@ -82,6 +85,53 @@ func LeafHash(nonce uint64, addr, total string, categories map[string]string) []
 	for _, k := range keys {
 		buf = appendLenPrefixed(buf, []byte(k))
 		buf = appendLenPrefixed(buf, []byte(categories[k]))
+	}
+
+	sum := sha256.Sum256(buf)
+	return sum[:]
+}
+
+// HeaderLeafHash returns the hash of the header leaf for a distribution. The
+// header leaf commits to the distribution's type, date, version, and the
+// authoritative per-category totals, so a submitted root that includes this leaf
+// is bound to exactly those totals (validated against the params percentages).
+//
+// The leaf preimage is:
+//
+//	0x02 || uint32BE(len(distroType)) || distroType
+//	     || uint32BE(len(date))       || date
+//	     || uint64BE(version)
+//	     || uint32BE(numCategories)
+//	     || for each (key,value) sorted ascending by key:
+//	          uint32BE(len(key)) || key || uint32BE(len(value)) || value
+//
+// The encoding mirrors LeafHash (length-prefixed, ascending-sorted categories)
+// under a distinct domain prefix. Off-chain producers MUST encode the header leaf
+// this way or submission proofs will fail.
+func HeaderLeafHash(distroType, date string, version uint64, totalsByCategory map[string]string) []byte {
+	buf := make([]byte, 0, 1+4+len(distroType)+4+len(date)+8+4)
+	buf = append(buf, headerPrefix)
+
+	buf = appendLenPrefixed(buf, []byte(distroType))
+	buf = appendLenPrefixed(buf, []byte(date))
+
+	var v [8]byte
+	binary.BigEndian.PutUint64(v[:], version)
+	buf = append(buf, v[:]...)
+
+	keys := make([]string, 0, len(totalsByCategory))
+	for k := range totalsByCategory {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var count [4]byte
+	binary.BigEndian.PutUint32(count[:], uint32(len(keys)))
+	buf = append(buf, count[:]...)
+
+	for _, k := range keys {
+		buf = appendLenPrefixed(buf, []byte(k))
+		buf = appendLenPrefixed(buf, []byte(totalsByCategory[k]))
 	}
 
 	sum := sha256.Sum256(buf)

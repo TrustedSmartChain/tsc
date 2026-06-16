@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -67,31 +68,40 @@ func (k Keeper) checkClaimBudget(ctx sdk.Context) InvariantResult {
 
 	var violations strings.Builder
 	count := 0
-	err = k.Distributions.Walk(ctx, nil, func(date string, d types.Distribution) (bool, error) {
-		// Only days that have been claimed against can violate the budget.
+	err = k.Distributions.Walk(ctx, nil, func(key collections.Pair[string, string], d types.Distribution) (bool, error) {
+		date := key.K1()
+		distroType := key.K2()
+		// Only (day, type)s that have been claimed against can violate the budget.
 		if d.ClaimedAmount == "" {
 			return false, nil
 		}
 		claimed, ok := math.NewIntFromString(d.ClaimedAmount)
 		if !ok {
 			count++
-			fmt.Fprintf(&violations, "\tday %s has unparseable claimed amount %q\n", date, d.ClaimedAmount)
+			fmt.Fprintf(&violations, "\tday %s type %s has unparseable claimed amount %q\n", date, distroType, d.ClaimedAmount)
 			return false, nil
 		}
 		if claimed.IsNegative() {
 			count++
-			fmt.Fprintf(&violations, "\tday %s has negative claimed amount %s\n", date, claimed)
+			fmt.Fprintf(&violations, "\tday %s type %s has negative claimed amount %s\n", date, distroType, claimed)
 			return false, nil
 		}
-		budget, err := dateBudget(params, date)
+		dayBudget, err := dateBudget(params, date)
 		if err != nil {
 			count++
-			fmt.Fprintf(&violations, "\tday %s budget error: %v\n", date, err)
+			fmt.Fprintf(&violations, "\tday %s type %s budget error: %v\n", date, distroType, err)
 			return false, nil
+		}
+		// The per-(day, type) cap is the day's halving budget scaled by the type's
+		// configured percentage. A type no longer in params caps at zero (any prior
+		// claim against it is a violation).
+		budget := math.ZeroInt()
+		if dt, ok := params.FindDistributionType(distroType); ok {
+			budget = types.TypeBudget(dayBudget, dt.Percentage)
 		}
 		if claimed.GT(budget) {
 			count++
-			fmt.Fprintf(&violations, "\tday %s claimed %s exceeds budget %s\n", date, claimed, budget)
+			fmt.Fprintf(&violations, "\tday %s type %s claimed %s exceeds budget %s\n", date, distroType, claimed, budget)
 		}
 		return false, nil
 	})
@@ -114,14 +124,14 @@ func (k Keeper) checkBondSolvency(ctx sdk.Context) InvariantResult {
 	outstanding := math.ZeroInt()
 	var invalid strings.Builder
 	hasInvalid := false
-	err = k.Distributions.Walk(ctx, nil, func(date string, d types.Distribution) (bool, error) {
+	err = k.Distributions.Walk(ctx, nil, func(key collections.Pair[string, string], d types.Distribution) (bool, error) {
 		if d.Status != types.DISTRIBUTION_STATUS_UNDER_REVIEW || d.ChallengeBond == "" {
 			return false, nil
 		}
 		bond, ok := math.NewIntFromString(d.ChallengeBond)
 		if !ok || bond.IsNegative() {
 			hasInvalid = true
-			fmt.Fprintf(&invalid, "\tday %s has invalid challenge bond %q\n", date, d.ChallengeBond)
+			fmt.Fprintf(&invalid, "\tday %s type %s has invalid challenge bond %q\n", key.K1(), key.K2(), d.ChallengeBond)
 			return false, nil
 		}
 		outstanding = outstanding.Add(bond)

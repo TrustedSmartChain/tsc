@@ -73,6 +73,17 @@ func request_Query_Distribution_0(ctx context.Context, marshaler runtime.Marshal
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
 	}
 
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
+	}
+
 	msg, err := client.Distribution(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -100,13 +111,24 @@ func local_request_Query_Distribution_0(ctx context.Context, marshaler runtime.M
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
 	}
 
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
+	}
+
 	msg, err := server.Distribution(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
 var (
-	filter_Query_DistributionVotes_0 = &utilities.DoubleArray{Encoding: map[string]int{"date": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_Query_DistributionVotes_0 = &utilities.DoubleArray{Encoding: map[string]int{"date": 0, "distro_type": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 )
 
 func request_Query_DistributionVotes_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -129,6 +151,17 @@ func request_Query_DistributionVotes_0(ctx context.Context, marshaler runtime.Ma
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
+	}
+
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -165,6 +198,17 @@ func local_request_Query_DistributionVotes_0(ctx context.Context, marshaler runt
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
 	}
 
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
+	}
+
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -197,6 +241,17 @@ func request_Query_Claimed_0(ctx context.Context, marshaler runtime.Marshaler, c
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
+	}
+
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
 	}
 
 	val, ok = pathParams["nonce"]
@@ -237,6 +292,17 @@ func local_request_Query_Claimed_0(ctx context.Context, marshaler runtime.Marsha
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
 	}
 
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
+	}
+
 	val, ok = pathParams["nonce"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "nonce")
@@ -254,7 +320,7 @@ func local_request_Query_Claimed_0(ctx context.Context, marshaler runtime.Marsha
 }
 
 var (
-	filter_Query_ClaimsByDate_0 = &utilities.DoubleArray{Encoding: map[string]int{"date": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_Query_ClaimsByDate_0 = &utilities.DoubleArray{Encoding: map[string]int{"date": 0, "distro_type": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 )
 
 func request_Query_ClaimsByDate_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -277,6 +343,17 @@ func request_Query_ClaimsByDate_0(ctx context.Context, marshaler runtime.Marshal
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
+	}
+
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -313,6 +390,17 @@ func local_request_Query_ClaimsByDate_0(ctx context.Context, marshaler runtime.M
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
 	}
 
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
+	}
+
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -347,6 +435,17 @@ func request_Query_ClaimTotalByCategory_0(ctx context.Context, marshaler runtime
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
 	}
 
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
+	}
+
 	msg, err := client.ClaimTotalByCategory(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -372,6 +471,17 @@ func local_request_Query_ClaimTotalByCategory_0(ctx context.Context, marshaler r
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "date", err)
+	}
+
+	val, ok = pathParams["distro_type"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "distro_type")
+	}
+
+	protoReq.DistroType, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "distro_type", err)
 	}
 
 	msg, err := server.ClaimTotalByCategory(ctx, &protoReq)
@@ -909,15 +1019,15 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 var (
 	pattern_Query_Params_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"tsc", "distro", "v1", "params"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_Distribution_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"tsc", "distro", "v1", "distribution", "date"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_Distribution_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"tsc", "distro", "v1", "distribution", "date", "distro_type"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_DistributionVotes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"tsc", "distro", "v1", "distribution_votes", "date"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_DistributionVotes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"tsc", "distro", "v1", "distribution_votes", "date", "distro_type"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_Claimed_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"tsc", "distro", "v1", "claimed", "date", "nonce"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_Claimed_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5, 1, 0, 4, 1, 5, 6}, []string{"tsc", "distro", "v1", "claimed", "date", "distro_type", "nonce"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ClaimsByDate_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"tsc", "distro", "v1", "claims", "date"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_ClaimsByDate_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"tsc", "distro", "v1", "claims", "date", "distro_type"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ClaimTotalByCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"tsc", "distro", "v1", "claim_total_by_category", "date"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_ClaimTotalByCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"tsc", "distro", "v1", "claim_total_by_category", "date", "distro_type"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_Query_Audit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"tsc", "distro", "v1", "audit"}, "", runtime.AssumeColonVerbOpt(false)))
 

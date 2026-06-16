@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 
@@ -18,28 +19,27 @@ import (
 // is restored, the bond is burned, and the day returns to PENDING and promotes.
 func TestChallengeTimesOutWhenRevoteStalls(t *testing.T) {
 	f, voters := fourVoterConsensus(t) // current epoch = 1
-	rootA := []byte("root-A-the-original-consensus!!!")
-	rootB := []byte("root-B-the-spoiler-no-consensus!")
+	rootA, _ := headerOnlySubmission(dateOf(1), 0)
 
 	for _, v := range voters {
-		f.submit(t, v, 1, rootA)
+		f.submit(t, v, 1, 0)
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1)) // -> PENDING (rootA, since=day1)
 
 	// Fund and challenge.
 	f.bank.balances[voters[0].String()] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
-	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(1)})
+	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(1), DistroType: defaultType})
 	require.NoError(t, err)
 	require.Equal(t, math.NewInt(100), f.bank.balances[types.ModuleName].AmountOf(testDenom)) // escrowed
 
 	// Split the re-vote so no root reaches the 2/3 thresholds: two voters move to
 	// rootB, two remain on rootA (2/4 license, 50/100 stake each — neither passes).
-	f.submit(t, voters[0], 1, rootB)
-	f.submit(t, voters[1], 1, rootB)
+	f.submit(t, voters[0], 1, 1)
+	f.submit(t, voters[1], 1, 1)
 
 	// Within the re-vote window it stays UNDER_REVIEW (no consensus, not timed out).
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2))
-	ed, err := f.k.Distributions.Get(f.ctx, dateOf(1))
+	ed, err := f.k.Distributions.Get(f.ctx, collections.Join(dateOf(1), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_UNDER_REVIEW, ed.Status)
 	require.Equal(t, math.NewInt(100), f.bank.balances[types.ModuleName].AmountOf(testDenom)) // still escrowed
@@ -47,7 +47,7 @@ func TestChallengeTimesOutWhenRevoteStalls(t *testing.T) {
 	// Once the re-vote window (vote_window_days, measured from the challenge day)
 	// elapses, it times out: bond burned, original root restored, back to PENDING.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1+int64(types.DefaultVoteWindowDays)))
-	ed, err = f.k.Distributions.Get(f.ctx, dateOf(1))
+	ed, err = f.k.Distributions.Get(f.ctx, collections.Join(dateOf(1), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status)
 	require.Equal(t, rootA, ed.MerkleRoot, "the pre-challenge consensus root must be restored")
@@ -59,7 +59,7 @@ func TestChallengeTimesOutWhenRevoteStalls(t *testing.T) {
 
 	// The resumed (already-elapsed) review timer promotes it to LIVE next epoch.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2+int64(types.DefaultVoteWindowDays)))
-	ed, err = f.k.Distributions.Get(f.ctx, dateOf(1))
+	ed, err = f.k.Distributions.Get(f.ctx, collections.Join(dateOf(1), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_LIVE, ed.Status)
 	require.Equal(t, rootA, ed.MerkleRoot)
@@ -70,25 +70,24 @@ func TestChallengeTimesOutWhenRevoteStalls(t *testing.T) {
 // consensus before the window elapses resolves as before (no timeout).
 func TestChallengeWithinWindowStillResolvesNormally(t *testing.T) {
 	f, voters := fourVoterConsensus(t)
-	rootA := []byte("root-A-buggy-original-result-32b")
-	rootB := []byte("root-B-corrected-recompute--32by")
+	rootB, _ := headerOnlySubmission(dateOf(1), 1)
 
 	for _, v := range voters {
-		f.submit(t, v, 1, rootA)
+		f.submit(t, v, 1, 0)
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1)) // -> PENDING
 
 	f.bank.balances[voters[0].String()] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
-	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(1)})
+	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(1), DistroType: defaultType})
 	require.NoError(t, err)
 
 	// Supermajority adopts the corrected root B before the window elapses.
-	f.submit(t, voters[0], 1, rootB)
-	f.submit(t, voters[1], 1, rootB)
-	f.submit(t, voters[2], 1, rootB)
+	f.submit(t, voters[0], 1, 1)
+	f.submit(t, voters[1], 1, 1)
+	f.submit(t, voters[2], 1, 1)
 
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2))
-	ed, err := f.k.Distributions.Get(f.ctx, dateOf(1))
+	ed, err := f.k.Distributions.Get(f.ctx, collections.Join(dateOf(1), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status)
 	require.Equal(t, rootB, ed.MerkleRoot, "corrected root adopted, not timed out")
@@ -101,18 +100,17 @@ func TestChallengeWithinWindowStillResolvesNormally(t *testing.T) {
 // rather than erroring and wedging the day UNDER_REVIEW forever.
 func TestUpheldChallengeRefundToBlockedChallengerBurnsBond(t *testing.T) {
 	f, voters := fourVoterConsensus(t)
-	rootA := []byte("root-A-buggy-original-result-32b")
-	rootB := []byte("root-B-corrected-recompute--32by")
+	rootB, _ := headerOnlySubmission(dateOf(1), 1)
 
 	for _, v := range voters {
-		f.submit(t, v, 1, rootA)
+		f.submit(t, v, 1, 0)
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1)) // -> PENDING (rootA)
 
 	// Challenge, then block the challenger from receiving funds (e.g. it is a
 	// blocked module address) so the refund will fail.
 	f.bank.balances[voters[0].String()] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
-	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(1)})
+	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: voters[0].String(), Date: dateOf(1), DistroType: defaultType})
 	require.NoError(t, err)
 	require.Equal(t, math.NewInt(100), f.bank.balances[types.ModuleName].AmountOf(testDenom)) // escrowed
 	f.bank.blocked[voters[0].String()] = true
@@ -120,12 +118,12 @@ func TestUpheldChallengeRefundToBlockedChallengerBurnsBond(t *testing.T) {
 	// Supermajority adopts the corrected root B => challenge upheld => refund due,
 	// but the refund is undeliverable. The day must still advance to PENDING with
 	// the corrected root, and the bond is burned (not stuck in the module).
-	f.submit(t, voters[0], 1, rootB)
-	f.submit(t, voters[1], 1, rootB)
-	f.submit(t, voters[2], 1, rootB)
+	f.submit(t, voters[0], 1, 1)
+	f.submit(t, voters[1], 1, 1)
+	f.submit(t, voters[2], 1, 1)
 
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2))
-	ed, err := f.k.Distributions.Get(f.ctx, dateOf(1))
+	ed, err := f.k.Distributions.Get(f.ctx, collections.Join(dateOf(1), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status, "day must not wedge UNDER_REVIEW")
 	require.Equal(t, rootB, ed.MerkleRoot)
@@ -136,7 +134,7 @@ func TestUpheldChallengeRefundToBlockedChallengerBurnsBond(t *testing.T) {
 
 	// And it still promotes to LIVE on the next epoch.
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 3))
-	ed, err = f.k.Distributions.Get(f.ctx, dateOf(1))
+	ed, err = f.k.Distributions.Get(f.ctx, collections.Join(dateOf(1), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_LIVE, ed.Status)
 	require.Equal(t, rootB, ed.MerkleRoot)

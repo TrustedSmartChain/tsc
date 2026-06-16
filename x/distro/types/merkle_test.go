@@ -55,6 +55,39 @@ func TestLeafHashFieldBoundaryUnambiguous(t *testing.T) {
 	)
 }
 
+func TestHeaderLeafHashDeterministic(t *testing.T) {
+	totals := map[string]string{"a": "1", "b": "2"}
+	h1 := types.HeaderLeafHash("type1", "2025-07-22", 3, totals)
+	h2 := types.HeaderLeafHash("type1", "2025-07-22", 3, map[string]string{"b": "2", "a": "1"})
+	require.Equal(t, h1, h2, "header leaf must be independent of map iteration order")
+}
+
+func TestHeaderLeafHashDomainSeparated(t *testing.T) {
+	// A header leaf and a reward leaf with otherwise-similar inputs must not
+	// collide: the header uses a distinct domain prefix (0x02).
+	header := types.HeaderLeafHash("type1", "2025-07-22", 0, map[string]string{"x": "1"})
+	reward := types.LeafHash(0, "type1", "2025-07-22", map[string]string{"x": "1"})
+	require.NotEqual(t, header, reward)
+}
+
+func TestHeaderLeafHashCommitsToFields(t *testing.T) {
+	base := types.HeaderLeafHash("type1", "2025-07-22", 1, map[string]string{"x": "1"})
+	require.NotEqual(t, base, types.HeaderLeafHash("type2", "2025-07-22", 1, map[string]string{"x": "1"}))
+	require.NotEqual(t, base, types.HeaderLeafHash("type1", "2025-07-23", 1, map[string]string{"x": "1"}))
+	require.NotEqual(t, base, types.HeaderLeafHash("type1", "2025-07-22", 2, map[string]string{"x": "1"}))
+	require.NotEqual(t, base, types.HeaderLeafHash("type1", "2025-07-22", 1, map[string]string{"x": "2"}))
+}
+
+// TestHeaderLeafInclusion checks a header leaf can be proven against a tree root
+// using VerifyProof, mirroring the submit-time inclusion check.
+func TestHeaderLeafInclusion(t *testing.T) {
+	header := types.HeaderLeafHash("type1", "2025-07-22", 1, map[string]string{"x": "100"})
+	reward := types.LeafHash(0, "tsc1a", "100", cat("100"))
+	root := types.HashPair(header, reward)
+	require.True(t, types.VerifyProof(root, header, [][]byte{reward}))
+	require.True(t, types.VerifyProof(root, reward, [][]byte{header}))
+}
+
 func TestHashPairCommutative(t *testing.T) {
 	a := types.LeafHash(1, "a", "1", cat("1"))
 	b := types.LeafHash(2, "b", "2", cat("2"))

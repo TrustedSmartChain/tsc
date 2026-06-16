@@ -3,6 +3,8 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/collections"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -24,7 +26,7 @@ func TestDistributionsQuery(t *testing.T) {
 	}
 	for i, s := range seed {
 		date := dateOf(int64(i + 1))
-		require.NoError(t, f.k.Distributions.Set(f.ctx, date, types.Distribution{Date: date, Status: s, MerkleRoot: []byte("r")}))
+		require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(date, defaultType), types.Distribution{Date: date, DistroType: defaultType, Status: s, MerkleRoot: []byte("r")}))
 	}
 
 	// Unpaginated: returns all, in ascending date order.
@@ -60,11 +62,11 @@ func TestActiveDistributionsQuery(t *testing.T) {
 		dateOf(4): types.DISTRIBUTION_STATUS_EXPIRED,
 	}
 	for date, s := range active {
-		require.NoError(t, f.k.Distributions.Set(f.ctx, date, types.Distribution{Date: date, Status: s, MerkleRoot: []byte("r")}))
-		require.NoError(t, f.k.ActiveDistributions.Set(f.ctx, date))
+		require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(date, defaultType), types.Distribution{Date: date, DistroType: defaultType, Status: s, MerkleRoot: []byte("r")}))
+		require.NoError(t, f.k.ActiveDistributions.Set(f.ctx, collections.Join(date, defaultType)))
 	}
 	for date, s := range terminal {
-		require.NoError(t, f.k.Distributions.Set(f.ctx, date, types.Distribution{Date: date, Status: s, MerkleRoot: []byte("r")}))
+		require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(date, defaultType), types.Distribution{Date: date, DistroType: defaultType, Status: s, MerkleRoot: []byte("r")}))
 	}
 
 	resp, err := q.ActiveDistributions(f.ctx, &types.QueryActiveDistributionsRequest{})

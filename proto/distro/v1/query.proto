@@ -15,26 +15,26 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/tsc/distro/v1/params";
   }
-  // Distribution queries the canonical distribution for a day (YYYY-MM-DD).
+  // Distribution queries the canonical distribution for a (day, type).
   rpc Distribution(QueryDistributionRequest) returns (QueryDistributionResponse) {
-    option (google.api.http).get = "/tsc/distro/v1/distribution/{date}";
+    option (google.api.http).get = "/tsc/distro/v1/distribution/{date}/{distro_type}";
   }
-  // DistributionVotes queries all submitted votes for a day (YYYY-MM-DD).
+  // DistributionVotes queries all submitted votes for a (day, type).
   rpc DistributionVotes(QueryDistributionVotesRequest) returns (QueryDistributionVotesResponse) {
-    option (google.api.http).get = "/tsc/distro/v1/distribution_votes/{date}";
+    option (google.api.http).get = "/tsc/distro/v1/distribution_votes/{date}/{distro_type}";
   }
-  // Claimed reports whether a (date, nonce) reward has been claimed.
+  // Claimed reports whether a (date, type, nonce) reward has been claimed.
   rpc Claimed(QueryClaimedRequest) returns (QueryClaimedResponse) {
-    option (google.api.http).get = "/tsc/distro/v1/claimed/{date}/{nonce}";
+    option (google.api.http).get = "/tsc/distro/v1/claimed/{date}/{distro_type}/{nonce}";
   }
-  // ClaimsByDate lists the reward nonces claimed for a day (YYYY-MM-DD).
+  // ClaimsByDate lists the reward nonces claimed for a (day, type).
   rpc ClaimsByDate(QueryClaimsByDateRequest) returns (QueryClaimsByDateResponse) {
-    option (google.api.http).get = "/tsc/distro/v1/claims/{date}";
+    option (google.api.http).get = "/tsc/distro/v1/claims/{date}/{distro_type}";
   }
   // ClaimTotalByCategory reports the cumulative claimed amount per category for a
-  // day's distribution (YYYY-MM-DD).
+  // (day, type)'s distribution.
   rpc ClaimTotalByCategory(QueryClaimTotalByCategoryRequest) returns (QueryClaimTotalByCategoryResponse) {
-    option (google.api.http).get = "/tsc/distro/v1/claim_total_by_category/{date}";
+    option (google.api.http).get = "/tsc/distro/v1/claim_total_by_category/{date}/{distro_type}";
   }
   // Audit runs the module's invariants (claim budget, bond solvency) against the
   // current state and reports the result. Lets operators verify module health on
@@ -65,6 +65,8 @@ message QueryParamsResponse {
 message QueryDistributionRequest {
   // date is the distribution day in YYYY-MM-DD form.
   string date = 1;
+  // distro_type is the distribution type id.
+  string distro_type = 2;
 }
 
 message QueryDistributionResponse {
@@ -74,6 +76,8 @@ message QueryDistributionResponse {
 message QueryDistributionVotesRequest {
   // date is the distribution day in YYYY-MM-DD form.
   string date = 1;
+  // distro_type is the distribution type id.
+  string distro_type = 3;
   cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
@@ -86,6 +90,8 @@ message QueryClaimedRequest {
   // date is the distribution day in YYYY-MM-DD form.
   string date = 1;
   uint64 nonce = 2;
+  // distro_type is the distribution type id.
+  string distro_type = 3;
 }
 
 message QueryClaimedResponse {
@@ -95,6 +101,8 @@ message QueryClaimedResponse {
 message QueryClaimsByDateRequest {
   // date is the distribution day in YYYY-MM-DD form.
   string date = 1;
+  // distro_type is the distribution type id.
+  string distro_type = 3;
   cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
@@ -107,6 +115,8 @@ message QueryClaimsByDateResponse {
 message QueryClaimTotalByCategoryRequest {
   // date selects the distribution by calendar day (YYYY-MM-DD).
   string date = 1;
+  // distro_type is the distribution type id.
+  string distro_type = 2;
 }
 
 message QueryClaimTotalByCategoryResponse {

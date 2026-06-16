@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 
@@ -15,7 +16,7 @@ import (
 
 func active(t *testing.T, f *distFixture, date string) bool {
 	t.Helper()
-	has, err := f.k.ActiveDistributions.Has(f.ctx, date)
+	has, err := f.k.ActiveDistributions.Has(f.ctx, collections.Join(date, defaultType))
 	require.NoError(t, err)
 	return has
 }
@@ -24,8 +25,8 @@ func active(t *testing.T, f *distFixture, date string) bool {
 func activeDates(t *testing.T, f *distFixture) []string {
 	t.Helper()
 	var out []string
-	require.NoError(t, f.k.ActiveDistributions.Walk(f.ctx, nil, func(date string) (bool, error) {
-		out = append(out, date)
+	require.NoError(t, f.k.ActiveDistributions.Walk(f.ctx, nil, func(key collections.Pair[string, string]) (bool, error) {
+		out = append(out, key.K1())
 		return false, nil
 	}))
 	return out
@@ -35,13 +36,12 @@ func activeDates(t *testing.T, f *distFixture) []string {
 // dropped once it reaches LIVE, so the epoch hook stops scanning it.
 func TestActiveIndexTracksLifecycle(t *testing.T) {
 	f, voters := fourVoterConsensus(t)
-	root := []byte("consensus-root-padded-to-32bytes")
 
 	// Not present before any submission.
 	require.False(t, active(t, f, dateOf(1)))
 
 	for _, v := range voters {
-		f.submit(t, v, 1, root)
+		f.submit(t, v, 1, 0)
 	}
 	// Indexed once voting opens.
 	require.True(t, active(t, f, dateOf(1)))
@@ -63,7 +63,7 @@ func TestActiveIndexDropsExpired(t *testing.T) {
 		mockLicensesKeeper{licenses: []licensetypes.License{activeLicense(signer.String()), activeLicense(other.String())}},
 		1,
 	)
-	f.submit(t, signer, 1, []byte("lonely-root---------------------"))
+	f.submit(t, signer, 1, 0)
 	require.True(t, active(t, f, dateOf(1)))
 
 	// Within the window it stays indexed.
@@ -80,8 +80,8 @@ func TestActiveIndexDropsExpired(t *testing.T) {
 func TestActiveIndexSelfHealsMissingDistribution(t *testing.T) {
 	f, _ := fourVoterConsensus(t)
 
-	// Point the index at a date with no Distribution record.
-	require.NoError(t, f.k.ActiveDistributions.Set(f.ctx, dateOf(1)))
+	// Point the index at a (date, type) with no Distribution record.
+	require.NoError(t, f.k.ActiveDistributions.Set(f.ctx, collections.Join(dateOf(1), defaultType)))
 	require.True(t, active(t, f, dateOf(1)))
 
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1))
@@ -104,7 +104,7 @@ func TestRebuildActiveDistributions(t *testing.T) {
 		{dateOf(5), types.DISTRIBUTION_STATUS_EXPIRED},
 	}
 	for _, s := range seed {
-		require.NoError(t, f.k.Distributions.Set(f.ctx, s.date, types.Distribution{Date: s.date, Status: s.status, MerkleRoot: []byte("r")}))
+		require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(s.date, defaultType), types.Distribution{Date: s.date, DistroType: defaultType, Status: s.status, MerkleRoot: []byte("r")}))
 	}
 
 	require.NoError(t, f.k.RebuildActiveDistributions(f.ctx))

@@ -5,6 +5,7 @@ package types
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -119,12 +120,6 @@ type Params struct {
 	// distribution_license_type_id is the x/licenses LicenseType id a signer must
 	// hold (with >= 1 active license) to submit a distribution root.
 	DistributionLicenseTypeId string `protobuf:"bytes,7,opt,name=distribution_license_type_id,json=distributionLicenseTypeId,proto3" json:"distribution_license_type_id,omitempty"`
-	// license_tally_threshold is the fraction (0,1] of license weight a root must
-	// reach to pass the license-based tally. Default "0.667".
-	LicenseTallyThreshold string `protobuf:"bytes,8,opt,name=license_tally_threshold,json=licenseTallyThreshold,proto3" json:"license_tally_threshold,omitempty"`
-	// stake_tally_threshold is the fraction (0,1] of bonded stake a root must
-	// reach to pass the stake-based tally. Default "0.667".
-	StakeTallyThreshold string `protobuf:"bytes,9,opt,name=stake_tally_threshold,json=stakeTallyThreshold,proto3" json:"stake_tally_threshold,omitempty"`
 	// epoch_identifier is the x/epochs identifier whose AfterEpochEnd triggers the
 	// daily tally. Default "day".
 	EpochIdentifier string `protobuf:"bytes,10,opt,name=epoch_identifier,json=epochIdentifier,proto3" json:"epoch_identifier,omitempty"`
@@ -140,6 +135,14 @@ type Params struct {
 	// distribution has to reach consensus before it expires and is no longer
 	// tallied. Bounds daily tally work.
 	VoteWindowDays uint64 `protobuf:"varint,13,opt,name=vote_window_days,json=voteWindowDays,proto3" json:"vote_window_days,omitempty"`
+	// validator_addresses is the allowlist of validator self-delegation addresses
+	// used by the count-based validator consensus mechanism: a root's validator
+	// tally is the fraction of these addresses that voted for it.
+	ValidatorAddresses []string `protobuf:"bytes,14,rep,name=validator_addresses,json=validatorAddresses,proto3" json:"validator_addresses,omitempty"`
+	// distribution_types are the allowable per-day distribution types. Each type
+	// claims a percentage of the day's halving budget and carries its own
+	// categories and consensus thresholds. Type percentages must sum to exactly 1.
+	DistributionTypes []DistributionType `protobuf:"bytes,15,rep,name=distribution_types,json=distributionTypes,proto3" json:"distribution_types"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -224,20 +227,6 @@ func (m *Params) GetDistributionLicenseTypeId() string {
 	return ""
 }
 
-func (m *Params) GetLicenseTallyThreshold() string {
-	if m != nil {
-		return m.LicenseTallyThreshold
-	}
-	return ""
-}
-
-func (m *Params) GetStakeTallyThreshold() string {
-	if m != nil {
-		return m.StakeTallyThreshold
-	}
-	return ""
-}
-
 func (m *Params) GetEpochIdentifier() string {
 	if m != nil {
 		return m.EpochIdentifier
@@ -266,57 +255,240 @@ func (m *Params) GetVoteWindowDays() uint64 {
 	return 0
 }
 
+func (m *Params) GetValidatorAddresses() []string {
+	if m != nil {
+		return m.ValidatorAddresses
+	}
+	return nil
+}
+
+func (m *Params) GetDistributionTypes() []DistributionType {
+	if m != nil {
+		return m.DistributionTypes
+	}
+	return nil
+}
+
+// DistributionType is an allowable distribution type that may run once per day
+// (keyed by (date, id)). It claims `percentage` of the day's halving budget,
+// breaks down into `categories`, and configures which consensus mechanisms a
+// root must pass to finalize.
+type DistributionType struct {
+	// id is the distribution type identifier (e.g. "type1").
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// percentage is the fraction [0,1] of the day's halving budget this type may
+	// claim. Across all types these must sum to exactly 1.
+	Percentage string `protobuf:"bytes,2,opt,name=percentage,proto3" json:"percentage,omitempty"`
+	// categories are the reward categories for this type.
+	Categories []DistributionCategory `protobuf:"bytes,3,rep,name=categories,proto3" json:"categories"`
+	// license_tally_threshold is the fraction (0,1] of license weight a root must
+	// reach to pass the license-based tally. Empty/"0" disables this mechanism.
+	LicenseTallyThreshold string `protobuf:"bytes,4,opt,name=license_tally_threshold,json=licenseTallyThreshold,proto3" json:"license_tally_threshold,omitempty"`
+	// stake_tally_threshold is the fraction (0,1] of bonded stake a root must
+	// reach to pass the stake-based tally. Empty/"0" disables this mechanism.
+	StakeTallyThreshold string `protobuf:"bytes,5,opt,name=stake_tally_threshold,json=stakeTallyThreshold,proto3" json:"stake_tally_threshold,omitempty"`
+	// validator_tally_threshold is the fraction (0,1] of the configured
+	// validator_addresses that must vote for a root. Empty/"0" disables this
+	// mechanism. At least one of the three thresholds must be set.
+	ValidatorTallyThreshold string `protobuf:"bytes,6,opt,name=validator_tally_threshold,json=validatorTallyThreshold,proto3" json:"validator_tally_threshold,omitempty"`
+}
+
+func (m *DistributionType) Reset()         { *m = DistributionType{} }
+func (m *DistributionType) String() string { return proto.CompactTextString(m) }
+func (*DistributionType) ProtoMessage()    {}
+func (*DistributionType) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f02fec9499f3ab0, []int{2}
+}
+func (m *DistributionType) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DistributionType) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DistributionType.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DistributionType) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DistributionType.Merge(m, src)
+}
+func (m *DistributionType) XXX_Size() int {
+	return m.Size()
+}
+func (m *DistributionType) XXX_DiscardUnknown() {
+	xxx_messageInfo_DistributionType.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DistributionType proto.InternalMessageInfo
+
+func (m *DistributionType) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *DistributionType) GetPercentage() string {
+	if m != nil {
+		return m.Percentage
+	}
+	return ""
+}
+
+func (m *DistributionType) GetCategories() []DistributionCategory {
+	if m != nil {
+		return m.Categories
+	}
+	return nil
+}
+
+func (m *DistributionType) GetLicenseTallyThreshold() string {
+	if m != nil {
+		return m.LicenseTallyThreshold
+	}
+	return ""
+}
+
+func (m *DistributionType) GetStakeTallyThreshold() string {
+	if m != nil {
+		return m.StakeTallyThreshold
+	}
+	return ""
+}
+
+func (m *DistributionType) GetValidatorTallyThreshold() string {
+	if m != nil {
+		return m.ValidatorTallyThreshold
+	}
+	return ""
+}
+
+// DistributionCategory is a reward category within a distribution type.
+type DistributionCategory struct {
+	// name is the category identifier (e.g. "team").
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// percentage is the optional fraction [0,1] of the type's budget this category
+	// may claim. Per type, category percentages are either all "0"/empty (each
+	// category uncapped within the type budget) or set and summing to exactly 1.
+	Percentage string `protobuf:"bytes,2,opt,name=percentage,proto3" json:"percentage,omitempty"`
+}
+
+func (m *DistributionCategory) Reset()         { *m = DistributionCategory{} }
+func (m *DistributionCategory) String() string { return proto.CompactTextString(m) }
+func (*DistributionCategory) ProtoMessage()    {}
+func (*DistributionCategory) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f02fec9499f3ab0, []int{3}
+}
+func (m *DistributionCategory) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DistributionCategory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DistributionCategory.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DistributionCategory) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DistributionCategory.Merge(m, src)
+}
+func (m *DistributionCategory) XXX_Size() int {
+	return m.Size()
+}
+func (m *DistributionCategory) XXX_DiscardUnknown() {
+	xxx_messageInfo_DistributionCategory.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DistributionCategory proto.InternalMessageInfo
+
+func (m *DistributionCategory) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *DistributionCategory) GetPercentage() string {
+	if m != nil {
+		return m.Percentage
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*GenesisState)(nil), "distro.v1.GenesisState")
 	proto.RegisterType((*Params)(nil), "distro.v1.Params")
+	proto.RegisterType((*DistributionType)(nil), "distro.v1.DistributionType")
+	proto.RegisterType((*DistributionCategory)(nil), "distro.v1.DistributionCategory")
 }
 
 func init() { proto.RegisterFile("distro/v1/genesis.proto", fileDescriptor_8f02fec9499f3ab0) }
 
 var fileDescriptor_8f02fec9499f3ab0 = []byte{
-	// 671 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x94, 0xc1, 0x4e, 0x1b, 0x39,
-	0x1c, 0xc6, 0x13, 0x48, 0xb2, 0x1b, 0x03, 0x09, 0x18, 0x22, 0xbc, 0x2c, 0x04, 0x84, 0xb4, 0xda,
-	0x94, 0x4a, 0x19, 0x11, 0xa4, 0x22, 0xf5, 0x52, 0x15, 0x22, 0x51, 0x24, 0x0e, 0x28, 0x89, 0x8a,
-	0xd4, 0x8b, 0xe5, 0x8c, 0xdd, 0x8c, 0xd5, 0x19, 0x7b, 0x34, 0x76, 0x12, 0xe6, 0x15, 0x7a, 0xea,
-	0x23, 0xf4, 0x11, 0xfa, 0x18, 0x1c, 0x39, 0xf6, 0xd4, 0x56, 0x70, 0x68, 0xdf, 0xa0, 0xd7, 0xca,
-	0xf6, 0x10, 0x86, 0xa2, 0x5e, 0xd0, 0xf0, 0x7d, 0xbf, 0xff, 0xcf, 0x96, 0x67, 0x1c, 0xb0, 0x4e,
-	0xb9, 0xd2, 0x89, 0xf4, 0x26, 0xfb, 0xde, 0x88, 0x09, 0xa6, 0xb8, 0x6a, 0xc7, 0x89, 0xd4, 0x12,
-	0x56, 0x5d, 0xd1, 0x9e, 0xec, 0x6f, 0xac, 0x8d, 0xe4, 0x48, 0xda, 0xd4, 0x33, 0x4f, 0x0e, 0xd8,
-	0x58, 0x21, 0x11, 0x17, 0xd2, 0xb3, 0x7f, 0xb3, 0xa8, 0x71, 0x2f, 0x53, 0x9a, 0x68, 0xe6, 0xe2,
-	0xdd, 0xaf, 0x73, 0x60, 0xf1, 0xc4, 0xc9, 0xfb, 0x26, 0x86, 0x1e, 0xa8, 0xc4, 0x24, 0x21, 0x91,
-	0x42, 0xc5, 0x9d, 0x62, 0x6b, 0xa1, 0xb3, 0xd2, 0x9e, 0x2d, 0xd6, 0x3e, 0xb7, 0xc5, 0x51, 0xe9,
-	0xea, 0xcb, 0x76, 0xa1, 0x97, 0x61, 0xf0, 0x10, 0x94, 0x27, 0x52, 0x33, 0x85, 0xe6, 0x76, 0xe6,
-	0x5b, 0x0b, 0x9d, 0x7f, 0x73, 0x7c, 0xd7, 0x3c, 0xf1, 0xe1, 0x58, 0x73, 0x29, 0x5e, 0x4b, 0xcd,
-	0xb2, 0x49, 0xc7, 0xc3, 0x63, 0xb0, 0x44, 0x73, 0x80, 0x42, 0xf3, 0x56, 0xb0, 0xfe, 0x07, 0x41,
-	0x36, 0xfc, 0x70, 0x06, 0x9e, 0x80, 0xba, 0x1f, 0x12, 0x1e, 0x31, 0x8a, 0x13, 0x36, 0x25, 0x09,
-	0x55, 0xa8, 0x64, 0x35, 0x28, 0xa7, 0x39, 0x76, 0x44, 0xcf, 0x02, 0x99, 0xa7, 0xe6, 0xe7, 0x43,
-	0x05, 0x2f, 0x40, 0xc3, 0x27, 0x9a, 0x8d, 0x64, 0x92, 0x62, 0x5b, 0x61, 0x2d, 0x35, 0x09, 0x15,
-	0x2a, 0x5b, 0xdd, 0x56, 0x5e, 0x97, 0x71, 0x56, 0x3b, 0x30, 0x54, 0xe6, 0x5c, 0xf5, 0x1f, 0x35,
-	0x6a, 0xf7, 0x67, 0x09, 0x54, 0xdc, 0xc1, 0xc1, 0xff, 0x41, 0x3d, 0xe2, 0x42, 0x73, 0x31, 0xc2,
-	0x84, 0xd2, 0x84, 0x29, 0x77, 0xc8, 0xd5, 0x5e, 0x2d, 0x8b, 0x5f, 0xba, 0x14, 0x3e, 0x05, 0x2b,
-	0x09, 0xf3, 0x19, 0x9f, 0xe4, 0xd1, 0x39, 0x8b, 0x2e, 0xcf, 0x8a, 0x3b, 0x78, 0x0d, 0x94, 0x29,
-	0x13, 0x32, 0x42, 0xf3, 0x16, 0x70, 0xff, 0xc0, 0x2d, 0x00, 0x22, 0x72, 0x89, 0xd5, 0x38, 0x8e,
-	0xc3, 0x14, 0x95, 0x6c, 0x55, 0x8d, 0xc8, 0x65, 0xdf, 0x06, 0xf0, 0x59, 0xf6, 0x75, 0x65, 0x07,
-	0x89, 0x95, 0x26, 0x89, 0xc6, 0x94, 0x68, 0x86, 0xca, 0x96, 0x6d, 0xe4, 0xeb, 0xbe, 0x69, 0xbb,
-	0xe6, 0xf3, 0x38, 0x04, 0x28, 0x92, 0x42, 0x07, 0x0a, 0x73, 0x81, 0x03, 0x12, 0xda, 0x1d, 0xc6,
-	0x2c, 0xe1, 0x92, 0xa2, 0xca, 0x4e, 0xb1, 0x55, 0xea, 0x35, 0x5c, 0x7f, 0x2a, 0x5e, 0xb9, 0xf6,
-	0xdc, 0x96, 0xf0, 0x05, 0xd8, 0x7c, 0xb0, 0x60, 0xc8, 0x7d, 0x26, 0x14, 0xc3, 0x3a, 0x8d, 0x19,
-	0xe6, 0x14, 0xfd, 0x65, 0x57, 0xfd, 0x27, 0xcf, 0x9c, 0x39, 0x64, 0x90, 0xc6, 0xec, 0x94, 0x9a,
-	0x1d, 0xcf, 0x66, 0x48, 0x18, 0xa6, 0x58, 0x07, 0x09, 0x53, 0x81, 0x0c, 0x29, 0xfa, 0xdb, 0xed,
-	0x38, 0xab, 0x07, 0xa6, 0x1d, 0xdc, 0x95, 0xb0, 0x03, 0x1a, 0x4a, 0x93, 0x77, 0x8f, 0xa7, 0xaa,
-	0x76, 0x6a, 0xd5, 0x96, 0xbf, 0xcd, 0x3c, 0x01, 0xcb, 0x2c, 0x96, 0x7e, 0x80, 0x39, 0x65, 0x42,
-	0xf3, 0xb7, 0x9c, 0x25, 0x08, 0x58, 0xbc, 0x6e, 0xf3, 0xd3, 0x59, 0x0c, 0xf7, 0xcc, 0xab, 0x9a,
-	0x70, 0x36, 0xc5, 0x94, 0x85, 0x24, 0xc5, 0x94, 0xa4, 0x0a, 0x2d, 0xd8, 0x93, 0xa8, 0xbb, 0xa2,
-	0x6b, 0xf2, 0x2e, 0x49, 0x15, 0xfc, 0x0f, 0xd4, 0xfc, 0x80, 0x84, 0x21, 0x13, 0x23, 0x86, 0x87,
-	0x52, 0x50, 0xb4, 0x68, 0xa5, 0x4b, 0xb3, 0xf4, 0x48, 0x0a, 0x0a, 0x5b, 0x60, 0xd9, 0xdc, 0x10,
-	0x3c, 0xe5, 0x82, 0xca, 0xa9, 0x33, 0x2e, 0x59, 0x63, 0xcd, 0xe4, 0x17, 0x36, 0x36, 0xc2, 0xe7,
-	0x9b, 0x3f, 0x3e, 0x6e, 0x17, 0xdf, 0x7f, 0xff, 0xb4, 0xb7, 0xaa, 0x95, 0xef, 0x5d, 0x7a, 0xd9,
-	0x1d, 0x77, 0x37, 0xf3, 0xe8, 0xec, 0xea, 0xa6, 0x59, 0xbc, 0xbe, 0x69, 0x16, 0xbf, 0xdd, 0x34,
-	0x8b, 0x1f, 0x6e, 0x9b, 0x85, 0xeb, 0xdb, 0x66, 0xe1, 0xf3, 0x6d, 0xb3, 0xf0, 0xa6, 0x33, 0xe2,
-	0x3a, 0x18, 0x0f, 0xdb, 0xbe, 0x8c, 0xbc, 0x41, 0x32, 0x56, 0x9a, 0xd1, 0x7e, 0x44, 0x12, 0x7d,
-	0x1c, 0x10, 0x2e, 0x3c, 0xe3, 0x9a, 0x1c, 0xdc, 0xeb, 0xcc, 0x2b, 0x52, 0xc3, 0x8a, 0xfd, 0xc1,
-	0x38, 0xf8, 0x15, 0x00, 0x00, 0xff, 0xff, 0x6c, 0x4b, 0xe1, 0x6e, 0x96, 0x04, 0x00, 0x00,
+	// 834 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x54, 0xcf, 0x6e, 0x23, 0x35,
+	0x18, 0x6f, 0xd2, 0x24, 0xa8, 0xee, 0x36, 0x69, 0xdd, 0x46, 0x75, 0x97, 0xdd, 0xb4, 0xaa, 0x84,
+	0x08, 0x8b, 0xc8, 0x68, 0xbb, 0x12, 0x2b, 0xf5, 0x82, 0xb6, 0x2d, 0x5a, 0x2a, 0xed, 0xa1, 0x4a,
+	0x22, 0x56, 0xe2, 0x62, 0xb9, 0xe3, 0x8f, 0x89, 0xc5, 0x8c, 0x3d, 0xb2, 0xdd, 0xb4, 0xf3, 0x0a,
+	0x9c, 0x78, 0x04, 0x8e, 0x1c, 0x39, 0x20, 0xf1, 0x0a, 0x7b, 0x5c, 0x71, 0xe2, 0x04, 0xa8, 0x3d,
+	0xc0, 0x63, 0xa0, 0xb1, 0x9d, 0x74, 0x9a, 0xa5, 0xec, 0x25, 0x9a, 0xf9, 0xfd, 0xb3, 0xf3, 0xf9,
+	0xe7, 0x41, 0xdb, 0x5c, 0x18, 0xab, 0x55, 0x34, 0x7d, 0x1a, 0x25, 0x20, 0xc1, 0x08, 0x33, 0xc8,
+	0xb5, 0xb2, 0x0a, 0xaf, 0x78, 0x62, 0x30, 0x7d, 0xfa, 0x70, 0x2b, 0x51, 0x89, 0x72, 0x68, 0x54,
+	0x3e, 0x79, 0xc1, 0xc3, 0x0d, 0x96, 0x09, 0xa9, 0x22, 0xf7, 0x1b, 0xa0, 0x9d, 0x58, 0x99, 0x4c,
+	0x19, 0xea, 0xb5, 0xfe, 0x25, 0x50, 0xdd, 0xdb, 0x75, 0x8c, 0x65, 0x16, 0x3c, 0xbc, 0xff, 0x67,
+	0x1d, 0x3d, 0x78, 0xe9, 0xd7, 0x1d, 0x95, 0x30, 0x8e, 0x50, 0x2b, 0x67, 0x9a, 0x65, 0x86, 0xd4,
+	0xf6, 0x6a, 0xfd, 0xd5, 0x83, 0x8d, 0xc1, 0x7c, 0x1f, 0x83, 0x33, 0x47, 0x1c, 0x35, 0xde, 0xfc,
+	0xb1, 0xbb, 0x34, 0x0c, 0x32, 0xfc, 0x1c, 0x35, 0xa7, 0xca, 0x82, 0x21, 0xf5, 0xbd, 0xe5, 0xfe,
+	0xea, 0xc1, 0x87, 0x15, 0xfd, 0x49, 0xf9, 0x24, 0xce, 0x2f, 0xac, 0x50, 0xf2, 0x6b, 0x65, 0x21,
+	0x38, 0xbd, 0x1e, 0x1f, 0xa3, 0x35, 0x5e, 0x11, 0x18, 0xb2, 0xec, 0x02, 0xb6, 0xef, 0x09, 0x08,
+	0xe6, 0xbb, 0x1e, 0xfc, 0x12, 0x75, 0xe2, 0x94, 0x89, 0x0c, 0x38, 0xd5, 0x70, 0xc9, 0x34, 0x37,
+	0xa4, 0xe1, 0x62, 0x48, 0x25, 0xe6, 0xd8, 0x2b, 0x86, 0x4e, 0x10, 0x72, 0xda, 0x71, 0x15, 0x34,
+	0xf8, 0x35, 0xea, 0xc6, 0xcc, 0x42, 0xa2, 0x74, 0x41, 0x1d, 0x45, 0xad, 0xb2, 0x2c, 0x35, 0xa4,
+	0xe9, 0xe2, 0x1e, 0x57, 0xe3, 0x82, 0xce, 0xc5, 0x8e, 0x4b, 0x55, 0xc8, 0xdc, 0x8c, 0xdf, 0x61,
+	0xcc, 0xfe, 0x4f, 0x4d, 0xd4, 0xf2, 0x83, 0xc3, 0x1f, 0xa3, 0x4e, 0x26, 0xa4, 0x15, 0x32, 0xa1,
+	0x8c, 0x73, 0x0d, 0xc6, 0x0f, 0x79, 0x65, 0xd8, 0x0e, 0xf0, 0x0b, 0x8f, 0xe2, 0x4f, 0xd1, 0x86,
+	0x86, 0x18, 0xc4, 0xb4, 0x2a, 0xad, 0x3b, 0xe9, 0xfa, 0x9c, 0x98, 0x89, 0xb7, 0x50, 0x93, 0x83,
+	0x54, 0x19, 0x59, 0x76, 0x02, 0xff, 0x82, 0x1f, 0x23, 0x94, 0xb1, 0x2b, 0x6a, 0x2e, 0xf2, 0x3c,
+	0x2d, 0x48, 0xc3, 0x51, 0x2b, 0x19, 0xbb, 0x1a, 0x39, 0x00, 0x7f, 0x1e, 0x8a, 0x17, 0x06, 0x49,
+	0x8d, 0x65, 0xda, 0x52, 0xce, 0x2c, 0x90, 0xa6, 0xd3, 0x76, 0xab, 0xf4, 0xa8, 0x64, 0x4f, 0xca,
+	0x7a, 0x3c, 0x47, 0x24, 0x53, 0xd2, 0x4e, 0x0c, 0x15, 0x92, 0x4e, 0x58, 0xea, 0x76, 0x98, 0x83,
+	0x16, 0x8a, 0x93, 0xd6, 0x5e, 0xad, 0xdf, 0x18, 0x76, 0x3d, 0x7f, 0x2a, 0xbf, 0xf2, 0xec, 0x99,
+	0x23, 0xf1, 0x17, 0xe8, 0xd1, 0x9d, 0x05, 0x53, 0x11, 0x83, 0x34, 0x40, 0x6d, 0x91, 0x03, 0x15,
+	0x9c, 0x7c, 0xe0, 0x56, 0xdd, 0xa9, 0x6a, 0x5e, 0x79, 0xc9, 0xb8, 0xc8, 0xe1, 0x94, 0xe3, 0x4f,
+	0xd0, 0x3a, 0xe4, 0x2a, 0x9e, 0x50, 0xc1, 0x41, 0x5a, 0xf1, 0xad, 0x00, 0x4d, 0x90, 0x33, 0x75,
+	0x1c, 0x7e, 0x3a, 0x87, 0xf1, 0x93, 0x72, 0x7c, 0x53, 0x01, 0x97, 0x94, 0x43, 0xca, 0x0a, 0xca,
+	0x59, 0x61, 0xc8, 0xaa, 0xdb, 0x5d, 0xc7, 0x13, 0x27, 0x25, 0x7e, 0xc2, 0x0a, 0x83, 0x3f, 0x42,
+	0xed, 0x78, 0xc2, 0xd2, 0x14, 0x64, 0x02, 0xf4, 0x5c, 0x49, 0x4e, 0x1e, 0xb8, 0xd0, 0xb5, 0x39,
+	0x7a, 0xa4, 0x24, 0xc7, 0x7d, 0xb4, 0x5e, 0xb6, 0x96, 0x5e, 0x0a, 0xc9, 0xd5, 0xa5, 0x4f, 0x5c,
+	0x73, 0x89, 0xed, 0x12, 0x7f, 0xed, 0x60, 0x17, 0x78, 0x8a, 0x36, 0xa7, 0x2c, 0x15, 0x9c, 0x59,
+	0xa5, 0x67, 0x67, 0x07, 0x86, 0xb4, 0xf7, 0x96, 0xfb, 0x2b, 0x47, 0xe4, 0xb7, 0x5f, 0x3e, 0xdb,
+	0x0a, 0xf7, 0x32, 0x9c, 0xdf, 0xc8, 0x6a, 0x21, 0x93, 0x21, 0x9e, 0x9b, 0x5e, 0xcc, 0x3c, 0xf8,
+	0x0c, 0xe1, 0x3b, 0x33, 0x2b, 0x67, 0x65, 0x48, 0xe7, 0x7f, 0xef, 0x59, 0x39, 0xad, 0x50, 0xc7,
+	0x0d, 0xbe, 0x80, 0x9b, 0xc3, 0x47, 0xff, 0xfc, 0xb8, 0x5b, 0xfb, 0xfe, 0xef, 0x9f, 0x9f, 0x6c,
+	0x5a, 0x13, 0x47, 0x57, 0x51, 0xf8, 0x28, 0xf8, 0xab, 0xbc, 0xff, 0x6b, 0x1d, 0xad, 0x2f, 0x66,
+	0xe1, 0x36, 0xaa, 0x0b, 0x1e, 0x7a, 0x5a, 0x17, 0x1c, 0xf7, 0x10, 0xca, 0x41, 0xc7, 0x20, 0x2d,
+	0x4b, 0x20, 0x94, 0xb2, 0x82, 0xe0, 0x2f, 0x11, 0x0a, 0xd7, 0x40, 0xc0, 0xec, 0x4e, 0xef, 0xde,
+	0xb3, 0xd9, 0xd9, 0x4d, 0x0a, 0x1b, 0xae, 0x18, 0xcb, 0x82, 0xce, 0x2b, 0xc2, 0xd2, 0xb4, 0xa0,
+	0x76, 0xa2, 0xc1, 0x4c, 0x54, 0xca, 0x43, 0x99, 0xbb, 0x81, 0x1e, 0x97, 0xec, 0x78, 0x46, 0xe2,
+	0x03, 0xd4, 0x35, 0x96, 0x7d, 0xf7, 0xae, 0xcb, 0xd7, 0x7a, 0xd3, 0x91, 0x0b, 0x9e, 0x43, 0xb4,
+	0x73, 0x7b, 0x64, 0x8b, 0xbe, 0x96, 0xf3, 0x6d, 0xcf, 0x05, 0x77, 0xbd, 0x87, 0x8d, 0x72, 0xa2,
+	0xfb, 0x67, 0x68, 0xeb, 0xbf, 0xfe, 0x17, 0xc6, 0xa8, 0x21, 0x59, 0x06, 0x61, 0x7c, 0xee, 0xf9,
+	0x7d, 0x03, 0xf4, 0x89, 0x47, 0xaf, 0xde, 0x5c, 0xf7, 0x6a, 0x6f, 0xaf, 0x7b, 0xb5, 0xbf, 0xae,
+	0x7b, 0xb5, 0x1f, 0x6e, 0x7a, 0x4b, 0x6f, 0x6f, 0x7a, 0x4b, 0xbf, 0xdf, 0xf4, 0x96, 0xbe, 0x39,
+	0x48, 0x84, 0x9d, 0x5c, 0x9c, 0x0f, 0x62, 0x95, 0x45, 0x63, 0x7d, 0x61, 0x2c, 0xf0, 0x51, 0xc6,
+	0xb4, 0x3d, 0x9e, 0x30, 0x21, 0xa3, 0xf2, 0x5c, 0xa7, 0xcf, 0x6e, 0x8f, 0xd6, 0x75, 0xe6, 0xbc,
+	0xe5, 0xbe, 0xf6, 0xcf, 0xfe, 0x0d, 0x00, 0x00, 0xff, 0xff, 0x66, 0xca, 0x5e, 0x55, 0x6e, 0x06,
+	0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -359,12 +531,6 @@ func (this *Params) Equal(that interface{}) bool {
 	if this.DistributionLicenseTypeId != that1.DistributionLicenseTypeId {
 		return false
 	}
-	if this.LicenseTallyThreshold != that1.LicenseTallyThreshold {
-		return false
-	}
-	if this.StakeTallyThreshold != that1.StakeTallyThreshold {
-		return false
-	}
 	if this.EpochIdentifier != that1.EpochIdentifier {
 		return false
 	}
@@ -375,6 +541,93 @@ func (this *Params) Equal(that interface{}) bool {
 		return false
 	}
 	if this.VoteWindowDays != that1.VoteWindowDays {
+		return false
+	}
+	if len(this.ValidatorAddresses) != len(that1.ValidatorAddresses) {
+		return false
+	}
+	for i := range this.ValidatorAddresses {
+		if this.ValidatorAddresses[i] != that1.ValidatorAddresses[i] {
+			return false
+		}
+	}
+	if len(this.DistributionTypes) != len(that1.DistributionTypes) {
+		return false
+	}
+	for i := range this.DistributionTypes {
+		if !this.DistributionTypes[i].Equal(&that1.DistributionTypes[i]) {
+			return false
+		}
+	}
+	return true
+}
+func (this *DistributionType) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*DistributionType)
+	if !ok {
+		that2, ok := that.(DistributionType)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Id != that1.Id {
+		return false
+	}
+	if this.Percentage != that1.Percentage {
+		return false
+	}
+	if len(this.Categories) != len(that1.Categories) {
+		return false
+	}
+	for i := range this.Categories {
+		if !this.Categories[i].Equal(&that1.Categories[i]) {
+			return false
+		}
+	}
+	if this.LicenseTallyThreshold != that1.LicenseTallyThreshold {
+		return false
+	}
+	if this.StakeTallyThreshold != that1.StakeTallyThreshold {
+		return false
+	}
+	if this.ValidatorTallyThreshold != that1.ValidatorTallyThreshold {
+		return false
+	}
+	return true
+}
+func (this *DistributionCategory) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*DistributionCategory)
+	if !ok {
+		that2, ok := that.(DistributionCategory)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Name != that1.Name {
+		return false
+	}
+	if this.Percentage != that1.Percentage {
 		return false
 	}
 	return true
@@ -488,6 +741,29 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.DistributionTypes) > 0 {
+		for iNdEx := len(m.DistributionTypes) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.DistributionTypes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x7a
+		}
+	}
+	if len(m.ValidatorAddresses) > 0 {
+		for iNdEx := len(m.ValidatorAddresses) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ValidatorAddresses[iNdEx])
+			copy(dAtA[i:], m.ValidatorAddresses[iNdEx])
+			i = encodeVarintGenesis(dAtA, i, uint64(len(m.ValidatorAddresses[iNdEx])))
+			i--
+			dAtA[i] = 0x72
+		}
+	}
 	if m.VoteWindowDays != 0 {
 		i = encodeVarintGenesis(dAtA, i, uint64(m.VoteWindowDays))
 		i--
@@ -511,20 +787,6 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintGenesis(dAtA, i, uint64(len(m.EpochIdentifier)))
 		i--
 		dAtA[i] = 0x52
-	}
-	if len(m.StakeTallyThreshold) > 0 {
-		i -= len(m.StakeTallyThreshold)
-		copy(dAtA[i:], m.StakeTallyThreshold)
-		i = encodeVarintGenesis(dAtA, i, uint64(len(m.StakeTallyThreshold)))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.LicenseTallyThreshold) > 0 {
-		i -= len(m.LicenseTallyThreshold)
-		copy(dAtA[i:], m.LicenseTallyThreshold)
-		i = encodeVarintGenesis(dAtA, i, uint64(len(m.LicenseTallyThreshold)))
-		i--
-		dAtA[i] = 0x42
 	}
 	if len(m.DistributionLicenseTypeId) > 0 {
 		i -= len(m.DistributionLicenseTypeId)
@@ -570,6 +832,115 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.MintingAddress)
 		copy(dAtA[i:], m.MintingAddress)
 		i = encodeVarintGenesis(dAtA, i, uint64(len(m.MintingAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DistributionType) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DistributionType) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DistributionType) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ValidatorTallyThreshold) > 0 {
+		i -= len(m.ValidatorTallyThreshold)
+		copy(dAtA[i:], m.ValidatorTallyThreshold)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.ValidatorTallyThreshold)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.StakeTallyThreshold) > 0 {
+		i -= len(m.StakeTallyThreshold)
+		copy(dAtA[i:], m.StakeTallyThreshold)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.StakeTallyThreshold)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.LicenseTallyThreshold) > 0 {
+		i -= len(m.LicenseTallyThreshold)
+		copy(dAtA[i:], m.LicenseTallyThreshold)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.LicenseTallyThreshold)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Categories) > 0 {
+		for iNdEx := len(m.Categories) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Categories[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.Percentage) > 0 {
+		i -= len(m.Percentage)
+		copy(dAtA[i:], m.Percentage)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Percentage)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DistributionCategory) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DistributionCategory) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DistributionCategory) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Percentage) > 0 {
+		i -= len(m.Percentage)
+		copy(dAtA[i:], m.Percentage)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Percentage)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Name)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -655,14 +1026,6 @@ func (m *Params) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovGenesis(uint64(l))
 	}
-	l = len(m.LicenseTallyThreshold)
-	if l > 0 {
-		n += 1 + l + sovGenesis(uint64(l))
-	}
-	l = len(m.StakeTallyThreshold)
-	if l > 0 {
-		n += 1 + l + sovGenesis(uint64(l))
-	}
 	l = len(m.EpochIdentifier)
 	if l > 0 {
 		n += 1 + l + sovGenesis(uint64(l))
@@ -676,6 +1039,70 @@ func (m *Params) Size() (n int) {
 	}
 	if m.VoteWindowDays != 0 {
 		n += 1 + sovGenesis(uint64(m.VoteWindowDays))
+	}
+	if len(m.ValidatorAddresses) > 0 {
+		for _, s := range m.ValidatorAddresses {
+			l = len(s)
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	if len(m.DistributionTypes) > 0 {
+		for _, e := range m.DistributionTypes {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *DistributionType) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = len(m.Percentage)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	if len(m.Categories) > 0 {
+		for _, e := range m.Categories {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	l = len(m.LicenseTallyThreshold)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = len(m.StakeTallyThreshold)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = len(m.ValidatorTallyThreshold)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	return n
+}
+
+func (m *DistributionCategory) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = len(m.Percentage)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
 	}
 	return n
 }
@@ -1145,70 +1572,6 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			}
 			m.DistributionLicenseTypeId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LicenseTallyThreshold", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.LicenseTallyThreshold = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StakeTallyThreshold", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.StakeTallyThreshold = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field EpochIdentifier", wireType)
@@ -1311,6 +1674,430 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorAddresses", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ValidatorAddresses = append(m.ValidatorAddresses, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DistributionTypes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DistributionTypes = append(m.DistributionTypes, DistributionType{})
+			if err := m.DistributionTypes[len(m.DistributionTypes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DistributionType) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DistributionType: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DistributionType: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Percentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Percentage = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Categories", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Categories = append(m.Categories, DistributionCategory{})
+			if err := m.Categories[len(m.Categories)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LicenseTallyThreshold", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LicenseTallyThreshold = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StakeTallyThreshold", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StakeTallyThreshold = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorTallyThreshold", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ValidatorTallyThreshold = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DistributionCategory) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DistributionCategory: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DistributionCategory: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Percentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Percentage = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])

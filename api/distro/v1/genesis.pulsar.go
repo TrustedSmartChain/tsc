@@ -4,6 +4,7 @@ package distrov1
 import (
 	_ "cosmossdk.io/api/amino"
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -1001,6 +1002,103 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 	}
 }
 
+var _ protoreflect.List = (*_Params_14_list)(nil)
+
+type _Params_14_list struct {
+	list *[]string
+}
+
+func (x *_Params_14_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_Params_14_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfString((*x.list)[i])
+}
+
+func (x *_Params_14_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_Params_14_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_Params_14_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message Params at list field ValidatorAddresses as it is not of Message kind"))
+}
+
+func (x *_Params_14_list) Truncate(n int) {
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_Params_14_list) NewElement() protoreflect.Value {
+	v := ""
+	return protoreflect.ValueOfString(v)
+}
+
+func (x *_Params_14_list) IsValid() bool {
+	return x.list != nil
+}
+
+var _ protoreflect.List = (*_Params_15_list)(nil)
+
+type _Params_15_list struct {
+	list *[]*DistributionType
+}
+
+func (x *_Params_15_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_Params_15_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_Params_15_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*DistributionType)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_Params_15_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*DistributionType)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_Params_15_list) AppendMutable() protoreflect.Value {
+	v := new(DistributionType)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_Params_15_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_Params_15_list) NewElement() protoreflect.Value {
+	v := new(DistributionType)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_Params_15_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
 	md_Params                              protoreflect.MessageDescriptor
 	fd_Params_minting_address              protoreflect.FieldDescriptor
@@ -1010,12 +1108,12 @@ var (
 	fd_Params_distribution_start_date      protoreflect.FieldDescriptor
 	fd_Params_months_in_halving_period     protoreflect.FieldDescriptor
 	fd_Params_distribution_license_type_id protoreflect.FieldDescriptor
-	fd_Params_license_tally_threshold      protoreflect.FieldDescriptor
-	fd_Params_stake_tally_threshold        protoreflect.FieldDescriptor
 	fd_Params_epoch_identifier             protoreflect.FieldDescriptor
 	fd_Params_review_delay_days            protoreflect.FieldDescriptor
 	fd_Params_challenge_bond               protoreflect.FieldDescriptor
 	fd_Params_vote_window_days             protoreflect.FieldDescriptor
+	fd_Params_validator_addresses          protoreflect.FieldDescriptor
+	fd_Params_distribution_types           protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -1028,12 +1126,12 @@ func init() {
 	fd_Params_distribution_start_date = md_Params.Fields().ByName("distribution_start_date")
 	fd_Params_months_in_halving_period = md_Params.Fields().ByName("months_in_halving_period")
 	fd_Params_distribution_license_type_id = md_Params.Fields().ByName("distribution_license_type_id")
-	fd_Params_license_tally_threshold = md_Params.Fields().ByName("license_tally_threshold")
-	fd_Params_stake_tally_threshold = md_Params.Fields().ByName("stake_tally_threshold")
 	fd_Params_epoch_identifier = md_Params.Fields().ByName("epoch_identifier")
 	fd_Params_review_delay_days = md_Params.Fields().ByName("review_delay_days")
 	fd_Params_challenge_bond = md_Params.Fields().ByName("challenge_bond")
 	fd_Params_vote_window_days = md_Params.Fields().ByName("vote_window_days")
+	fd_Params_validator_addresses = md_Params.Fields().ByName("validator_addresses")
+	fd_Params_distribution_types = md_Params.Fields().ByName("distribution_types")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -1143,18 +1241,6 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
-	if x.LicenseTallyThreshold != "" {
-		value := protoreflect.ValueOfString(x.LicenseTallyThreshold)
-		if !f(fd_Params_license_tally_threshold, value) {
-			return
-		}
-	}
-	if x.StakeTallyThreshold != "" {
-		value := protoreflect.ValueOfString(x.StakeTallyThreshold)
-		if !f(fd_Params_stake_tally_threshold, value) {
-			return
-		}
-	}
 	if x.EpochIdentifier != "" {
 		value := protoreflect.ValueOfString(x.EpochIdentifier)
 		if !f(fd_Params_epoch_identifier, value) {
@@ -1176,6 +1262,18 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 	if x.VoteWindowDays != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.VoteWindowDays)
 		if !f(fd_Params_vote_window_days, value) {
+			return
+		}
+	}
+	if len(x.ValidatorAddresses) != 0 {
+		value := protoreflect.ValueOfList(&_Params_14_list{list: &x.ValidatorAddresses})
+		if !f(fd_Params_validator_addresses, value) {
+			return
+		}
+	}
+	if len(x.DistributionTypes) != 0 {
+		value := protoreflect.ValueOfList(&_Params_15_list{list: &x.DistributionTypes})
+		if !f(fd_Params_distribution_types, value) {
 			return
 		}
 	}
@@ -1208,10 +1306,6 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.MonthsInHalvingPeriod != uint64(0)
 	case "distro.v1.Params.distribution_license_type_id":
 		return x.DistributionLicenseTypeId != ""
-	case "distro.v1.Params.license_tally_threshold":
-		return x.LicenseTallyThreshold != ""
-	case "distro.v1.Params.stake_tally_threshold":
-		return x.StakeTallyThreshold != ""
 	case "distro.v1.Params.epoch_identifier":
 		return x.EpochIdentifier != ""
 	case "distro.v1.Params.review_delay_days":
@@ -1220,6 +1314,10 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.ChallengeBond != ""
 	case "distro.v1.Params.vote_window_days":
 		return x.VoteWindowDays != uint64(0)
+	case "distro.v1.Params.validator_addresses":
+		return len(x.ValidatorAddresses) != 0
+	case "distro.v1.Params.distribution_types":
+		return len(x.DistributionTypes) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1250,10 +1348,6 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 		x.MonthsInHalvingPeriod = uint64(0)
 	case "distro.v1.Params.distribution_license_type_id":
 		x.DistributionLicenseTypeId = ""
-	case "distro.v1.Params.license_tally_threshold":
-		x.LicenseTallyThreshold = ""
-	case "distro.v1.Params.stake_tally_threshold":
-		x.StakeTallyThreshold = ""
 	case "distro.v1.Params.epoch_identifier":
 		x.EpochIdentifier = ""
 	case "distro.v1.Params.review_delay_days":
@@ -1262,6 +1356,10 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 		x.ChallengeBond = ""
 	case "distro.v1.Params.vote_window_days":
 		x.VoteWindowDays = uint64(0)
+	case "distro.v1.Params.validator_addresses":
+		x.ValidatorAddresses = nil
+	case "distro.v1.Params.distribution_types":
+		x.DistributionTypes = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1299,12 +1397,6 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 	case "distro.v1.Params.distribution_license_type_id":
 		value := x.DistributionLicenseTypeId
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.Params.license_tally_threshold":
-		value := x.LicenseTallyThreshold
-		return protoreflect.ValueOfString(value)
-	case "distro.v1.Params.stake_tally_threshold":
-		value := x.StakeTallyThreshold
-		return protoreflect.ValueOfString(value)
 	case "distro.v1.Params.epoch_identifier":
 		value := x.EpochIdentifier
 		return protoreflect.ValueOfString(value)
@@ -1317,6 +1409,18 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 	case "distro.v1.Params.vote_window_days":
 		value := x.VoteWindowDays
 		return protoreflect.ValueOfUint64(value)
+	case "distro.v1.Params.validator_addresses":
+		if len(x.ValidatorAddresses) == 0 {
+			return protoreflect.ValueOfList(&_Params_14_list{})
+		}
+		listValue := &_Params_14_list{list: &x.ValidatorAddresses}
+		return protoreflect.ValueOfList(listValue)
+	case "distro.v1.Params.distribution_types":
+		if len(x.DistributionTypes) == 0 {
+			return protoreflect.ValueOfList(&_Params_15_list{})
+		}
+		listValue := &_Params_15_list{list: &x.DistributionTypes}
+		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1351,10 +1455,6 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 		x.MonthsInHalvingPeriod = value.Uint()
 	case "distro.v1.Params.distribution_license_type_id":
 		x.DistributionLicenseTypeId = value.Interface().(string)
-	case "distro.v1.Params.license_tally_threshold":
-		x.LicenseTallyThreshold = value.Interface().(string)
-	case "distro.v1.Params.stake_tally_threshold":
-		x.StakeTallyThreshold = value.Interface().(string)
 	case "distro.v1.Params.epoch_identifier":
 		x.EpochIdentifier = value.Interface().(string)
 	case "distro.v1.Params.review_delay_days":
@@ -1363,6 +1463,14 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 		x.ChallengeBond = value.Interface().(string)
 	case "distro.v1.Params.vote_window_days":
 		x.VoteWindowDays = value.Uint()
+	case "distro.v1.Params.validator_addresses":
+		lv := value.List()
+		clv := lv.(*_Params_14_list)
+		x.ValidatorAddresses = *clv.list
+	case "distro.v1.Params.distribution_types":
+		lv := value.List()
+		clv := lv.(*_Params_15_list)
+		x.DistributionTypes = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1383,6 +1491,18 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "distro.v1.Params.validator_addresses":
+		if x.ValidatorAddresses == nil {
+			x.ValidatorAddresses = []string{}
+		}
+		value := &_Params_14_list{list: &x.ValidatorAddresses}
+		return protoreflect.ValueOfList(value)
+	case "distro.v1.Params.distribution_types":
+		if x.DistributionTypes == nil {
+			x.DistributionTypes = []*DistributionType{}
+		}
+		value := &_Params_15_list{list: &x.DistributionTypes}
+		return protoreflect.ValueOfList(value)
 	case "distro.v1.Params.minting_address":
 		panic(fmt.Errorf("field minting_address of message distro.v1.Params is not mutable"))
 	case "distro.v1.Params.receiving_address":
@@ -1397,10 +1517,6 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 		panic(fmt.Errorf("field months_in_halving_period of message distro.v1.Params is not mutable"))
 	case "distro.v1.Params.distribution_license_type_id":
 		panic(fmt.Errorf("field distribution_license_type_id of message distro.v1.Params is not mutable"))
-	case "distro.v1.Params.license_tally_threshold":
-		panic(fmt.Errorf("field license_tally_threshold of message distro.v1.Params is not mutable"))
-	case "distro.v1.Params.stake_tally_threshold":
-		panic(fmt.Errorf("field stake_tally_threshold of message distro.v1.Params is not mutable"))
 	case "distro.v1.Params.epoch_identifier":
 		panic(fmt.Errorf("field epoch_identifier of message distro.v1.Params is not mutable"))
 	case "distro.v1.Params.review_delay_days":
@@ -1436,10 +1552,6 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "distro.v1.Params.distribution_license_type_id":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.Params.license_tally_threshold":
-		return protoreflect.ValueOfString("")
-	case "distro.v1.Params.stake_tally_threshold":
-		return protoreflect.ValueOfString("")
 	case "distro.v1.Params.epoch_identifier":
 		return protoreflect.ValueOfString("")
 	case "distro.v1.Params.review_delay_days":
@@ -1448,6 +1560,12 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 		return protoreflect.ValueOfString("")
 	case "distro.v1.Params.vote_window_days":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "distro.v1.Params.validator_addresses":
+		list := []string{}
+		return protoreflect.ValueOfList(&_Params_14_list{list: &list})
+	case "distro.v1.Params.distribution_types":
+		list := []*DistributionType{}
+		return protoreflect.ValueOfList(&_Params_15_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.Params"))
@@ -1544,14 +1662,6 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.LicenseTallyThreshold)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.StakeTallyThreshold)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		l = len(x.EpochIdentifier)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
@@ -1565,6 +1675,18 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		}
 		if x.VoteWindowDays != 0 {
 			n += 1 + runtime.Sov(uint64(x.VoteWindowDays))
+		}
+		if len(x.ValidatorAddresses) > 0 {
+			for _, s := range x.ValidatorAddresses {
+				l = len(s)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if len(x.DistributionTypes) > 0 {
+			for _, e := range x.DistributionTypes {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1595,6 +1717,31 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if len(x.DistributionTypes) > 0 {
+			for iNdEx := len(x.DistributionTypes) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.DistributionTypes[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x7a
+			}
+		}
+		if len(x.ValidatorAddresses) > 0 {
+			for iNdEx := len(x.ValidatorAddresses) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.ValidatorAddresses[iNdEx])
+				copy(dAtA[i:], x.ValidatorAddresses[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ValidatorAddresses[iNdEx])))
+				i--
+				dAtA[i] = 0x72
+			}
+		}
 		if x.VoteWindowDays != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.VoteWindowDays))
 			i--
@@ -1618,20 +1765,6 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.EpochIdentifier)))
 			i--
 			dAtA[i] = 0x52
-		}
-		if len(x.StakeTallyThreshold) > 0 {
-			i -= len(x.StakeTallyThreshold)
-			copy(dAtA[i:], x.StakeTallyThreshold)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.StakeTallyThreshold)))
-			i--
-			dAtA[i] = 0x4a
-		}
-		if len(x.LicenseTallyThreshold) > 0 {
-			i -= len(x.LicenseTallyThreshold)
-			copy(dAtA[i:], x.LicenseTallyThreshold)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.LicenseTallyThreshold)))
-			i--
-			dAtA[i] = 0x42
 		}
 		if len(x.DistributionLicenseTypeId) > 0 {
 			i -= len(x.DistributionLicenseTypeId)
@@ -1940,70 +2073,6 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				}
 				x.DistributionLicenseTypeId = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 8:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LicenseTallyThreshold", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.LicenseTallyThreshold = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 9:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field StakeTallyThreshold", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.StakeTallyThreshold = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			case 10:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EpochIdentifier", wireType)
@@ -2106,6 +2175,1370 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
+			case 14:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ValidatorAddresses", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ValidatorAddresses = append(x.ValidatorAddresses, string(dAtA[iNdEx:postIndex]))
+				iNdEx = postIndex
+			case 15:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DistributionTypes", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.DistributionTypes = append(x.DistributionTypes, &DistributionType{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.DistributionTypes[len(x.DistributionTypes)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var _ protoreflect.List = (*_DistributionType_3_list)(nil)
+
+type _DistributionType_3_list struct {
+	list *[]*DistributionCategory
+}
+
+func (x *_DistributionType_3_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_DistributionType_3_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_DistributionType_3_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*DistributionCategory)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_DistributionType_3_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*DistributionCategory)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_DistributionType_3_list) AppendMutable() protoreflect.Value {
+	v := new(DistributionCategory)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_DistributionType_3_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_DistributionType_3_list) NewElement() protoreflect.Value {
+	v := new(DistributionCategory)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_DistributionType_3_list) IsValid() bool {
+	return x.list != nil
+}
+
+var (
+	md_DistributionType                           protoreflect.MessageDescriptor
+	fd_DistributionType_id                        protoreflect.FieldDescriptor
+	fd_DistributionType_percentage                protoreflect.FieldDescriptor
+	fd_DistributionType_categories                protoreflect.FieldDescriptor
+	fd_DistributionType_license_tally_threshold   protoreflect.FieldDescriptor
+	fd_DistributionType_stake_tally_threshold     protoreflect.FieldDescriptor
+	fd_DistributionType_validator_tally_threshold protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_distro_v1_genesis_proto_init()
+	md_DistributionType = File_distro_v1_genesis_proto.Messages().ByName("DistributionType")
+	fd_DistributionType_id = md_DistributionType.Fields().ByName("id")
+	fd_DistributionType_percentage = md_DistributionType.Fields().ByName("percentage")
+	fd_DistributionType_categories = md_DistributionType.Fields().ByName("categories")
+	fd_DistributionType_license_tally_threshold = md_DistributionType.Fields().ByName("license_tally_threshold")
+	fd_DistributionType_stake_tally_threshold = md_DistributionType.Fields().ByName("stake_tally_threshold")
+	fd_DistributionType_validator_tally_threshold = md_DistributionType.Fields().ByName("validator_tally_threshold")
+}
+
+var _ protoreflect.Message = (*fastReflection_DistributionType)(nil)
+
+type fastReflection_DistributionType DistributionType
+
+func (x *DistributionType) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_DistributionType)(x)
+}
+
+func (x *DistributionType) slowProtoReflect() protoreflect.Message {
+	mi := &file_distro_v1_genesis_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_DistributionType_messageType fastReflection_DistributionType_messageType
+var _ protoreflect.MessageType = fastReflection_DistributionType_messageType{}
+
+type fastReflection_DistributionType_messageType struct{}
+
+func (x fastReflection_DistributionType_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_DistributionType)(nil)
+}
+func (x fastReflection_DistributionType_messageType) New() protoreflect.Message {
+	return new(fastReflection_DistributionType)
+}
+func (x fastReflection_DistributionType_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_DistributionType
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_DistributionType) Descriptor() protoreflect.MessageDescriptor {
+	return md_DistributionType
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_DistributionType) Type() protoreflect.MessageType {
+	return _fastReflection_DistributionType_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_DistributionType) New() protoreflect.Message {
+	return new(fastReflection_DistributionType)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_DistributionType) Interface() protoreflect.ProtoMessage {
+	return (*DistributionType)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_DistributionType) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Id != "" {
+		value := protoreflect.ValueOfString(x.Id)
+		if !f(fd_DistributionType_id, value) {
+			return
+		}
+	}
+	if x.Percentage != "" {
+		value := protoreflect.ValueOfString(x.Percentage)
+		if !f(fd_DistributionType_percentage, value) {
+			return
+		}
+	}
+	if len(x.Categories) != 0 {
+		value := protoreflect.ValueOfList(&_DistributionType_3_list{list: &x.Categories})
+		if !f(fd_DistributionType_categories, value) {
+			return
+		}
+	}
+	if x.LicenseTallyThreshold != "" {
+		value := protoreflect.ValueOfString(x.LicenseTallyThreshold)
+		if !f(fd_DistributionType_license_tally_threshold, value) {
+			return
+		}
+	}
+	if x.StakeTallyThreshold != "" {
+		value := protoreflect.ValueOfString(x.StakeTallyThreshold)
+		if !f(fd_DistributionType_stake_tally_threshold, value) {
+			return
+		}
+	}
+	if x.ValidatorTallyThreshold != "" {
+		value := protoreflect.ValueOfString(x.ValidatorTallyThreshold)
+		if !f(fd_DistributionType_validator_tally_threshold, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_DistributionType) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "distro.v1.DistributionType.id":
+		return x.Id != ""
+	case "distro.v1.DistributionType.percentage":
+		return x.Percentage != ""
+	case "distro.v1.DistributionType.categories":
+		return len(x.Categories) != 0
+	case "distro.v1.DistributionType.license_tally_threshold":
+		return x.LicenseTallyThreshold != ""
+	case "distro.v1.DistributionType.stake_tally_threshold":
+		return x.StakeTallyThreshold != ""
+	case "distro.v1.DistributionType.validator_tally_threshold":
+		return x.ValidatorTallyThreshold != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionType"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionType does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DistributionType) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "distro.v1.DistributionType.id":
+		x.Id = ""
+	case "distro.v1.DistributionType.percentage":
+		x.Percentage = ""
+	case "distro.v1.DistributionType.categories":
+		x.Categories = nil
+	case "distro.v1.DistributionType.license_tally_threshold":
+		x.LicenseTallyThreshold = ""
+	case "distro.v1.DistributionType.stake_tally_threshold":
+		x.StakeTallyThreshold = ""
+	case "distro.v1.DistributionType.validator_tally_threshold":
+		x.ValidatorTallyThreshold = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionType"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionType does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_DistributionType) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "distro.v1.DistributionType.id":
+		value := x.Id
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.DistributionType.percentage":
+		value := x.Percentage
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.DistributionType.categories":
+		if len(x.Categories) == 0 {
+			return protoreflect.ValueOfList(&_DistributionType_3_list{})
+		}
+		listValue := &_DistributionType_3_list{list: &x.Categories}
+		return protoreflect.ValueOfList(listValue)
+	case "distro.v1.DistributionType.license_tally_threshold":
+		value := x.LicenseTallyThreshold
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.DistributionType.stake_tally_threshold":
+		value := x.StakeTallyThreshold
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.DistributionType.validator_tally_threshold":
+		value := x.ValidatorTallyThreshold
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionType"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionType does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DistributionType) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "distro.v1.DistributionType.id":
+		x.Id = value.Interface().(string)
+	case "distro.v1.DistributionType.percentage":
+		x.Percentage = value.Interface().(string)
+	case "distro.v1.DistributionType.categories":
+		lv := value.List()
+		clv := lv.(*_DistributionType_3_list)
+		x.Categories = *clv.list
+	case "distro.v1.DistributionType.license_tally_threshold":
+		x.LicenseTallyThreshold = value.Interface().(string)
+	case "distro.v1.DistributionType.stake_tally_threshold":
+		x.StakeTallyThreshold = value.Interface().(string)
+	case "distro.v1.DistributionType.validator_tally_threshold":
+		x.ValidatorTallyThreshold = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionType"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionType does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DistributionType) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "distro.v1.DistributionType.categories":
+		if x.Categories == nil {
+			x.Categories = []*DistributionCategory{}
+		}
+		value := &_DistributionType_3_list{list: &x.Categories}
+		return protoreflect.ValueOfList(value)
+	case "distro.v1.DistributionType.id":
+		panic(fmt.Errorf("field id of message distro.v1.DistributionType is not mutable"))
+	case "distro.v1.DistributionType.percentage":
+		panic(fmt.Errorf("field percentage of message distro.v1.DistributionType is not mutable"))
+	case "distro.v1.DistributionType.license_tally_threshold":
+		panic(fmt.Errorf("field license_tally_threshold of message distro.v1.DistributionType is not mutable"))
+	case "distro.v1.DistributionType.stake_tally_threshold":
+		panic(fmt.Errorf("field stake_tally_threshold of message distro.v1.DistributionType is not mutable"))
+	case "distro.v1.DistributionType.validator_tally_threshold":
+		panic(fmt.Errorf("field validator_tally_threshold of message distro.v1.DistributionType is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionType"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionType does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_DistributionType) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "distro.v1.DistributionType.id":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.DistributionType.percentage":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.DistributionType.categories":
+		list := []*DistributionCategory{}
+		return protoreflect.ValueOfList(&_DistributionType_3_list{list: &list})
+	case "distro.v1.DistributionType.license_tally_threshold":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.DistributionType.stake_tally_threshold":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.DistributionType.validator_tally_threshold":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionType"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionType does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_DistributionType) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in distro.v1.DistributionType", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_DistributionType) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DistributionType) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_DistributionType) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_DistributionType) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*DistributionType)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Id)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Percentage)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if len(x.Categories) > 0 {
+			for _, e := range x.Categories {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		l = len(x.LicenseTallyThreshold)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.StakeTallyThreshold)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.ValidatorTallyThreshold)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*DistributionType)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.ValidatorTallyThreshold) > 0 {
+			i -= len(x.ValidatorTallyThreshold)
+			copy(dAtA[i:], x.ValidatorTallyThreshold)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ValidatorTallyThreshold)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if len(x.StakeTallyThreshold) > 0 {
+			i -= len(x.StakeTallyThreshold)
+			copy(dAtA[i:], x.StakeTallyThreshold)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.StakeTallyThreshold)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.LicenseTallyThreshold) > 0 {
+			i -= len(x.LicenseTallyThreshold)
+			copy(dAtA[i:], x.LicenseTallyThreshold)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.LicenseTallyThreshold)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if len(x.Categories) > 0 {
+			for iNdEx := len(x.Categories) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Categories[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x1a
+			}
+		}
+		if len(x.Percentage) > 0 {
+			i -= len(x.Percentage)
+			copy(dAtA[i:], x.Percentage)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Percentage)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Id) > 0 {
+			i -= len(x.Id)
+			copy(dAtA[i:], x.Id)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Id)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*DistributionType)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: DistributionType: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: DistributionType: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Id = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Percentage", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Percentage = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Categories", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Categories = append(x.Categories, &DistributionCategory{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Categories[len(x.Categories)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LicenseTallyThreshold", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.LicenseTallyThreshold = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field StakeTallyThreshold", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.StakeTallyThreshold = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ValidatorTallyThreshold", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ValidatorTallyThreshold = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_DistributionCategory            protoreflect.MessageDescriptor
+	fd_DistributionCategory_name       protoreflect.FieldDescriptor
+	fd_DistributionCategory_percentage protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_distro_v1_genesis_proto_init()
+	md_DistributionCategory = File_distro_v1_genesis_proto.Messages().ByName("DistributionCategory")
+	fd_DistributionCategory_name = md_DistributionCategory.Fields().ByName("name")
+	fd_DistributionCategory_percentage = md_DistributionCategory.Fields().ByName("percentage")
+}
+
+var _ protoreflect.Message = (*fastReflection_DistributionCategory)(nil)
+
+type fastReflection_DistributionCategory DistributionCategory
+
+func (x *DistributionCategory) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_DistributionCategory)(x)
+}
+
+func (x *DistributionCategory) slowProtoReflect() protoreflect.Message {
+	mi := &file_distro_v1_genesis_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_DistributionCategory_messageType fastReflection_DistributionCategory_messageType
+var _ protoreflect.MessageType = fastReflection_DistributionCategory_messageType{}
+
+type fastReflection_DistributionCategory_messageType struct{}
+
+func (x fastReflection_DistributionCategory_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_DistributionCategory)(nil)
+}
+func (x fastReflection_DistributionCategory_messageType) New() protoreflect.Message {
+	return new(fastReflection_DistributionCategory)
+}
+func (x fastReflection_DistributionCategory_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_DistributionCategory
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_DistributionCategory) Descriptor() protoreflect.MessageDescriptor {
+	return md_DistributionCategory
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_DistributionCategory) Type() protoreflect.MessageType {
+	return _fastReflection_DistributionCategory_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_DistributionCategory) New() protoreflect.Message {
+	return new(fastReflection_DistributionCategory)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_DistributionCategory) Interface() protoreflect.ProtoMessage {
+	return (*DistributionCategory)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_DistributionCategory) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Name != "" {
+		value := protoreflect.ValueOfString(x.Name)
+		if !f(fd_DistributionCategory_name, value) {
+			return
+		}
+	}
+	if x.Percentage != "" {
+		value := protoreflect.ValueOfString(x.Percentage)
+		if !f(fd_DistributionCategory_percentage, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_DistributionCategory) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "distro.v1.DistributionCategory.name":
+		return x.Name != ""
+	case "distro.v1.DistributionCategory.percentage":
+		return x.Percentage != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionCategory"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionCategory does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DistributionCategory) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "distro.v1.DistributionCategory.name":
+		x.Name = ""
+	case "distro.v1.DistributionCategory.percentage":
+		x.Percentage = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionCategory"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionCategory does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_DistributionCategory) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "distro.v1.DistributionCategory.name":
+		value := x.Name
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.DistributionCategory.percentage":
+		value := x.Percentage
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionCategory"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionCategory does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DistributionCategory) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "distro.v1.DistributionCategory.name":
+		x.Name = value.Interface().(string)
+	case "distro.v1.DistributionCategory.percentage":
+		x.Percentage = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionCategory"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionCategory does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DistributionCategory) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "distro.v1.DistributionCategory.name":
+		panic(fmt.Errorf("field name of message distro.v1.DistributionCategory is not mutable"))
+	case "distro.v1.DistributionCategory.percentage":
+		panic(fmt.Errorf("field percentage of message distro.v1.DistributionCategory is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionCategory"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionCategory does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_DistributionCategory) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "distro.v1.DistributionCategory.name":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.DistributionCategory.percentage":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.DistributionCategory"))
+		}
+		panic(fmt.Errorf("message distro.v1.DistributionCategory does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_DistributionCategory) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in distro.v1.DistributionCategory", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_DistributionCategory) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DistributionCategory) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_DistributionCategory) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_DistributionCategory) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*DistributionCategory)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Name)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Percentage)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*DistributionCategory)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.Percentage) > 0 {
+			i -= len(x.Percentage)
+			copy(dAtA[i:], x.Percentage)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Percentage)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Name) > 0 {
+			i -= len(x.Name)
+			copy(dAtA[i:], x.Name)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Name)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*DistributionCategory)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: DistributionCategory: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: DistributionCategory: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Name = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Percentage", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Percentage = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -2244,12 +3677,6 @@ type Params struct {
 	// distribution_license_type_id is the x/licenses LicenseType id a signer must
 	// hold (with >= 1 active license) to submit a distribution root.
 	DistributionLicenseTypeId string `protobuf:"bytes,7,opt,name=distribution_license_type_id,json=distributionLicenseTypeId,proto3" json:"distribution_license_type_id,omitempty"`
-	// license_tally_threshold is the fraction (0,1] of license weight a root must
-	// reach to pass the license-based tally. Default "0.667".
-	LicenseTallyThreshold string `protobuf:"bytes,8,opt,name=license_tally_threshold,json=licenseTallyThreshold,proto3" json:"license_tally_threshold,omitempty"`
-	// stake_tally_threshold is the fraction (0,1] of bonded stake a root must
-	// reach to pass the stake-based tally. Default "0.667".
-	StakeTallyThreshold string `protobuf:"bytes,9,opt,name=stake_tally_threshold,json=stakeTallyThreshold,proto3" json:"stake_tally_threshold,omitempty"`
 	// epoch_identifier is the x/epochs identifier whose AfterEpochEnd triggers the
 	// daily tally. Default "day".
 	EpochIdentifier string `protobuf:"bytes,10,opt,name=epoch_identifier,json=epochIdentifier,proto3" json:"epoch_identifier,omitempty"`
@@ -2265,6 +3692,14 @@ type Params struct {
 	// distribution has to reach consensus before it expires and is no longer
 	// tallied. Bounds daily tally work.
 	VoteWindowDays uint64 `protobuf:"varint,13,opt,name=vote_window_days,json=voteWindowDays,proto3" json:"vote_window_days,omitempty"`
+	// validator_addresses is the allowlist of validator self-delegation addresses
+	// used by the count-based validator consensus mechanism: a root's validator
+	// tally is the fraction of these addresses that voted for it.
+	ValidatorAddresses []string `protobuf:"bytes,14,rep,name=validator_addresses,json=validatorAddresses,proto3" json:"validator_addresses,omitempty"`
+	// distribution_types are the allowable per-day distribution types. Each type
+	// claims a percentage of the day's halving budget and carries its own
+	// categories and consensus thresholds. Type percentages must sum to exactly 1.
+	DistributionTypes []*DistributionType `protobuf:"bytes,15,rep,name=distribution_types,json=distributionTypes,proto3" json:"distribution_types,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -2336,20 +3771,6 @@ func (x *Params) GetDistributionLicenseTypeId() string {
 	return ""
 }
 
-func (x *Params) GetLicenseTallyThreshold() string {
-	if x != nil {
-		return x.LicenseTallyThreshold
-	}
-	return ""
-}
-
-func (x *Params) GetStakeTallyThreshold() string {
-	if x != nil {
-		return x.StakeTallyThreshold
-	}
-	return ""
-}
-
 func (x *Params) GetEpochIdentifier() string {
 	if x != nil {
 		return x.EpochIdentifier
@@ -2378,6 +3799,158 @@ func (x *Params) GetVoteWindowDays() uint64 {
 	return 0
 }
 
+func (x *Params) GetValidatorAddresses() []string {
+	if x != nil {
+		return x.ValidatorAddresses
+	}
+	return nil
+}
+
+func (x *Params) GetDistributionTypes() []*DistributionType {
+	if x != nil {
+		return x.DistributionTypes
+	}
+	return nil
+}
+
+// DistributionType is an allowable distribution type that may run once per day
+// (keyed by (date, id)). It claims `percentage` of the day's halving budget,
+// breaks down into `categories`, and configures which consensus mechanisms a
+// root must pass to finalize.
+type DistributionType struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// id is the distribution type identifier (e.g. "type1").
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// percentage is the fraction [0,1] of the day's halving budget this type may
+	// claim. Across all types these must sum to exactly 1.
+	Percentage string `protobuf:"bytes,2,opt,name=percentage,proto3" json:"percentage,omitempty"`
+	// categories are the reward categories for this type.
+	Categories []*DistributionCategory `protobuf:"bytes,3,rep,name=categories,proto3" json:"categories,omitempty"`
+	// license_tally_threshold is the fraction (0,1] of license weight a root must
+	// reach to pass the license-based tally. Empty/"0" disables this mechanism.
+	LicenseTallyThreshold string `protobuf:"bytes,4,opt,name=license_tally_threshold,json=licenseTallyThreshold,proto3" json:"license_tally_threshold,omitempty"`
+	// stake_tally_threshold is the fraction (0,1] of bonded stake a root must
+	// reach to pass the stake-based tally. Empty/"0" disables this mechanism.
+	StakeTallyThreshold string `protobuf:"bytes,5,opt,name=stake_tally_threshold,json=stakeTallyThreshold,proto3" json:"stake_tally_threshold,omitempty"`
+	// validator_tally_threshold is the fraction (0,1] of the configured
+	// validator_addresses that must vote for a root. Empty/"0" disables this
+	// mechanism. At least one of the three thresholds must be set.
+	ValidatorTallyThreshold string `protobuf:"bytes,6,opt,name=validator_tally_threshold,json=validatorTallyThreshold,proto3" json:"validator_tally_threshold,omitempty"`
+}
+
+func (x *DistributionType) Reset() {
+	*x = DistributionType{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_distro_v1_genesis_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DistributionType) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DistributionType) ProtoMessage() {}
+
+// Deprecated: Use DistributionType.ProtoReflect.Descriptor instead.
+func (*DistributionType) Descriptor() ([]byte, []int) {
+	return file_distro_v1_genesis_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *DistributionType) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DistributionType) GetPercentage() string {
+	if x != nil {
+		return x.Percentage
+	}
+	return ""
+}
+
+func (x *DistributionType) GetCategories() []*DistributionCategory {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+func (x *DistributionType) GetLicenseTallyThreshold() string {
+	if x != nil {
+		return x.LicenseTallyThreshold
+	}
+	return ""
+}
+
+func (x *DistributionType) GetStakeTallyThreshold() string {
+	if x != nil {
+		return x.StakeTallyThreshold
+	}
+	return ""
+}
+
+func (x *DistributionType) GetValidatorTallyThreshold() string {
+	if x != nil {
+		return x.ValidatorTallyThreshold
+	}
+	return ""
+}
+
+// DistributionCategory is a reward category within a distribution type.
+type DistributionCategory struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// name is the category identifier (e.g. "team").
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// percentage is the optional fraction [0,1] of the type's budget this category
+	// may claim. Per type, category percentages are either all "0"/empty (each
+	// category uncapped within the type budget) or set and summing to exactly 1.
+	Percentage string `protobuf:"bytes,2,opt,name=percentage,proto3" json:"percentage,omitempty"`
+}
+
+func (x *DistributionCategory) Reset() {
+	*x = DistributionCategory{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_distro_v1_genesis_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DistributionCategory) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DistributionCategory) ProtoMessage() {}
+
+// Deprecated: Use DistributionCategory.ProtoReflect.Descriptor instead.
+func (*DistributionCategory) Descriptor() ([]byte, []int) {
+	return file_distro_v1_genesis_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *DistributionCategory) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DistributionCategory) GetPercentage() string {
+	if x != nil {
+		return x.Percentage
+	}
+	return ""
+}
+
 var File_distro_v1_genesis_proto protoreflect.FileDescriptor
 
 var file_distro_v1_genesis_proto_rawDesc = []byte{
@@ -2385,81 +3958,111 @@ var file_distro_v1_genesis_proto_rawDesc = []byte{
 	0x73, 0x69, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x09, 0x64, 0x69, 0x73, 0x74, 0x72,
 	0x6f, 0x2e, 0x76, 0x31, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
 	0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e,
-	0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x15, 0x64,
-	0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x76, 0x31, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0xdf, 0x02, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73,
-	0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x2f, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76,
-	0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x06,
-	0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x37, 0x0a, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x18,
-	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76,
-	0x31, 0x2e, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x6f,
-	0x74, 0x65, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x12,
-	0x43, 0x0a, 0x0d, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x73,
-	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e,
-	0x76, 0x31, 0x2e, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x42,
-	0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0d, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
-	0x69, 0x6f, 0x6e, 0x73, 0x12, 0x47, 0x0a, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f,
-	0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e,
-	0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65,
-	0x64, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0e, 0x63,
-	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x12, 0x57, 0x0a,
-	0x15, 0x63, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f,
-	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x64,
-	0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72,
-	0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x42, 0x04, 0xc8, 0xde, 0x1f,
-	0x00, 0x52, 0x13, 0x63, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d,
-	0x54, 0x6f, 0x74, 0x61, 0x6c, 0x73, 0x22, 0xf7, 0x04, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x12, 0x27, 0x0a, 0x0f, 0x6d, 0x69, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x6d, 0x69, 0x6e, 0x74,
-	0x69, 0x6e, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x2b, 0x0a, 0x11, 0x72, 0x65,
-	0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x1d, 0x0a,
-	0x0a, 0x6d, 0x61, 0x78, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x09, 0x6d, 0x61, 0x78, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x12, 0x36, 0x0a, 0x17,
-	0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61,
-	0x72, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x15, 0x64,
-	0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74,
-	0x44, 0x61, 0x74, 0x65, 0x12, 0x37, 0x0a, 0x18, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x5f, 0x69,
-	0x6e, 0x5f, 0x68, 0x61, 0x6c, 0x76, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64,
-	0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x15, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x49, 0x6e,
-	0x48, 0x61, 0x6c, 0x76, 0x69, 0x6e, 0x67, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x12, 0x3f, 0x0a,
-	0x1c, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x69,
-	0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x07, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x19, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f,
-	0x6e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x54, 0x79, 0x70, 0x65, 0x49, 0x64, 0x12, 0x36,
-	0x0a, 0x17, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f,
-	0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x15, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x54, 0x61, 0x6c, 0x6c, 0x79, 0x54, 0x68, 0x72,
-	0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x12, 0x32, 0x0a, 0x15, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f,
-	0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18,
-	0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x13, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x6c, 0x6c,
-	0x79, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x12, 0x29, 0x0a, 0x10, 0x65, 0x70,
-	0x6f, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x18, 0x0a,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x49, 0x64, 0x65, 0x6e, 0x74,
-	0x69, 0x66, 0x69, 0x65, 0x72, 0x12, 0x2a, 0x0a, 0x11, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x5f,
-	0x64, 0x65, 0x6c, 0x61, 0x79, 0x5f, 0x64, 0x61, 0x79, 0x73, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x0f, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x44, 0x65, 0x6c, 0x61, 0x79, 0x44, 0x61, 0x79,
-	0x73, 0x12, 0x25, 0x0a, 0x0e, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x5f, 0x62,
-	0x6f, 0x6e, 0x64, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x68, 0x61, 0x6c, 0x6c,
-	0x65, 0x6e, 0x67, 0x65, 0x42, 0x6f, 0x6e, 0x64, 0x12, 0x28, 0x0a, 0x10, 0x76, 0x6f, 0x74, 0x65,
-	0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x64, 0x61, 0x79, 0x73, 0x18, 0x0d, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x0e, 0x76, 0x6f, 0x74, 0x65, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x44, 0x61,
-	0x79, 0x73, 0x3a, 0x1c, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x13, 0x74, 0x73, 0x63,
-	0x2f, 0x78, 0x2f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x42, 0x9e, 0x01, 0x0a, 0x0d, 0x63, 0x6f, 0x6d, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e,
-	0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x3a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x54,
-	0x72, 0x75, 0x73, 0x74, 0x65, 0x64, 0x53, 0x6d, 0x61, 0x72, 0x74, 0x43, 0x68, 0x61, 0x69, 0x6e,
-	0x2f, 0x74, 0x73, 0x63, 0x2f, 0x76, 0x33, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x64, 0x69, 0x73, 0x74,
-	0x72, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x76, 0x31, 0xa2, 0x02,
-	0x03, 0x44, 0x58, 0x58, 0xaa, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x56, 0x31,
-	0xca, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x15, 0x44,
-	0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0a, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x3a, 0x3a, 0x56,
-	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x15, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f,
+	0x2f, 0x76, 0x31, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
+	0xdf, 0x02, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65,
+	0x12, 0x2f, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x11, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x12, 0x37, 0x0a, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x1b, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x73,
+	0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x6f, 0x74, 0x65, 0x42, 0x04, 0xc8,
+	0xde, 0x1f, 0x00, 0x52, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x12, 0x43, 0x0a, 0x0d, 0x64, 0x69,
+	0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x17, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69,
+	0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00,
+	0x52, 0x0d, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
+	0x47, 0x0a, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x72, 0x65, 0x77, 0x61, 0x72,
+	0x64, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72,
+	0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x77, 0x61,
+	0x72, 0x64, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65,
+	0x64, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x73, 0x12, 0x57, 0x0a, 0x15, 0x63, 0x61, 0x74, 0x65,
+	0x67, 0x6f, 0x72, 0x79, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f, 0x74, 0x6f, 0x74, 0x61, 0x6c,
+	0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69,
+	0x6d, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x13, 0x63, 0x61,
+	0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x54, 0x6f, 0x74, 0x61, 0x6c,
+	0x73, 0x22, 0xa8, 0x05, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x27, 0x0a, 0x0f,
+	0x6d, 0x69, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x6d, 0x69, 0x6e, 0x74, 0x69, 0x6e, 0x67, 0x41, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x2b, 0x0a, 0x11, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69,
+	0x6e, 0x67, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x10, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x61, 0x78, 0x5f,
+	0x73, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6d, 0x61,
+	0x78, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x79, 0x12, 0x36, 0x0a, 0x17, 0x64, 0x69, 0x73, 0x74, 0x72,
+	0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61,
+	0x74, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x15, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69,
+	0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x44, 0x61, 0x74, 0x65, 0x12,
+	0x37, 0x0a, 0x18, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x5f, 0x69, 0x6e, 0x5f, 0x68, 0x61, 0x6c,
+	0x76, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x15, 0x6d, 0x6f, 0x6e, 0x74, 0x68, 0x73, 0x49, 0x6e, 0x48, 0x61, 0x6c, 0x76, 0x69,
+	0x6e, 0x67, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x12, 0x3f, 0x0a, 0x1c, 0x64, 0x69, 0x73, 0x74,
+	0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65,
+	0x5f, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x19,
+	0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x69, 0x63, 0x65,
+	0x6e, 0x73, 0x65, 0x54, 0x79, 0x70, 0x65, 0x49, 0x64, 0x12, 0x29, 0x0a, 0x10, 0x65, 0x70, 0x6f,
+	0x63, 0x68, 0x5f, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x18, 0x0a, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x0f, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69,
+	0x66, 0x69, 0x65, 0x72, 0x12, 0x2a, 0x0a, 0x11, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x5f, 0x64,
+	0x65, 0x6c, 0x61, 0x79, 0x5f, 0x64, 0x61, 0x79, 0x73, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x0f, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x44, 0x65, 0x6c, 0x61, 0x79, 0x44, 0x61, 0x79, 0x73,
+	0x12, 0x25, 0x0a, 0x0e, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x5f, 0x62, 0x6f,
+	0x6e, 0x64, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x68, 0x61, 0x6c, 0x6c, 0x65,
+	0x6e, 0x67, 0x65, 0x42, 0x6f, 0x6e, 0x64, 0x12, 0x28, 0x0a, 0x10, 0x76, 0x6f, 0x74, 0x65, 0x5f,
+	0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x64, 0x61, 0x79, 0x73, 0x18, 0x0d, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x0e, 0x76, 0x6f, 0x74, 0x65, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x44, 0x61, 0x79,
+	0x73, 0x12, 0x49, 0x0a, 0x13, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x0e, 0x20, 0x03, 0x28, 0x09, 0x42, 0x18,
+	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61,
+	0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x12, 0x50, 0x0a, 0x12,
+	0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x74, 0x79, 0x70,
+	0x65, 0x73, 0x18, 0x0f, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72,
+	0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f,
+	0x6e, 0x54, 0x79, 0x70, 0x65, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x11, 0x64, 0x69, 0x73,
+	0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x73, 0x3a, 0x1c,
+	0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x13, 0x74, 0x73, 0x63, 0x2f, 0x78, 0x2f, 0x64,
+	0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0xb7, 0x02, 0x0a,
+	0x10, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70,
+	0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69,
+	0x64, 0x12, 0x1e, 0x0a, 0x0a, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67,
+	0x65, 0x12, 0x45, 0x0a, 0x0a, 0x63, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x18,
+	0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76,
+	0x31, 0x2e, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x61,
+	0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0a, 0x63, 0x61,
+	0x74, 0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x12, 0x36, 0x0a, 0x17, 0x6c, 0x69, 0x63, 0x65,
+	0x6e, 0x73, 0x65, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68,
+	0x6f, 0x6c, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x15, 0x6c, 0x69, 0x63, 0x65, 0x6e,
+	0x73, 0x65, 0x54, 0x61, 0x6c, 0x6c, 0x79, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64,
+	0x12, 0x32, 0x0a, 0x15, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f,
+	0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x13, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x6c, 0x6c, 0x79, 0x54, 0x68, 0x72, 0x65, 0x73,
+	0x68, 0x6f, 0x6c, 0x64, 0x12, 0x3a, 0x0a, 0x19, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
+	0x72, 0x5f, 0x74, 0x61, 0x6c, 0x6c, 0x79, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c,
+	0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x17, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
+	0x6f, 0x72, 0x54, 0x61, 0x6c, 0x6c, 0x79, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64,
+	0x3a, 0x04, 0xe8, 0xa0, 0x1f, 0x01, 0x22, 0x50, 0x0a, 0x14, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69,
+	0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x12, 0x12,
+	0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61,
+	0x6d, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61,
+	0x67, 0x65, 0x3a, 0x04, 0xe8, 0xa0, 0x1f, 0x01, 0x42, 0x9e, 0x01, 0x0a, 0x0d, 0x63, 0x6f, 0x6d,
+	0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65,
+	0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x3a, 0x67, 0x69, 0x74, 0x68,
+	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x54, 0x72, 0x75, 0x73, 0x74, 0x65, 0x64, 0x53, 0x6d,
+	0x61, 0x72, 0x74, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x2f, 0x74, 0x73, 0x63, 0x2f, 0x76, 0x33, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69,
+	0x73, 0x74, 0x72, 0x6f, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x44, 0x58, 0x58, 0xaa, 0x02, 0x09, 0x44,
+	0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x09, 0x44, 0x69, 0x73, 0x74, 0x72,
+	0x6f, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x15, 0x44, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x5c, 0x56, 0x31,
+	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0a, 0x44,
+	0x69, 0x73, 0x74, 0x72, 0x6f, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -2474,26 +4077,30 @@ func file_distro_v1_genesis_proto_rawDescGZIP() []byte {
 	return file_distro_v1_genesis_proto_rawDescData
 }
 
-var file_distro_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_distro_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_distro_v1_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil),       // 0: distro.v1.GenesisState
-	(*Params)(nil),             // 1: distro.v1.Params
-	(*DistributionVote)(nil),   // 2: distro.v1.DistributionVote
-	(*Distribution)(nil),       // 3: distro.v1.Distribution
-	(*ClaimedReward)(nil),      // 4: distro.v1.ClaimedReward
-	(*CategoryClaimTotal)(nil), // 5: distro.v1.CategoryClaimTotal
+	(*GenesisState)(nil),         // 0: distro.v1.GenesisState
+	(*Params)(nil),               // 1: distro.v1.Params
+	(*DistributionType)(nil),     // 2: distro.v1.DistributionType
+	(*DistributionCategory)(nil), // 3: distro.v1.DistributionCategory
+	(*DistributionVote)(nil),     // 4: distro.v1.DistributionVote
+	(*Distribution)(nil),         // 5: distro.v1.Distribution
+	(*ClaimedReward)(nil),        // 6: distro.v1.ClaimedReward
+	(*CategoryClaimTotal)(nil),   // 7: distro.v1.CategoryClaimTotal
 }
 var file_distro_v1_genesis_proto_depIdxs = []int32{
 	1, // 0: distro.v1.GenesisState.params:type_name -> distro.v1.Params
-	2, // 1: distro.v1.GenesisState.votes:type_name -> distro.v1.DistributionVote
-	3, // 2: distro.v1.GenesisState.distributions:type_name -> distro.v1.Distribution
-	4, // 3: distro.v1.GenesisState.claimed_rewards:type_name -> distro.v1.ClaimedReward
-	5, // 4: distro.v1.GenesisState.category_claim_totals:type_name -> distro.v1.CategoryClaimTotal
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	4, // 1: distro.v1.GenesisState.votes:type_name -> distro.v1.DistributionVote
+	5, // 2: distro.v1.GenesisState.distributions:type_name -> distro.v1.Distribution
+	6, // 3: distro.v1.GenesisState.claimed_rewards:type_name -> distro.v1.ClaimedReward
+	7, // 4: distro.v1.GenesisState.category_claim_totals:type_name -> distro.v1.CategoryClaimTotal
+	2, // 5: distro.v1.Params.distribution_types:type_name -> distro.v1.DistributionType
+	3, // 6: distro.v1.DistributionType.categories:type_name -> distro.v1.DistributionCategory
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_distro_v1_genesis_proto_init() }
@@ -2527,6 +4134,30 @@ func file_distro_v1_genesis_proto_init() {
 				return nil
 			}
 		}
+		file_distro_v1_genesis_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DistributionType); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_distro_v1_genesis_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DistributionCategory); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2534,7 +4165,7 @@ func file_distro_v1_genesis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_distro_v1_genesis_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

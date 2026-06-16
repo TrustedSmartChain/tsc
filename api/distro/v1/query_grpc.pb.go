@@ -36,16 +36,16 @@ const (
 type QueryClient interface {
 	// Params queries all parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// Distribution queries the canonical distribution for a day (YYYY-MM-DD).
+	// Distribution queries the canonical distribution for a (day, type).
 	Distribution(ctx context.Context, in *QueryDistributionRequest, opts ...grpc.CallOption) (*QueryDistributionResponse, error)
-	// DistributionVotes queries all submitted votes for a day (YYYY-MM-DD).
+	// DistributionVotes queries all submitted votes for a (day, type).
 	DistributionVotes(ctx context.Context, in *QueryDistributionVotesRequest, opts ...grpc.CallOption) (*QueryDistributionVotesResponse, error)
-	// Claimed reports whether a (date, nonce) reward has been claimed.
+	// Claimed reports whether a (date, type, nonce) reward has been claimed.
 	Claimed(ctx context.Context, in *QueryClaimedRequest, opts ...grpc.CallOption) (*QueryClaimedResponse, error)
-	// ClaimsByDate lists the reward nonces claimed for a day (YYYY-MM-DD).
+	// ClaimsByDate lists the reward nonces claimed for a (day, type).
 	ClaimsByDate(ctx context.Context, in *QueryClaimsByDateRequest, opts ...grpc.CallOption) (*QueryClaimsByDateResponse, error)
 	// ClaimTotalByCategory reports the cumulative claimed amount per category for a
-	// day's distribution (YYYY-MM-DD).
+	// (day, type)'s distribution.
 	ClaimTotalByCategory(ctx context.Context, in *QueryClaimTotalByCategoryRequest, opts ...grpc.CallOption) (*QueryClaimTotalByCategoryResponse, error)
 	// Audit runs the module's invariants (claim budget, bond solvency) against the
 	// current state and reports the result. Lets operators verify module health on
@@ -153,16 +153,16 @@ func (c *queryClient) ActiveDistributions(ctx context.Context, in *QueryActiveDi
 type QueryServer interface {
 	// Params queries all parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// Distribution queries the canonical distribution for a day (YYYY-MM-DD).
+	// Distribution queries the canonical distribution for a (day, type).
 	Distribution(context.Context, *QueryDistributionRequest) (*QueryDistributionResponse, error)
-	// DistributionVotes queries all submitted votes for a day (YYYY-MM-DD).
+	// DistributionVotes queries all submitted votes for a (day, type).
 	DistributionVotes(context.Context, *QueryDistributionVotesRequest) (*QueryDistributionVotesResponse, error)
-	// Claimed reports whether a (date, nonce) reward has been claimed.
+	// Claimed reports whether a (date, type, nonce) reward has been claimed.
 	Claimed(context.Context, *QueryClaimedRequest) (*QueryClaimedResponse, error)
-	// ClaimsByDate lists the reward nonces claimed for a day (YYYY-MM-DD).
+	// ClaimsByDate lists the reward nonces claimed for a (day, type).
 	ClaimsByDate(context.Context, *QueryClaimsByDateRequest) (*QueryClaimsByDateResponse, error)
 	// ClaimTotalByCategory reports the cumulative claimed amount per category for a
-	// day's distribution (YYYY-MM-DD).
+	// (day, type)'s distribution.
 	ClaimTotalByCategory(context.Context, *QueryClaimTotalByCategoryRequest) (*QueryClaimTotalByCategoryResponse, error)
 	// Audit runs the module's invariants (claim budget, bond solvency) against the
 	// current state and reports the result. Lets operators verify module health on

@@ -78,12 +78,12 @@ func NewMsgUpdateParams(
 	distroStartDate string,
 	monthsInHalvingPeriod uint64,
 	distributionLicenseTypeID string,
-	licenseTallyThreshold string,
-	stakeTallyThreshold string,
 	epochIdentifier string,
 	reviewDelayDays uint64,
 	challengeBond string,
 	voteWindowDays uint64,
+	validatorAddresses []string,
+	distributionTypes []DistributionType,
 ) *MsgUpdateParams {
 	return &MsgUpdateParams{
 		Authority: sender.String(),
@@ -95,14 +95,40 @@ func NewMsgUpdateParams(
 			distroStartDate,
 			monthsInHalvingPeriod,
 			distributionLicenseTypeID,
-			licenseTallyThreshold,
-			stakeTallyThreshold,
 			epochIdentifier,
 			reviewDelayDays,
 			challengeBond,
 			voteWindowDays,
+			validatorAddresses,
+			distributionTypes,
 		),
 	}
+}
+
+// ValidateHeaderTotals statelessly validates a submission's header
+// totals_by_category map: non-empty, within MaxCategories, each category named
+// and a non-negative integer. The per-type/per-category percentage caps are
+// stateful (they depend on the day's budget) and are enforced in the handler.
+func ValidateHeaderTotals(totals map[string]string) error {
+	if len(totals) == 0 {
+		return fmt.Errorf("totals_by_category must not be empty")
+	}
+	if len(totals) > MaxCategories {
+		return fmt.Errorf("too many categories: %d exceeds max %d", len(totals), MaxCategories)
+	}
+	for category, raw := range totals {
+		if category == "" {
+			return fmt.Errorf("category name must not be empty")
+		}
+		amount, ok := math.NewIntFromString(raw)
+		if !ok {
+			return fmt.Errorf("category %q total is not a valid integer", category)
+		}
+		if amount.IsNegative() {
+			return fmt.Errorf("category %q total must not be negative", category)
+		}
+	}
+	return nil
 }
 
 // Route returns the name of the module
@@ -139,8 +165,17 @@ func (msg *MsgSubmitDistributionRoot) ValidateBasic() error {
 	if err := validateDateString(msg.Date); err != nil {
 		return err
 	}
+	if msg.DistroType == "" {
+		return fmt.Errorf("distro_type cannot be empty")
+	}
 	if len(msg.MerkleRoot) == 0 {
 		return fmt.Errorf("merkle root cannot be empty")
+	}
+	if err := ValidateHeaderTotals(msg.TotalsByCategory); err != nil {
+		return err
+	}
+	if len(msg.HeaderProof) > MaxProofDepth {
+		return fmt.Errorf("header proof too long: %d exceeds max depth %d", len(msg.HeaderProof), MaxProofDepth)
 	}
 	return nil
 }
@@ -159,6 +194,9 @@ func (msg *MsgClaim) ValidateBasic() error {
 	if err := validateDateString(msg.Date); err != nil {
 		return err
 	}
+	if msg.DistroType == "" {
+		return fmt.Errorf("distro_type cannot be empty")
+	}
 	if _, err := ValidateClaimAmounts(msg.Total, msg.Categories); err != nil {
 		return err
 	}
@@ -173,6 +211,9 @@ func (msg *MsgChallengeDistribution) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Challenger); err != nil {
 		return errors.Wrap(err, "invalid challenger address")
 	}
+	if msg.DistroType == "" {
+		return fmt.Errorf("distro_type cannot be empty")
+	}
 	return validateDateString(msg.Date)
 }
 
@@ -180,6 +221,9 @@ func (msg *MsgChallengeDistribution) ValidateBasic() error {
 func (msg *MsgReviveDistribution) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
 		return errors.Wrap(err, "invalid authority address")
+	}
+	if msg.DistroType == "" {
+		return fmt.Errorf("distro_type cannot be empty")
 	}
 	return validateDateString(msg.Date)
 }

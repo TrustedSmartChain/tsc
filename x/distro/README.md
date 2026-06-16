@@ -14,11 +14,44 @@ The halving/budget math is implemented once, as pure store-free functions in
 workers that compute daily distributions should import these functions rather
 than reimplementing the schedule, so their per-day cap matches consensus exactly.
 
-All distribution state is keyed by **date** (`YYYY-MM-DD`). The `x/epochs` daily
-hook is the time trigger; the module translates the fired epoch number into its
-calendar day (`distribution_start_date` is day 1) and keys everything by that
-date. Because `YYYY-MM-DD` sorts chronologically, ordered iteration over days is
-just ordered iteration over keys.
+All distribution state is keyed by **(date, distribution type)** — `date` is
+`YYYY-MM-DD` and the type is one of the `distribution_types` configured in params.
+Multiple distributions (one per type) run on the same day; each type claims a
+configured percentage of that day's halving budget. The `x/epochs` daily hook is
+the time trigger; the module translates the fired epoch number into its calendar
+day (`distribution_start_date` is day 1) and keys everything by `(date, type)`.
+Because `YYYY-MM-DD` sorts chronologically, ordered iteration is still ordered by
+day (then by type within a day).
+
+## Distribution types, budgets, and the header leaf
+
+Params define the allowable `distribution_types`. Each type has:
+
+- a `percentage` (fraction in `(0,1]`) of the day's halving budget it may claim —
+  type percentages across all types **sum to exactly 1**;
+- a set of `categories`, each with an optional `percentage`. Category percentages
+  are **all-or-nothing per type**: either no category sets one (each category is
+  uncapped within the type budget) or they all do and **sum to exactly 1**. A
+  category name that is not configured on the type is rejected — both in a
+  submission's header totals and in a claim's reward breakdown;
+- its own consensus thresholds (`license_tally_threshold`,
+  `stake_tally_threshold`, `validator_tally_threshold`) — a root must pass every
+  threshold the type configures (empty/`"0"` disables that mechanism; at least one
+  is required).
+
+So the per-`(date, type)` budget is `dateBudget(date) × type.percentage`, and (when
+the type sets category percentages) each category is capped at
+`typeBudget × category.percentage`. These splits are pure functions in
+`types/budget.go` (`types.TypeBudget`, `types.CategoryCap`) so off-chain workers
+reproduce them exactly.
+
+**Header leaf.** Every `MsgSubmitDistributionRoot` carries a *header leaf*
+(`distro_type`, `date`, `version`, `totals_by_category`) plus a proof that the
+header leaf is included in the submitted root. At submit the module verifies the
+inclusion and checks `totals_by_category` against the type/category budget caps
+(rejecting a root that claims to distribute more than allowed). The winning root's
+header (`version` + `totals_by_category`) is stored on the canonical
+`Distribution` when the day reaches consensus.
 
 ## Decentralized distribution lifecycle
 
@@ -48,12 +81,19 @@ full window rather than being measured from its stale calendar date.
 - **Submit** — each node runs the deterministic daily calculation and submits its
   merkle root via `MsgSubmitDistributionRoot`. The signer must hold a license of
   `params.distribution_license_type_id` that was **valid on the submitted day**.
-  Votes are stored by `(date, signer)` and retained.
-- **Tally** — at each epoch end the votes are tallied two ways: license-weighted
-  and stake-weighted (per-address stake; a validator operator counts only its
-  self-delegation). A root passing **both** thresholds (`license_tally_threshold`,
-  `stake_tally_threshold`, default `0.667`) becomes the canonical root and enters
-  `PENDING`.
+  Votes are stored by `(date, type, signer)` and retained.
+- **Tally** — at each epoch end the votes for a `(date, type)` are tallied up to
+  three ways, per the type's configured thresholds:
+  - **license-weighted** — fraction of licenses (valid on the day) that voted for
+    the root;
+  - **stake-weighted** — fraction of total bonded stake (per-address; a validator
+    operator counts only its self-delegation);
+  - **validator-count** — fraction of the params `validator_addresses` allowlist
+    (validator self-delegation addresses) that voted for the root, each address
+    one vote.
+  A root passing **every** threshold the type configures (each defaults to
+  `0.667` where set; an empty/`"0"` threshold disables that mechanism) becomes the
+  canonical root and enters `PENDING`.
 
   **License eligibility is judged as of the distribution day**, not the current
   block: a vote counts (and the license denominator includes a holder) only if the
@@ -106,8 +146,8 @@ Distribution `status` values: `VOTING` (0), `LIVE` (1), `PENDING` (2),
 | `distribution_start_date` | string `YYYY-MM-DD` | `2025-07-22` | Day 1 of the halving schedule. |
 | `months_in_halving_period` | uint64 | `48` | Length of each halving period. |
 | `distribution_license_type_id` | string | `tsc.node` | x/licenses `LicenseType` id a voter/challenger must hold (≥1 active). |
-| `license_tally_threshold` | string dec (0,1] | `0.667` | License-weighted fraction a root must reach. |
-| `stake_tally_threshold` | string dec (0,1] | `0.667` | Stake-weighted fraction (of total bonded) a root must reach. |
+| `validator_addresses` | repeated string | — | Validator self-delegation addresses for the count-based validator tally. |
+| `distribution_types` | repeated `DistributionType` | one `default` type (100%, two uncapped categories `type1`/`type2`, license+stake at `0.667`) | The allowable per-day distribution types: each has an `id`, a `percentage` of the day budget, `categories` (each with an optional `percentage`), and per-type `license_tally_threshold` / `stake_tally_threshold` / `validator_tally_threshold`. Type percentages sum to exactly 1; category percentages are all-or-nothing per type and, when set, sum to exactly 1. Claimed/header categories must be configured on the type. |
 | `epoch_identifier` | string | `day` | x/epochs identifier whose `AfterEpochEnd` drives the lifecycle. |
 | `review_delay_days` | uint64 | `3` | Days a root stays `PENDING` (challengeable) before auto-promoting to `LIVE`. Must be ≥ 1 (a zero delay would remove the challenge window). |
 | `challenge_bond` | string int | `10000000000000000000` | Bond escrowed to challenge a `PENDING` root; burned if frivolous, else refunded. |
@@ -119,19 +159,23 @@ Distribution `status` values: `VOTING` (0), `LIVE` (1), `PENDING` (2),
 Collections (all under the `distro` store key):
 
 - `Params` — `Item[Params]`.
-- `Votes` — `Map[(date string, signer string) → DistributionVote]`. The raw
-  per-signer submitted roots; **retained, never pruned** (audit trail).
-- `Distributions` — `Map[date string → Distribution]`. The canonical per-day
-  record: `merkle_root`, `status`, `license_tally`, `stake_tally`,
+- `Votes` — `Map[(date string, type string, signer string) → DistributionVote]`.
+  The raw per-signer submitted roots (each carrying its header); **retained, never
+  pruned** (audit trail).
+- `Distributions` — `Map[(date string, type string) → Distribution]`. The
+  canonical per-`(day, type)` record: `merkle_root`, `status`, `license_tally`,
+  `stake_tally`, `validator_tally`, `header` (winning root's version + totals),
   `finalized_height`, `pending_since_date`, `challenger`, `challenge_bond`,
   `claimed_amount`, `voting_since_date` (when voting last (re)opened; the voting
   window is measured from this).
-- `Claimed` — `KeySet[(date string, nonce uint64)]`. Spent reward nonces.
-- `ClaimTotals` — `Map[(date string, category string) → CategoryClaimTotal]`.
-  The cumulative amount claimed per reward category for a day, accumulated as
-  rewards are claimed.
-- `ActiveDistributions` — `KeySet[date string]`. The set of non-terminal
-  (`VOTING`/`PENDING`/`UNDER_REVIEW`) days. The epoch hook iterates this set
+- `Claimed` — `KeySet[(date string, type string, nonce uint64)]`. Spent reward
+  nonces.
+- `ClaimTotals` — `Map[(date string, type string, category string) → CategoryClaimTotal]`.
+  The cumulative amount claimed per reward category for a `(day, type)`,
+  accumulated as rewards are claimed.
+- `ActiveDistributions` — `KeySet[(date string, type string)]`. The set of
+  non-terminal (`VOTING`/`PENDING`/`UNDER_REVIEW`) `(day, type)`s. The epoch hook
+  iterates this set
   instead of scanning every distribution ever created, so per-epoch work is
   `O(open days)` rather than `O(all days)`. It is derived state (rebuilt from
   distribution statuses on genesis import and at the introducing upgrade), so it
@@ -146,21 +190,21 @@ challenger on `UNDER_REVIEW`, parseable bond/claimed amounts, and that
 
 | Msg | Signer | Notes |
 |---|---|---|
-| `MsgSubmitDistributionRoot` | `signer` | License-gated; `date` must be in `[current − vote_window_days, current]` and ≥ the start date. Opens/updates a `VOTING` day. |
-| `MsgChallengeDistribution` | `challenger` | License-gated; only on a `PENDING` day; escrows `challenge_bond`. |
-| `MsgClaim` | `claimer` | Permissionless (proof-gated); pays the leaf's `address` the `total`, broken down by `categories` (which must sum to `total`). Requires `LIVE`. |
-| `MsgReviveDistribution` | gov authority | Reopens an `EXPIRED` day for voting with a fresh window. Authority-gated (submitted via a gov proposal). |
+| `MsgSubmitDistributionRoot` | `signer` | License-gated; carries `distro_type` and a header leaf (`version`, `totals_by_category`) with an inclusion `header_proof`. `date` must be in `[current − vote_window_days, current]` and ≥ the start date. Verifies header inclusion + budget caps; opens/updates a `VOTING` `(day, type)`. |
+| `MsgChallengeDistribution` | `challenger` | License-gated; only on a `PENDING` `(day, type)`; escrows `challenge_bond`. |
+| `MsgClaim` | `claimer` | Permissionless (proof-gated); pays the leaf's `address` the `total`, broken down by `categories` (which must sum to `total`), against the `(date, distro_type)` distribution. Requires `LIVE`. |
+| `MsgReviveDistribution` | gov authority | Reopens an `EXPIRED` `(day, type)` for voting with a fresh window. Authority-gated (submitted via a gov proposal). |
 | `MsgUpdateParams` | gov authority | Updates `Params`. |
 
 ## Queries
 
 - `Params` — module parameters.
-- `Distribution(date)` — the canonical record for a day.
-- `DistributionVotes(date)` — submitted votes for a day (paginated).
-- `Claimed(date, nonce)` — whether a reward nonce has been claimed.
-- `ClaimsByDate(date)` — the reward nonces claimed for a day, ascending (paginated).
-- `ClaimTotalByCategory(date)` — the cumulative claimed amount per category for a
-  day.
+- `Distribution(date, distro_type)` — the canonical record for a `(day, type)`.
+- `DistributionVotes(date, distro_type)` — submitted votes for a `(day, type)` (paginated).
+- `Claimed(date, distro_type, nonce)` — whether a reward nonce has been claimed.
+- `ClaimsByDate(date, distro_type)` — the reward nonces claimed for a `(day, type)`, ascending (paginated).
+- `ClaimTotalByCategory(date, distro_type)` — the cumulative claimed amount per category for a
+  `(day, type)`.
 - `Distributions` — all distributions, date-ordered and paginated.
 - `ActiveDistributions` — the in-flight (`VOTING`/`PENDING`/`UNDER_REVIEW`) days,
   resolved from the active index (paginated).
@@ -173,8 +217,9 @@ The module registers two invariants (exercised by the simulation runner; no
 crisis module is wired, so there is no runtime halt-on-break). The same checks
 are exposed at runtime through `Query/Audit` so operators can verify a live node:
 
-- **claim-budget** — for every day, cumulative `claimed_amount ≤ dateBudget(date)`.
-  Guards against minting beyond the halving emission for any day.
+- **claim-budget** — for every `(day, type)`, cumulative `claimed_amount ≤
+  TypeBudget(dateBudget(date), type.percentage)`. Guards against minting beyond a
+  type's share of the day's halving emission.
 - **bond-solvency** — the module account's balance is `≥` the sum of all
   outstanding (`UNDER_REVIEW`) `challenge_bond`s, i.e. every escrowed bond is
   fully backed and refundable.
@@ -187,9 +232,14 @@ hashing, so a proof is just the ordered list of sibling hashes — no direction
 bits. The leaf commits to the full per-category breakdown; categories are
 emitted in ascending key order so the leaf is independent of map iteration order:
 
-- **Leaf**:
+- **Reward leaf**:
   `sha256(0x00 || uint64BE(nonce) || lp(addr) || lp(total) || uint32BE(numCategories) || for each (key,value) sorted by key: lp(key) || lp(value))`
   where `lp(x) = uint32BE(len(x)) || x`.
+- **Header leaf** (`types.HeaderLeafHash`):
+  `sha256(0x02 || lp(distroType) || lp(date) || uint64BE(version) || uint32BE(numCategories) || for each (key,value) sorted by key: lp(key) || lp(value))`.
+  The distinct `0x02` domain prefix keeps a header leaf from ever colliding with a
+  reward leaf. The tree includes exactly one header leaf; `MsgSubmitDistributionRoot`
+  proves its inclusion.
 - **Inner node**: `sha256(0x01 || min(a,b) || max(a,b))`
 - **Verify**: fold the proof siblings into the leaf with the inner-node rule and
   compare to the canonical root.
@@ -254,5 +304,5 @@ Notes:
   `MsgExec`.
 - **Revoke** — `tscd tx authz revoke <node_addr> /distro.v1.MsgSubmitDistributionRoot --from <owner_key>`;
   grants may also carry an expiration.
-- **No double counting** — votes are keyed by `(date, owner)`, so an owner that
+- **No double counting** — votes are keyed by `(date, type, owner)`, so an owner that
   both delegates and votes directly still contributes a single weight.

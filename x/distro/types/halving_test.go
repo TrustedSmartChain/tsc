@@ -120,10 +120,10 @@ func TestTypesHalvingFarFuture(t *testing.T) {
 
 	startDate, err := time.Parse("2006-01-02", start)
 	require.NoError(t, err)
-	p5Start := startDate.AddDate(0, 4*int(months), 0)               // 2041-07-22
-	p5End := startDate.AddDate(0, 5*int(months), -1)                // 2045-07-21
-	daysInP5 := int64(p5End.Sub(p5Start).Hours()/24) + 1            // 1461 (2044 is a leap year)
-	target := p5Start.AddDate(0, 0, 100).Format("2006-01-02")       // day 101 of period 5
+	p5Start := startDate.AddDate(0, 4*int(months), 0)         // 2041-07-22
+	p5End := startDate.AddDate(0, 5*int(months), -1)          // 2045-07-21
+	daysInP5 := int64(p5End.Sub(p5Start).Hours()/24) + 1      // 1461 (2044 is a leap year)
+	target := p5Start.AddDate(0, 0, 100).Format("2006-01-02") // day 101 of period 5
 
 	completed := math.ZeroInt()
 	for n := int64(1); n <= 4; n++ {

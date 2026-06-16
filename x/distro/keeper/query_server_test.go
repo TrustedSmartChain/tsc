@@ -17,22 +17,22 @@ func TestQueryEmptyAndNotFound(t *testing.T) {
 	f, _ := fourVoterConsensus(t)
 	q := keeper.NewQuerier(f.k)
 
-	_, err := q.Distribution(f.ctx, &types.QueryDistributionRequest{Date: dateOf(1)})
+	_, err := q.Distribution(f.ctx, &types.QueryDistributionRequest{Date: dateOf(1), DistroType: defaultType})
 	require.Equal(t, codes.NotFound, status.Code(err))
 
-	votes, err := q.DistributionVotes(f.ctx, &types.QueryDistributionVotesRequest{Date: dateOf(1)})
+	votes, err := q.DistributionVotes(f.ctx, &types.QueryDistributionVotesRequest{Date: dateOf(1), DistroType: defaultType})
 	require.NoError(t, err)
 	require.Empty(t, votes.Votes)
 
-	claimed, err := q.Claimed(f.ctx, &types.QueryClaimedRequest{Date: dateOf(1), Nonce: 0})
+	claimed, err := q.Claimed(f.ctx, &types.QueryClaimedRequest{Date: dateOf(1), DistroType: defaultType, Nonce: 0})
 	require.NoError(t, err)
 	require.False(t, claimed.Claimed)
 
-	claims, err := q.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(1)})
+	claims, err := q.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(1), DistroType: defaultType})
 	require.NoError(t, err)
 	require.Empty(t, claims.Nonces)
 
-	totals, err := q.ClaimTotalByCategory(f.ctx, &types.QueryClaimTotalByCategoryRequest{Date: dateOf(1)})
+	totals, err := q.ClaimTotalByCategory(f.ctx, &types.QueryClaimTotalByCategoryRequest{Date: dateOf(1), DistroType: defaultType})
 	require.NoError(t, err)
 	require.Empty(t, totals.Totals)
 }

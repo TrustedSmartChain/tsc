@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 
@@ -21,15 +22,15 @@ func TestClaimBudgetInvariant(t *testing.T) {
 	require.False(t, broken)
 
 	// A day that has claimed within its (large) day-1 budget: still holds.
-	require.NoError(t, f.k.Distributions.Set(f.ctx, dateOf(1), types.Distribution{
-		Date: dateOf(1), Status: types.DISTRIBUTION_STATUS_LIVE, MerkleRoot: []byte("r"), ClaimedAmount: "1000",
+	require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(dateOf(1), defaultType), types.Distribution{
+		Date: dateOf(1), DistroType: defaultType, Status: types.DISTRIBUTION_STATUS_LIVE, MerkleRoot: []byte("r"), ClaimedAmount: "1000",
 	}))
 	_, broken = inv(f.ctx)
 	require.False(t, broken)
 
 	// A day that has claimed beyond any single day's budget: broken.
-	require.NoError(t, f.k.Distributions.Set(f.ctx, dateOf(1), types.Distribution{
-		Date: dateOf(1), Status: types.DISTRIBUTION_STATUS_LIVE, MerkleRoot: []byte("r"), ClaimedAmount: types.DefaultMaxSupply,
+	require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(dateOf(1), defaultType), types.Distribution{
+		Date: dateOf(1), DistroType: defaultType, Status: types.DISTRIBUTION_STATUS_LIVE, MerkleRoot: []byte("r"), ClaimedAmount: types.DefaultMaxSupply,
 	}))
 	msg, broken := inv(f.ctx)
 	require.True(t, broken)
@@ -45,8 +46,8 @@ func TestBondSolvencyInvariant(t *testing.T) {
 	require.False(t, broken)
 
 	// An UNDER_REVIEW day with an escrowed bond fully backed by module balance.
-	require.NoError(t, f.k.Distributions.Set(f.ctx, dateOf(1), types.Distribution{
-		Date: dateOf(1), Status: types.DISTRIBUTION_STATUS_UNDER_REVIEW,
+	require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(dateOf(1), defaultType), types.Distribution{
+		Date: dateOf(1), DistroType: defaultType, Status: types.DISTRIBUTION_STATUS_UNDER_REVIEW,
 		MerkleRoot: []byte("r"), Challenger: "tsc1challenger", ChallengeBond: "100",
 	}))
 	f.bank.balances[types.ModuleName] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
@@ -77,8 +78,8 @@ func TestAuditQuery(t *testing.T) {
 
 	// Introduce an over-budget day; the audit must report broken with the
 	// offending invariant flagged.
-	require.NoError(t, f.k.Distributions.Set(f.ctx, dateOf(1), types.Distribution{
-		Date: dateOf(1), Status: types.DISTRIBUTION_STATUS_LIVE, MerkleRoot: []byte("r"), ClaimedAmount: types.DefaultMaxSupply,
+	require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(dateOf(1), defaultType), types.Distribution{
+		Date: dateOf(1), DistroType: defaultType, Status: types.DISTRIBUTION_STATUS_LIVE, MerkleRoot: []byte("r"), ClaimedAmount: types.DefaultMaxSupply,
 	}))
 	resp, err = q.Audit(f.ctx, &types.QueryAuditRequest{})
 	require.NoError(t, err)

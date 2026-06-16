@@ -33,21 +33,21 @@ func (k Querier) Params(c context.Context, req *types.QueryParamsRequest) (*type
 	return &types.QueryParamsResponse{Params: &p}, nil
 }
 
-// Distribution returns the canonical distribution for a day (YYYY-MM-DD).
+// Distribution returns the canonical distribution for a (day, type).
 func (k Querier) Distribution(goCtx context.Context, req *types.QueryDistributionRequest) (*types.QueryDistributionResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	d, err := k.Keeper.Distributions.Get(ctx, req.Date)
+	d, err := k.Keeper.Distributions.Get(ctx, collections.Join(req.Date, req.DistroType))
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "no distribution for date %q", req.Date)
+		return nil, status.Errorf(codes.NotFound, "no distribution for date %q type %q", req.Date, req.DistroType)
 	}
 	return &types.QueryDistributionResponse{Distribution: &d}, nil
 }
 
-// DistributionVotes returns all submitted votes for a day (YYYY-MM-DD).
+// DistributionVotes returns all submitted votes for a (day, type).
 func (k Querier) DistributionVotes(goCtx context.Context, req *types.QueryDistributionVotesRequest) (*types.QueryDistributionVotesResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
@@ -56,10 +56,13 @@ func (k Querier) DistributionVotes(goCtx context.Context, req *types.QueryDistri
 
 	votes, pageResp, err := query.CollectionPaginate(
 		ctx, k.Keeper.Votes, req.Pagination,
-		func(_ collections.Pair[string, string], v types.DistributionVote) (types.DistributionVote, error) {
+		func(_ collections.Triple[string, string, string], v types.DistributionVote) (types.DistributionVote, error) {
 			return v, nil
 		},
-		query.WithCollectionPaginationPairPrefix[string, string](req.Date),
+		func(o *query.CollectionsPaginateOptions[collections.Triple[string, string, string]]) {
+			prefix := collections.TripleSuperPrefix[string, string, string](req.Date, req.DistroType)
+			o.Prefix = &prefix
+		},
 	)
 	if err != nil {
 		return nil, err
@@ -67,22 +70,22 @@ func (k Querier) DistributionVotes(goCtx context.Context, req *types.QueryDistri
 	return &types.QueryDistributionVotesResponse{Votes: votes, Pagination: pageResp}, nil
 }
 
-// Claimed reports whether a (date, nonce) reward has been claimed.
+// Claimed reports whether a (date, type, nonce) reward has been claimed.
 func (k Querier) Claimed(goCtx context.Context, req *types.QueryClaimedRequest) (*types.QueryClaimedResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	claimed, err := k.Keeper.Claimed.Has(ctx, collections.Join(req.Date, req.Nonce))
+	claimed, err := k.Keeper.Claimed.Has(ctx, collections.Join3(req.Date, req.DistroType, req.Nonce))
 	if err != nil {
 		return nil, err
 	}
 	return &types.QueryClaimedResponse{Claimed: claimed}, nil
 }
 
-// ClaimsByDate lists the reward nonces claimed for a day (YYYY-MM-DD), in
-// ascending order.
+// ClaimsByDate lists the reward nonces claimed for a (day, type), in ascending
+// order.
 func (k Querier) ClaimsByDate(goCtx context.Context, req *types.QueryClaimsByDateRequest) (*types.QueryClaimsByDateResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
@@ -94,10 +97,13 @@ func (k Querier) ClaimsByDate(goCtx context.Context, req *types.QueryClaimsByDat
 
 	nonces, pageResp, err := query.CollectionPaginate(
 		ctx, k.Keeper.Claimed, req.Pagination,
-		func(key collections.Pair[string, uint64], _ collections.NoValue) (uint64, error) {
-			return key.K2(), nil
+		func(key collections.Triple[string, string, uint64], _ collections.NoValue) (uint64, error) {
+			return key.K3(), nil
 		},
-		query.WithCollectionPaginationPairPrefix[string, uint64](req.Date),
+		func(o *query.CollectionsPaginateOptions[collections.Triple[string, string, uint64]]) {
+			prefix := collections.TripleSuperPrefix[string, string, uint64](req.Date, req.DistroType)
+			o.Prefix = &prefix
+		},
 	)
 	if err != nil {
 		return nil, err
@@ -106,7 +112,7 @@ func (k Querier) ClaimsByDate(goCtx context.Context, req *types.QueryClaimsByDat
 }
 
 // ClaimTotalByCategory returns the cumulative claimed amount per category for a
-// day's distribution (YYYY-MM-DD).
+// (day, type)'s distribution.
 func (k Querier) ClaimTotalByCategory(goCtx context.Context, req *types.QueryClaimTotalByCategoryRequest) (*types.QueryClaimTotalByCategoryResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
@@ -117,8 +123,8 @@ func (k Querier) ClaimTotalByCategory(goCtx context.Context, req *types.QueryCla
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	totals := map[string]string{}
-	rng := collections.NewPrefixedPairRange[string, string](req.Date)
-	if err := k.Keeper.ClaimTotals.Walk(ctx, rng, func(_ collections.Pair[string, string], ct types.CategoryClaimTotal) (bool, error) {
+	rng := collections.NewSuperPrefixedTripleRange[string, string, string](req.Date, req.DistroType)
+	if err := k.Keeper.ClaimTotals.Walk(ctx, rng, func(_ collections.Triple[string, string, string], ct types.CategoryClaimTotal) (bool, error) {
 		totals[ct.Category] = ct.Total
 		return false, nil
 	}); err != nil {
@@ -159,7 +165,7 @@ func (k Querier) Distributions(goCtx context.Context, req *types.QueryDistributi
 
 	distributions, pageResp, err := query.CollectionPaginate(
 		ctx, k.Keeper.Distributions, req.Pagination,
-		func(_ string, d types.Distribution) (types.Distribution, error) {
+		func(_ collections.Pair[string, string], d types.Distribution) (types.Distribution, error) {
 			return d, nil
 		},
 	)
@@ -181,15 +187,15 @@ func (k Querier) ActiveDistributions(goCtx context.Context, req *types.QueryActi
 	distributions, pageResp, err := query.CollectionFilteredPaginate(
 		ctx, k.Keeper.ActiveDistributions, req.Pagination,
 		// Filter out any stale index entry with no backing distribution.
-		func(date string, _ collections.NoValue) (bool, error) {
-			has, err := k.Keeper.Distributions.Has(ctx, date)
+		func(key collections.Pair[string, string], _ collections.NoValue) (bool, error) {
+			has, err := k.Keeper.Distributions.Has(ctx, key)
 			if err != nil {
 				return false, err
 			}
 			return has, nil
 		},
-		func(date string, _ collections.NoValue) (types.Distribution, error) {
-			return k.Keeper.Distributions.Get(ctx, date)
+		func(key collections.Pair[string, string], _ collections.NoValue) (types.Distribution, error) {
+			return k.Keeper.Distributions.Get(ctx, key)
 		},
 	)
 	if err != nil {

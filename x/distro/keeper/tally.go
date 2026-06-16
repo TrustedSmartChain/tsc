@@ -76,10 +76,31 @@ type tallyCache struct {
 
 	stakes      map[string]math.Int
 	totalBonded *math.Int
+
+	// validatorSet is the params validator-address allowlist for the count-based
+	// validator consensus mechanism; validatorTotal is its size (the denominator).
+	validatorSet   map[string]struct{}
+	validatorTotal uint64
 }
 
-func newTallyCache(k Keeper, typeID string) *tallyCache {
-	return &tallyCache{k: k, typeID: typeID, stakes: map[string]math.Int{}}
+func newTallyCache(k Keeper, typeID string, validatorAddresses []string) *tallyCache {
+	set := make(map[string]struct{}, len(validatorAddresses))
+	for _, a := range validatorAddresses {
+		set[a] = struct{}{}
+	}
+	return &tallyCache{
+		k:              k,
+		typeID:         typeID,
+		stakes:         map[string]math.Int{},
+		validatorSet:   set,
+		validatorTotal: uint64(len(set)),
+	}
+}
+
+// isValidator reports whether addr is in the configured validator allowlist.
+func (c *tallyCache) isValidator(addr string) bool {
+	_, ok := c.validatorSet[addr]
+	return ok
 }
 
 func (c *tallyCache) loadLicenses(ctx context.Context) error {
@@ -197,32 +218,39 @@ func (k Keeper) voterStake(ctx context.Context, addr sdk.AccAddress) (math.Int, 
 	return total, nil
 }
 
-// tallyResult is a winning root and the fractions it achieved.
+// tallyResult is a winning root, the fractions it achieved for each configured
+// mechanism, and the header leaf committed in that root.
 type tallyResult struct {
-	root         []byte
-	licenseTally math.LegacyDec
-	stakeTally   math.LegacyDec
+	root           []byte
+	licenseTally   math.LegacyDec
+	stakeTally     math.LegacyDec
+	validatorTally math.LegacyDec
+	header         *types.DistributionHeader
 }
 
-// tallyDistribution groups all votes for a day by submitted root, computes the
-// license-weighted and stake-weighted fractions for each, and returns the
-// winning root if any passes BOTH configured thresholds. Returns (nil, nil) if
-// no root reaches consensus. Iteration is deterministic (sorted by root bytes).
+// tallyDistribution groups all votes for a (day, type) by submitted root,
+// computes the license-weighted, stake-weighted, and validator-count fractions
+// for each, and returns the winning root if any passes every mechanism that the
+// type configures (a threshold left empty/"0" is not required). Returns
+// (nil, nil) if no root reaches consensus. Iteration is deterministic (sorted by
+// root bytes).
 //
 // Eligibility is judged as of `date`: only votes from signers whose license was
 // valid on that day are counted, and the license denominator is the licenses
 // valid on that day. The cache memoizes the underlying keeper reads across the
 // whole epoch-end pass; the day-specific filter is applied on top.
-func (k Keeper) tallyDistribution(ctx context.Context, date string, params types.Params, cache *tallyCache) (*tallyResult, error) {
+func (k Keeper) tallyDistribution(ctx context.Context, date, distroType string, dt types.DistributionType, cache *tallyCache) (*tallyResult, error) {
 	type group struct {
-		licenseWeight uint64
-		stakeWeight   math.Int
+		licenseWeight   uint64
+		stakeWeight     math.Int
+		validatorWeight uint64
+		header          *types.DistributionHeader
 	}
 	groups := map[string]*group{}
 
-	rng := collections.NewPrefixedPairRange[string, string](date)
-	err := k.Votes.Walk(ctx, rng, func(key collections.Pair[string, string], vote types.DistributionVote) (bool, error) {
-		signer := key.K2()
+	rng := collections.NewSuperPrefixedTripleRange[string, string, string](date, distroType)
+	err := k.Votes.Walk(ctx, rng, func(key collections.Triple[string, string, string], vote types.DistributionVote) (bool, error) {
+		signer := key.K3()
 
 		// A vote only counts while its signer held a license valid on this day.
 		lc, err := cache.licensesValidOn(ctx, signer, date)
@@ -250,6 +278,14 @@ func (k Keeper) tallyDistribution(ctx context.Context, date string, params types
 		}
 		g.licenseWeight += lc
 		g.stakeWeight = g.stakeWeight.Add(stake)
+		if cache.isValidator(signer) {
+			g.validatorWeight++
+		}
+		// The header is committed in the root, so every vote for a given root
+		// carries the same header; capture the first one seen.
+		if g.header == nil {
+			g.header = vote.Header
+		}
 		return false, nil
 	})
 	if err != nil {
@@ -267,11 +303,18 @@ func (k Keeper) tallyDistribution(ctx context.Context, date string, params types
 	if err != nil {
 		return nil, err
 	}
-	licenseThreshold, err := math.LegacyNewDecFromStr(params.LicenseTallyThreshold)
+
+	// A mechanism is required only when its threshold is configured (non-empty,
+	// non-zero) for this type. Params.Validate guarantees at least one is set.
+	licenseThreshold, licenseReq, err := optionalThreshold(dt.LicenseTallyThreshold)
 	if err != nil {
 		return nil, err
 	}
-	stakeThreshold, err := math.LegacyNewDecFromStr(params.StakeTallyThreshold)
+	stakeThreshold, stakeReq, err := optionalThreshold(dt.StakeTallyThreshold)
+	if err != nil {
+		return nil, err
+	}
+	validatorThreshold, validatorReq, err := optionalThreshold(dt.ValidatorTallyThreshold)
 	if err != nil {
 		return nil, err
 	}
@@ -288,15 +331,40 @@ func (k Keeper) tallyDistribution(ctx context.Context, date string, params types
 		g := groups[rk]
 		licenseFrac := uintFraction(g.licenseWeight, totalLicenses)
 		stakeFrac := intFraction(g.stakeWeight, totalBonded)
-		if licenseFrac.GTE(licenseThreshold) && stakeFrac.GTE(stakeThreshold) {
-			return &tallyResult{
-				root:         []byte(rk),
-				licenseTally: licenseFrac,
-				stakeTally:   stakeFrac,
-			}, nil
+		validatorFrac := uintFraction(g.validatorWeight, cache.validatorTotal)
+
+		if licenseReq && !licenseFrac.GTE(licenseThreshold) {
+			continue
 		}
+		if stakeReq && !stakeFrac.GTE(stakeThreshold) {
+			continue
+		}
+		if validatorReq && !validatorFrac.GTE(validatorThreshold) {
+			continue
+		}
+		return &tallyResult{
+			root:           []byte(rk),
+			licenseTally:   licenseFrac,
+			stakeTally:     stakeFrac,
+			validatorTally: validatorFrac,
+			header:         g.header,
+		}, nil
 	}
 	return nil, nil
+}
+
+// optionalThreshold parses a per-type tally threshold. An empty or "0" string
+// means the mechanism is not required (required=false); otherwise the parsed
+// decimal is returned with required=true.
+func optionalThreshold(v string) (math.LegacyDec, bool, error) {
+	if v == "" || v == "0" {
+		return math.LegacyZeroDec(), false, nil
+	}
+	dec, err := math.LegacyNewDecFromStr(v)
+	if err != nil {
+		return math.LegacyZeroDec(), false, err
+	}
+	return dec, true, nil
 }
 
 func uintFraction(num, den uint64) math.LegacyDec {

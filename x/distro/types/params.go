@@ -21,6 +21,10 @@ const DefaultLicenseTallyThreshold string = "0.667"
 const DefaultStakeTallyThreshold string = "0.667"
 const DefaultEpochIdentifier string = "day"
 
+// DefaultDistributionTypeID is the id of the single distribution type configured
+// by default (claiming 100% of the day's budget).
+const DefaultDistributionTypeID string = "default"
+
 // DefaultReviewDelayDays keeps a distribution PENDING (challengeable) for three
 // days after consensus before it auto-promotes to LIVE.
 const DefaultReviewDelayDays uint64 = 3
@@ -42,12 +46,12 @@ func NewParams(
 	distribution_start_date string,
 	months_in_halving_period uint64,
 	distribution_license_type_id string,
-	license_tally_threshold string,
-	stake_tally_threshold string,
 	epoch_identifier string,
 	review_delay_days uint64,
 	challenge_bond string,
-	vote_window_days uint64) Params {
+	vote_window_days uint64,
+	validator_addresses []string,
+	distribution_types []DistributionType) Params {
 	return Params{
 		MintingAddress:            minting_address,
 		ReceivingAddress:          receiving_address,
@@ -56,12 +60,32 @@ func NewParams(
 		DistributionStartDate:     distribution_start_date,
 		MonthsInHalvingPeriod:     months_in_halving_period,
 		DistributionLicenseTypeId: distribution_license_type_id,
-		LicenseTallyThreshold:     license_tally_threshold,
-		StakeTallyThreshold:       stake_tally_threshold,
 		EpochIdentifier:           epoch_identifier,
 		ReviewDelayDays:           review_delay_days,
 		ChallengeBond:             challenge_bond,
 		VoteWindowDays:            vote_window_days,
+		ValidatorAddresses:        validator_addresses,
+		DistributionTypes:         distribution_types,
+	}
+}
+
+// DefaultDistributionTypes returns the single default distribution type, which
+// claims 100% of the day's budget under two uncapped categories ("type1",
+// "type2") and requires both the license and stake tallies (matching the pre-v2
+// single-distribution behaviour). Operators override this set via gov.
+func DefaultDistributionTypes() []DistributionType {
+	return []DistributionType{
+		{
+			Id:         DefaultDistributionTypeID,
+			Percentage: "1",
+			Categories: []DistributionCategory{
+				{Name: "type1", Percentage: ""},
+				{Name: "type2", Percentage: ""},
+			},
+			LicenseTallyThreshold:   DefaultLicenseTallyThreshold,
+			StakeTallyThreshold:     DefaultStakeTallyThreshold,
+			ValidatorTallyThreshold: "",
+		},
 	}
 }
 
@@ -74,12 +98,12 @@ func DefaultParams() Params {
 		DefaultDistributionStartDate,
 		DefaultMonthsInHalvingPeriod,
 		DefaultDistributionLicenseTypeID,
-		DefaultLicenseTallyThreshold,
-		DefaultStakeTallyThreshold,
 		DefaultEpochIdentifier,
 		DefaultReviewDelayDays,
 		DefaultChallengeBond,
 		DefaultVoteWindowDays,
+		nil,
+		DefaultDistributionTypes(),
 	)
 }
 
@@ -106,16 +130,16 @@ func (p Params) Validate() error {
 	if err := validateLicenseTypeID(p.DistributionLicenseTypeId); err != nil {
 		return err
 	}
-	if err := validateThreshold("license_tally_threshold", p.LicenseTallyThreshold); err != nil {
-		return err
-	}
-	if err := validateThreshold("stake_tally_threshold", p.StakeTallyThreshold); err != nil {
-		return err
-	}
 	if err := validateEpochIdentifier(p.EpochIdentifier); err != nil {
 		return err
 	}
 	if err := validateChallengeBond(p.ChallengeBond); err != nil {
+		return err
+	}
+	if err := validateValidatorAddresses(p.ValidatorAddresses); err != nil {
+		return err
+	}
+	if err := validateDistributionTypes(p.DistributionTypes); err != nil {
 		return err
 	}
 	if p.VoteWindowDays == 0 {
@@ -239,4 +263,151 @@ func validateMonthsInHalvingPeriod(v uint64) error {
 		return fmt.Errorf("months in halving period must be greater than zero")
 	}
 	return nil
+}
+
+// validateValidatorAddresses checks each address parses as a bech32 account
+// address and that there are no duplicates. An empty list is allowed.
+func validateValidatorAddresses(addrs []string) error {
+	seen := make(map[string]struct{}, len(addrs))
+	for _, a := range addrs {
+		if _, err := sdk.AccAddressFromBech32(a); err != nil {
+			return fmt.Errorf("invalid validator address %q: %w", a, err)
+		}
+		if _, dup := seen[a]; dup {
+			return fmt.Errorf("duplicate validator address %q", a)
+		}
+		seen[a] = struct{}{}
+	}
+	return nil
+}
+
+// validateDistributionTypes enforces the per-type rules: at least one type;
+// unique non-empty ids; each type percentage in (0,1] with all type percentages
+// summing to exactly 1; at least one consensus threshold set per type (each in
+// (0,1] when set); non-empty unique category names; and per type either all
+// category percentages zero/unset (uncapped) or set and summing to exactly 1.
+func validateDistributionTypes(types []DistributionType) error {
+	if len(types) == 0 {
+		return fmt.Errorf("at least one distribution type must be configured")
+	}
+	seen := make(map[string]struct{}, len(types))
+	typeSum := math.LegacyZeroDec()
+	for _, dt := range types {
+		if dt.Id == "" {
+			return fmt.Errorf("distribution type id cannot be empty")
+		}
+		if _, dup := seen[dt.Id]; dup {
+			return fmt.Errorf("duplicate distribution type %q", dt.Id)
+		}
+		seen[dt.Id] = struct{}{}
+
+		pct, err := parsePercentage(fmt.Sprintf("distribution type %q percentage", dt.Id), dt.Percentage)
+		if err != nil {
+			return err
+		}
+		if !pct.IsPositive() {
+			return fmt.Errorf("distribution type %q percentage must be greater than zero", dt.Id)
+		}
+		typeSum = typeSum.Add(pct)
+
+		hasMechanism := false
+		for _, m := range []struct{ name, v string }{
+			{"license_tally_threshold", dt.LicenseTallyThreshold},
+			{"stake_tally_threshold", dt.StakeTallyThreshold},
+			{"validator_tally_threshold", dt.ValidatorTallyThreshold},
+		} {
+			if m.v == "" || m.v == "0" {
+				continue
+			}
+			if err := validateThreshold(fmt.Sprintf("distribution type %q %s", dt.Id, m.name), m.v); err != nil {
+				return err
+			}
+			hasMechanism = true
+		}
+		if !hasMechanism {
+			return fmt.Errorf("distribution type %q must configure at least one consensus threshold", dt.Id)
+		}
+
+		if len(dt.Categories) == 0 {
+			return fmt.Errorf("distribution type %q must have at least one category", dt.Id)
+		}
+		catSeen := make(map[string]struct{}, len(dt.Categories))
+		catSum := math.LegacyZeroDec()
+		anyCatPct := false
+		for _, c := range dt.Categories {
+			if c.Name == "" {
+				return fmt.Errorf("distribution type %q has an empty category name", dt.Id)
+			}
+			if _, dup := catSeen[c.Name]; dup {
+				return fmt.Errorf("distribution type %q has duplicate category %q", dt.Id, c.Name)
+			}
+			catSeen[c.Name] = struct{}{}
+			cp, err := parsePercentage(fmt.Sprintf("distribution type %q category %q percentage", dt.Id, c.Name), c.Percentage)
+			if err != nil {
+				return err
+			}
+			if cp.IsPositive() {
+				anyCatPct = true
+			}
+			catSum = catSum.Add(cp)
+		}
+		if anyCatPct && !catSum.Equal(math.LegacyOneDec()) {
+			return fmt.Errorf("distribution type %q category percentages must sum to exactly 1 (got %s)", dt.Id, catSum)
+		}
+	}
+	if !typeSum.Equal(math.LegacyOneDec()) {
+		return fmt.Errorf("distribution type percentages must sum to exactly 1 (got %s)", typeSum)
+	}
+	return nil
+}
+
+// parsePercentage parses a fraction in [0,1]; an empty string is treated as zero.
+func parsePercentage(name, v string) (math.LegacyDec, error) {
+	if v == "" {
+		return math.LegacyZeroDec(), nil
+	}
+	dec, err := math.LegacyNewDecFromStr(v)
+	if err != nil {
+		return math.LegacyZeroDec(), fmt.Errorf("%s must be a valid decimal: %w", name, err)
+	}
+	if dec.IsNegative() {
+		return math.LegacyZeroDec(), fmt.Errorf("%s must not be negative", name)
+	}
+	if dec.GT(math.LegacyOneDec()) {
+		return math.LegacyZeroDec(), fmt.Errorf("%s must not exceed 1", name)
+	}
+	return dec, nil
+}
+
+// FindDistributionType returns the configured distribution type with the given
+// id, if any.
+func (p Params) FindDistributionType(id string) (DistributionType, bool) {
+	for _, dt := range p.DistributionTypes {
+		if dt.Id == id {
+			return dt, true
+		}
+	}
+	return DistributionType{}, false
+}
+
+// FindCategory returns the category with the given name within the type, if any.
+func (dt DistributionType) FindCategory(name string) (DistributionCategory, bool) {
+	for _, c := range dt.Categories {
+		if c.Name == name {
+			return c, true
+		}
+	}
+	return DistributionCategory{}, false
+}
+
+// HasCategoryPercentages reports whether any category in the type carries a
+// positive percentage. When false, categories are uncapped within the type
+// budget; when true, the type's category percentages sum to exactly 1.
+func (dt DistributionType) HasCategoryPercentages() bool {
+	for _, c := range dt.Categories {
+		if d, err := math.LegacyNewDecFromStr(c.Percentage); err == nil && d.IsPositive() {
+			return true
+		}
+	}
+	return false
 }

@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,6 +30,10 @@ func (ms msgServer) ChallengeDistribution(goCtx context.Context, msg *types.MsgC
 		return nil, err
 	}
 
+	if _, ok := params.FindDistributionType(msg.DistroType); !ok {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "unknown distribution type %q", msg.DistroType)
+	}
+
 	// Resolve the current day so the re-vote window can be bounded from here: a
 	// challenge reopens voting, and if the re-vote never reaches consensus the day
 	// must not stay UNDER_REVIEW (bond + distribution locked) forever.
@@ -53,12 +58,13 @@ func (ms msgServer) ChallengeDistribution(goCtx context.Context, msg *types.MsgC
 
 	// Only a PENDING distribution (consensus reached, in the review window) can
 	// be challenged.
-	ed, err := ms.k.Distributions.Get(ctx, msg.Date)
+	distKey := collections.Join(msg.Date, msg.DistroType)
+	ed, err := ms.k.Distributions.Get(ctx, distKey)
 	if err != nil {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for date %q", msg.Date)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for date %q type %q", msg.Date, msg.DistroType)
 	}
 	if ed.Status != types.DISTRIBUTION_STATUS_PENDING {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q is not pending (status %s)", msg.Date, ed.Status)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "date %q type %q is not pending (status %s)", msg.Date, msg.DistroType, ed.Status)
 	}
 
 	// Escrow the challenge bond (if configured) from the challenger.
@@ -80,13 +86,14 @@ func (ms msgServer) ChallengeDistribution(goCtx context.Context, msg *types.MsgC
 	// advanceOne's UNDER_REVIEW handling). The original PENDING root is left in
 	// ed.MerkleRoot so it can be restored if the challenge does not overturn it.
 	ed.VotingSinceDate = currentDate
-	if err := ms.k.Distributions.Set(ctx, msg.Date, ed); err != nil {
+	if err := ms.k.Distributions.Set(ctx, distKey, ed); err != nil {
 		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeDistributionUnderReview,
 		sdk.NewAttribute(types.AttributeKeyDate, msg.Date),
+		sdk.NewAttribute(types.AttributeKeyDistroType, msg.DistroType),
 		sdk.NewAttribute(types.AttributeKeyChallenger, msg.Challenger),
 		sdk.NewAttribute(types.AttributeKeyBond, bond.String()),
 	))

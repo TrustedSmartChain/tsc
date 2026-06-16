@@ -71,6 +71,16 @@ message MsgSubmitDistributionRoot {
   // date is the distribution day in YYYY-MM-DD form.
   string date = 2;
   bytes merkle_root = 3;
+  // distro_type is the distribution type id this submission is for.
+  string distro_type = 4;
+  // version is the header leaf's version.
+  uint64 version = 5;
+  // totals_by_category is the header leaf's authoritative per-category totals.
+  // Validated against the params percentages for the type.
+  map<string, string> totals_by_category = 6;
+  // header_proof proves the header leaf (distro_type, date, version,
+  // totals_by_category) is included in merkle_root.
+  repeated bytes header_proof = 7;
 }
 
 message MsgSubmitDistributionRootResponse {}
@@ -85,6 +95,8 @@ message MsgClaim {
   // date is the distribution day in YYYY-MM-DD form.
   string date = 2;
   uint64 nonce = 3;
+  // distro_type is the distribution type id being claimed against.
+  string distro_type = 8;
   string address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // total is the full reward amount for this leaf. It must equal the sum of the
   // category amounts.
@@ -106,6 +118,8 @@ message MsgChallengeDistribution {
   string challenger = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // date is the distribution day in YYYY-MM-DD form.
   string date = 2;
+  // distro_type is the distribution type id being challenged.
+  string distro_type = 3;
 }
 
 message MsgChallengeDistributionResponse {}
@@ -121,6 +135,8 @@ message MsgReviveDistribution {
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // date is the distribution day in YYYY-MM-DD form.
   string date = 2;
+  // distro_type is the distribution type id being revived.
+  string distro_type = 3;
 }
 
 message MsgReviveDistributionResponse {}

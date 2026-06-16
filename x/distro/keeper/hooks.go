@@ -62,10 +62,10 @@ func (k Keeper) advanceDistributions(ctx context.Context, upTo string, params ty
 	// state, so this is O(open days) per epoch rather than O(all days). Keys are
 	// walked in ascending date order (YYYY-MM-DD sorts chronologically); snapshot
 	// first so we don't mutate the set while iterating it.
-	var dates []string
-	if err := k.ActiveDistributions.Walk(ctx, nil, func(date string) (bool, error) {
-		if date <= upTo {
-			dates = append(dates, date)
+	var keys []collections.Pair[string, string]
+	if err := k.ActiveDistributions.Walk(ctx, nil, func(key collections.Pair[string, string]) (bool, error) {
+		if key.K1() <= upTo {
+			keys = append(keys, key)
 		}
 		return false, nil
 	}); err != nil {
@@ -75,18 +75,18 @@ func (k Keeper) advanceDistributions(ctx context.Context, upTo string, params ty
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	reviewDelay := int64(params.ReviewDelayDays)
 
-	// One cache for the whole pass: the license/stake reads it memoizes are
-	// invariant across every day tallied in this (single-block) epoch end.
-	cache := newTallyCache(k, params.DistributionLicenseTypeId)
+	// One cache for the whole pass: the license/stake/validator reads it memoizes
+	// are invariant across every day tallied in this (single-block) epoch end.
+	cache := newTallyCache(k, params.DistributionLicenseTypeId, params.ValidatorAddresses)
 
-	for _, date := range dates {
-		d, err := k.Distributions.Get(ctx, date)
+	for _, key := range keys {
+		d, err := k.Distributions.Get(ctx, key)
 		if err != nil {
 			// The active index points to a missing distribution — an invariant
 			// violation. Self-heal by dropping the stale entry and move on.
 			if errors.Is(err, collections.ErrNotFound) {
-				sdkCtx.Logger().Error("distro: active index references missing distribution; removing", "date", date)
-				if rmErr := k.ActiveDistributions.Remove(ctx, date); rmErr != nil {
+				sdkCtx.Logger().Error("distro: active index references missing distribution; removing", "date", key.K1(), "type", key.K2())
+				if rmErr := k.ActiveDistributions.Remove(ctx, key); rmErr != nil {
 					return rmErr
 				}
 				continue
@@ -114,9 +114,18 @@ func (k Keeper) advanceDistributions(ctx context.Context, upTo string, params ty
 // It is run inside a per-day cache context by advanceDistributions. upTo is the
 // day (YYYY-MM-DD) that just ended; reviewDelay is in days.
 func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, reviewDelay int64, params types.Params, cache *tallyCache) error {
+	key := collections.Join(d.Date, d.DistroType)
 	switch d.Status {
 	case types.DISTRIBUTION_STATUS_VOTING:
-		result, err := k.tallyDistribution(ctx, d.Date, params, cache)
+		dt, ok := params.FindDistributionType(d.DistroType)
+		if !ok {
+			// The type was removed from params while this day was open; it can no
+			// longer be tallied. Leave it for an operator to revive/clean up.
+			k.Logger().Error("distro: active distribution references unknown type; skipping",
+				"date", d.Date, "type", d.DistroType)
+			return nil
+		}
+		result, err := k.tallyDistribution(ctx, d.Date, d.DistroType, dt, cache)
 		if err != nil {
 			return err
 		}
@@ -136,11 +145,11 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 			}
 			if age >= int64(params.VoteWindowDays) {
 				d.Status = types.DISTRIBUTION_STATUS_EXPIRED
-				if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
+				if err := k.Distributions.Set(ctx, key, d); err != nil {
 					return err
 				}
 				// Terminal state: drop it from the active index.
-				if err := k.ActiveDistributions.Remove(ctx, d.Date); err != nil {
+				if err := k.ActiveDistributions.Remove(ctx, key); err != nil {
 					return err
 				}
 				ctx.EventManager().EmitEvent(sdk.NewEvent(
@@ -153,15 +162,23 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 		d.MerkleRoot = result.root
 		d.LicenseTally = result.licenseTally.String()
 		d.StakeTally = result.stakeTally.String()
+		d.ValidatorTally = result.validatorTally.String()
+		d.Header = result.header
 		d.Status = types.DISTRIBUTION_STATUS_PENDING
 		d.PendingSinceDate = upTo
-		if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
+		if err := k.Distributions.Set(ctx, key, d); err != nil {
 			return err
 		}
 		emitPending(ctx, d)
 
 	case types.DISTRIBUTION_STATUS_UNDER_REVIEW:
-		result, err := k.tallyDistribution(ctx, d.Date, params, cache)
+		dt, ok := params.FindDistributionType(d.DistroType)
+		if !ok {
+			k.Logger().Error("distro: active distribution references unknown type; skipping",
+				"date", d.Date, "type", d.DistroType)
+			return nil
+		}
+		result, err := k.tallyDistribution(ctx, d.Date, d.DistroType, dt, cache)
 		if err != nil {
 			return err
 		}
@@ -191,7 +208,7 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 			d.Status = types.DISTRIBUTION_STATUS_PENDING
 			d.Challenger = ""
 			d.ChallengeBond = ""
-			if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
+			if err := k.Distributions.Set(ctx, key, d); err != nil {
 				return err
 			}
 			ctx.EventManager().EmitEvent(sdk.NewEvent(
@@ -213,13 +230,15 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 		d.MerkleRoot = result.root
 		d.LicenseTally = result.licenseTally.String()
 		d.StakeTally = result.stakeTally.String()
+		d.ValidatorTally = result.validatorTally.String()
+		d.Header = result.header
 		d.Status = types.DISTRIBUTION_STATUS_PENDING
 		// NOTE: PendingSinceDate is intentionally NOT reset here. Resuming the
 		// original review timer (rather than restarting it) prevents repeated
 		// challenges from indefinitely delaying finalization.
 		d.Challenger = ""
 		d.ChallengeBond = ""
-		if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
+		if err := k.Distributions.Set(ctx, key, d); err != nil {
 			return err
 		}
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
@@ -239,18 +258,20 @@ func (k Keeper) advanceOne(ctx sdk.Context, d types.Distribution, upTo string, r
 		}
 		d.Status = types.DISTRIBUTION_STATUS_LIVE
 		d.FinalizedHeight = ctx.BlockHeight()
-		if err := k.Distributions.Set(ctx, d.Date, d); err != nil {
+		if err := k.Distributions.Set(ctx, key, d); err != nil {
 			return err
 		}
 		// Terminal state: drop it from the active index.
-		if err := k.ActiveDistributions.Remove(ctx, d.Date); err != nil {
+		if err := k.ActiveDistributions.Remove(ctx, key); err != nil {
 			return err
 		}
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
 			types.EventTypeDistributionFinalized,
 			sdk.NewAttribute(types.AttributeKeyDate, d.Date),
+			sdk.NewAttribute(types.AttributeKeyDistroType, d.DistroType),
 			sdk.NewAttribute(types.AttributeKeyLicenseTally, d.LicenseTally),
 			sdk.NewAttribute(types.AttributeKeyStakeTally, d.StakeTally),
+			sdk.NewAttribute(types.AttributeKeyValidatorTally, d.ValidatorTally),
 		))
 	}
 	return nil
@@ -294,7 +315,9 @@ func emitPending(sdkCtx sdk.Context, d types.Distribution) {
 	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
 		types.EventTypeDistributionPending,
 		sdk.NewAttribute(types.AttributeKeyDate, d.Date),
+		sdk.NewAttribute(types.AttributeKeyDistroType, d.DistroType),
 		sdk.NewAttribute(types.AttributeKeyLicenseTally, d.LicenseTally),
 		sdk.NewAttribute(types.AttributeKeyStakeTally, d.StakeTally),
+		sdk.NewAttribute(types.AttributeKeyValidatorTally, d.ValidatorTally),
 	))
 }

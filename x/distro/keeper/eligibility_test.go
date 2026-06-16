@@ -27,14 +27,18 @@ func TestSubmitRejectsLicenseNotValidOnDate(t *testing.T) {
 	)
 
 	// Not valid on day 1 (license starts day 2): rejected.
+	root1, hproof1 := headerOnlySubmission(dateOf(1), 0)
 	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
-		Signer: signer.String(), Date: dateOf(1), MerkleRoot: []byte("root"),
+		Signer: signer.String(), Date: dateOf(1), DistroType: defaultType,
+		MerkleRoot: root1, TotalsByCategory: defaultHeaderTotals(), HeaderProof: hproof1,
 	})
 	require.ErrorContains(t, err, "valid on")
 
 	// Valid on day 2: accepted.
+	root2, hproof2 := headerOnlySubmission(dateOf(2), 0)
 	_, err = f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
-		Signer: signer.String(), Date: dateOf(2), MerkleRoot: []byte("root"),
+		Signer: signer.String(), Date: dateOf(2), DistroType: defaultType,
+		MerkleRoot: root2, TotalsByCategory: defaultHeaderTotals(), HeaderProof: hproof2,
 	})
 	require.NoError(t, err)
 }
@@ -60,14 +64,14 @@ func TestChallengeRejectsLicenseNotValidOnDate(t *testing.T) {
 
 	// Reach consensus on day 1 and move it to PENDING.
 	for _, v := range voters {
-		f.submit(t, v, 1, []byte("root-padded-to-thirty-two-bytes!"))
+		f.submit(t, v, 1, 0)
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1))
 
 	// The challenger's license only became valid the day AFTER day 1, so it may
 	// not challenge day 1's distribution.
 	f.bank.balances[challenger.String()] = sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100)))
-	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: challenger.String(), Date: dateOf(1)})
+	_, err := f.msgServer.ChallengeDistribution(f.ctx, &types.MsgChallengeDistribution{Challenger: challenger.String(), Date: dateOf(1), DistroType: defaultType})
 	require.ErrorContains(t, err, "valid on")
 }
 
@@ -94,24 +98,24 @@ func TestTallyExcludesLicensesNotValidOnDay(t *testing.T) {
 	root := []byte("unanimous-root-padded-to-32bytes")
 	seedVotingDay := func(day int64) {
 		date := dateOf(day)
-		require.NoError(t, f.k.Distributions.Set(f.ctx, date, types.Distribution{Date: date, Status: types.DISTRIBUTION_STATUS_VOTING, VotingSinceDate: date}))
-		require.NoError(t, f.k.ActiveDistributions.Set(f.ctx, date))
+		require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(date, defaultType), types.Distribution{Date: date, DistroType: defaultType, Status: types.DISTRIBUTION_STATUS_VOTING, VotingSinceDate: date}))
+		require.NoError(t, f.k.ActiveDistributions.Set(f.ctx, collections.Join(date, defaultType)))
 		for _, v := range voters {
-			require.NoError(t, f.k.Votes.Set(f.ctx, collections.Join(date, v.String()), types.DistributionVote{Date: date, Signer: v.String(), MerkleRoot: root}))
+			require.NoError(t, f.k.Votes.Set(f.ctx, collections.Join3(date, defaultType, v.String()), types.DistributionVote{Date: date, DistroType: defaultType, Signer: v.String(), MerkleRoot: root}))
 		}
 	}
 
 	// Day 1: nobody was licensed yet, so the unanimous votes do NOT count.
 	seedVotingDay(1)
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1))
-	ed, err := f.k.Distributions.Get(f.ctx, dateOf(1))
+	ed, err := f.k.Distributions.Get(f.ctx, collections.Join(dateOf(1), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_VOTING, ed.Status, "ineligible votes must not reach consensus")
 
 	// Day 2: the same voters ARE licensed, so the same votes reach consensus.
 	seedVotingDay(2)
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 2))
-	ed, err = f.k.Distributions.Get(f.ctx, dateOf(2))
+	ed, err = f.k.Distributions.Get(f.ctx, collections.Join(dateOf(2), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status, "same voters are eligible on their license start day")
 }
@@ -143,10 +147,9 @@ func TestTallyMemoizesAcrossDays(t *testing.T) {
 	}
 	f := setupDistribution(t, staking, licenses, 2)
 
-	root := []byte("memoization-root-padded-32-bytes")
 	for _, day := range []int64{1, 2} {
 		for _, v := range voters {
-			f.submit(t, v, day, root)
+			f.submit(t, v, day, 0)
 		}
 	}
 

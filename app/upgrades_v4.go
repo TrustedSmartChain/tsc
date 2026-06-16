@@ -59,11 +59,11 @@ func migrateDistroParams(ctx context.Context, app *ChainApp) error {
 	if params.DistributionLicenseTypeId == "" {
 		params.DistributionLicenseTypeId = distrotypes.DefaultDistributionLicenseTypeID
 	}
-	if params.LicenseTallyThreshold == "" {
-		params.LicenseTallyThreshold = distrotypes.DefaultLicenseTallyThreshold
-	}
-	if params.StakeTallyThreshold == "" {
-		params.StakeTallyThreshold = distrotypes.DefaultStakeTallyThreshold
+	// Per-type distribution config (with per-type consensus thresholds) replaced
+	// the global license/stake thresholds. Seed the default single type when none
+	// are configured.
+	if len(params.DistributionTypes) == 0 {
+		params.DistributionTypes = distrotypes.DefaultDistributionTypes()
 	}
 	if params.EpochIdentifier == "" {
 		params.EpochIdentifier = distrotypes.DefaultEpochIdentifier

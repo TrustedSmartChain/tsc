@@ -105,8 +105,11 @@ func TestVoteDelegationViaAuthz(t *testing.T) {
 	authzKeeper := authzkeeper.NewKeeper(runtime.NewKVStoreService(authzKey), cdc, router, mockAuthzAccountKeeper{})
 
 	const epoch = int64(1)
-	root := []byte("authz-delegated-root------------")
-	submit := &types.MsgSubmitDistributionRoot{Signer: owner.String(), Date: dateOf(epoch), MerkleRoot: root}
+	root, hproof := headerOnlySubmission(dateOf(epoch), 0)
+	submit := &types.MsgSubmitDistributionRoot{
+		Signer: owner.String(), Date: dateOf(epoch), DistroType: defaultType,
+		MerkleRoot: root, Version: 0, TotalsByCategory: defaultHeaderTotals(), HeaderProof: hproof,
+	}
 	msgURL := sdk.MsgTypeURL(submit)
 
 	// 1. Without a grant the node cannot vote for the owner.
@@ -119,9 +122,9 @@ func TestVoteDelegationViaAuthz(t *testing.T) {
 	require.NoError(t, err)
 
 	// 3. The vote is attributed to the OWNER, not the node.
-	_, err = k.Votes.Get(ctx, collections.Join(dateOf(epoch), owner.String()))
+	_, err = k.Votes.Get(ctx, collections.Join3(dateOf(epoch), defaultType, owner.String()))
 	require.NoError(t, err, "vote should be recorded under the owner")
-	hasNodeVote, err := k.Votes.Has(ctx, collections.Join(dateOf(epoch), node.String()))
+	hasNodeVote, err := k.Votes.Has(ctx, collections.Join3(dateOf(epoch), defaultType, node.String()))
 	require.NoError(t, err)
 	require.False(t, hasNodeVote, "no vote should be recorded under the node key")
 
@@ -133,7 +136,7 @@ func TestVoteDelegationViaAuthz(t *testing.T) {
 	// 5. The tally counts the OWNER's license + stake weight: the epoch reaches
 	//    consensus and enters PENDING with the submitted root.
 	require.NoError(t, k.EpochHooks().AfterEpochEnd(ctx, params.EpochIdentifier, epoch))
-	ed, err := k.Distributions.Get(ctx, dateOf(epoch))
+	ed, err := k.Distributions.Get(ctx, collections.Join(dateOf(epoch), defaultType))
 	require.NoError(t, err)
 	require.Equal(t, types.DISTRIBUTION_STATUS_PENDING, ed.Status)
 	require.Equal(t, root, ed.MerkleRoot)

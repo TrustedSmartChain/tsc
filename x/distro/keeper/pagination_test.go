@@ -19,22 +19,22 @@ func TestClaimsByDatePagination(t *testing.T) {
 
 	// Seed five claimed nonces for one day.
 	for nonce := uint64(0); nonce < 5; nonce++ {
-		require.NoError(t, f.k.Claimed.Set(f.ctx, collections.Join(dateOf(1), nonce)))
+		require.NoError(t, f.k.Claimed.Set(f.ctx, collections.Join3(dateOf(1), defaultType, nonce)))
 	}
 
 	// Unpaginated returns all five, ascending.
-	all, err := q.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(1)})
+	all, err := q.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(1), DistroType: defaultType})
 	require.NoError(t, err)
 	require.Equal(t, []uint64{0, 1, 2, 3, 4}, all.Nonces)
 
 	// A limit of 2 returns the first page plus a next key.
-	page1, err := q.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(1), Pagination: &query.PageRequest{Limit: 2}})
+	page1, err := q.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(1), DistroType: defaultType, Pagination: &query.PageRequest{Limit: 2}})
 	require.NoError(t, err)
 	require.Equal(t, []uint64{0, 1}, page1.Nonces)
 	require.NotEmpty(t, page1.Pagination.NextKey)
 
 	// Following the next key returns the subsequent page.
-	page2, err := q.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(1), Pagination: &query.PageRequest{Key: page1.Pagination.NextKey, Limit: 2}})
+	page2, err := q.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(1), DistroType: defaultType, Pagination: &query.PageRequest{Key: page1.Pagination.NextKey, Limit: 2}})
 	require.NoError(t, err)
 	require.Equal(t, []uint64{2, 3}, page2.Nonces)
 }
@@ -45,16 +45,16 @@ func TestDistributionVotesPagination(t *testing.T) {
 	signers := simtestutil.CreateIncrementalAccounts(3)
 
 	for _, s := range signers {
-		require.NoError(t, f.k.Votes.Set(f.ctx, collections.Join(dateOf(1), s.String()), types.DistributionVote{
-			Date: dateOf(1), Signer: s.String(), MerkleRoot: []byte("root"),
+		require.NoError(t, f.k.Votes.Set(f.ctx, collections.Join3(dateOf(1), defaultType, s.String()), types.DistributionVote{
+			Date: dateOf(1), DistroType: defaultType, Signer: s.String(), MerkleRoot: []byte("root"),
 		}))
 	}
 
-	all, err := q.DistributionVotes(f.ctx, &types.QueryDistributionVotesRequest{Date: dateOf(1)})
+	all, err := q.DistributionVotes(f.ctx, &types.QueryDistributionVotesRequest{Date: dateOf(1), DistroType: defaultType})
 	require.NoError(t, err)
 	require.Len(t, all.Votes, 3)
 
-	page, err := q.DistributionVotes(f.ctx, &types.QueryDistributionVotesRequest{Date: dateOf(1), Pagination: &query.PageRequest{Limit: 2}})
+	page, err := q.DistributionVotes(f.ctx, &types.QueryDistributionVotesRequest{Date: dateOf(1), DistroType: defaultType, Pagination: &query.PageRequest{Limit: 2}})
 	require.NoError(t, err)
 	require.Len(t, page.Votes, 2)
 	require.NotEmpty(t, page.Pagination.NextKey)
@@ -66,8 +66,8 @@ func TestActiveDistributionsPagination(t *testing.T) {
 
 	for i := int64(1); i <= 3; i++ {
 		date := dateOf(i)
-		require.NoError(t, f.k.Distributions.Set(f.ctx, date, types.Distribution{Date: date, Status: types.DISTRIBUTION_STATUS_VOTING}))
-		require.NoError(t, f.k.ActiveDistributions.Set(f.ctx, date))
+		require.NoError(t, f.k.Distributions.Set(f.ctx, collections.Join(date, defaultType), types.Distribution{Date: date, DistroType: defaultType, Status: types.DISTRIBUTION_STATUS_VOTING}))
+		require.NoError(t, f.k.ActiveDistributions.Set(f.ctx, collections.Join(date, defaultType)))
 	}
 
 	page, err := q.ActiveDistributions(f.ctx, &types.QueryActiveDistributionsRequest{Pagination: &query.PageRequest{Limit: 2}})

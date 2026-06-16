@@ -31,6 +31,7 @@ func TestMsgClaimValidateBasic(t *testing.T) {
 		return &types.MsgClaim{
 			Claimer:    addrA,
 			Date:       "2025-07-22",
+			DistroType: "type1",
 			Nonce:      0,
 			Address:    addrB,
 			Total:      "3000",
@@ -56,6 +57,7 @@ func TestMsgClaimValidateBasic(t *testing.T) {
 		{"empty category name", func(m *types.MsgClaim) { m.Categories = map[string]string{"": "3000"} }, "category name must not be empty"},
 		{"bad category amount", func(m *types.MsgClaim) { m.Categories = map[string]string{"type1": "x"} }, "is not a valid integer"},
 		{"non-positive category", func(m *types.MsgClaim) { m.Categories = map[string]string{"type1": "0"} }, "must be positive"},
+		{"empty distro type", func(m *types.MsgClaim) { m.DistroType = "" }, "distro_type cannot be empty"},
 		{"sum mismatch", func(m *types.MsgClaim) { m.Categories = map[string]string{"type1": "1"} }, "does not equal total"},
 		{"proof too long", func(m *types.MsgClaim) { m.Proof = make([][]byte, types.MaxProofDepth+1) }, "merkle proof too long"},
 		{"too many categories", func(m *types.MsgClaim) { m.Categories = manyCategories(types.MaxCategories + 1) }, "too many categories"},
@@ -77,24 +79,60 @@ func TestMsgClaimValidateBasic(t *testing.T) {
 }
 
 func TestMsgSubmitDistributionRootValidateBasic(t *testing.T) {
-	valid := &types.MsgSubmitDistributionRoot{Signer: addrA, Date: "2025-07-22", MerkleRoot: []byte("root")}
-	require.NoError(t, valid.ValidateBasic())
+	valid := func() *types.MsgSubmitDistributionRoot {
+		return &types.MsgSubmitDistributionRoot{
+			Signer:           addrA,
+			Date:             "2025-07-22",
+			DistroType:       "type1",
+			MerkleRoot:       []byte("root"),
+			Version:          1,
+			TotalsByCategory: map[string]string{"type1": "1000"},
+			HeaderProof:      [][]byte{[]byte("sibling")},
+		}
+	}
+	require.NoError(t, valid().ValidateBasic())
 
-	require.ErrorContains(t, (&types.MsgSubmitDistributionRoot{Signer: "bad", Date: "2025-07-22", MerkleRoot: []byte("r")}).ValidateBasic(), "invalid signer")
-	require.ErrorContains(t, (&types.MsgSubmitDistributionRoot{Signer: addrA, Date: "bad", MerkleRoot: []byte("r")}).ValidateBasic(), "YYYY-MM-DD")
-	require.ErrorContains(t, (&types.MsgSubmitDistributionRoot{Signer: addrA, Date: "2025-07-22"}).ValidateBasic(), "merkle root cannot be empty")
+	bad := valid()
+	bad.Signer = "bad"
+	require.ErrorContains(t, bad.ValidateBasic(), "invalid signer")
+
+	bad = valid()
+	bad.Date = "bad"
+	require.ErrorContains(t, bad.ValidateBasic(), "YYYY-MM-DD")
+
+	bad = valid()
+	bad.DistroType = ""
+	require.ErrorContains(t, bad.ValidateBasic(), "distro_type cannot be empty")
+
+	bad = valid()
+	bad.MerkleRoot = nil
+	require.ErrorContains(t, bad.ValidateBasic(), "merkle root cannot be empty")
+
+	bad = valid()
+	bad.TotalsByCategory = nil
+	require.ErrorContains(t, bad.ValidateBasic(), "totals_by_category must not be empty")
+
+	bad = valid()
+	bad.TotalsByCategory = map[string]string{"type1": "x"}
+	require.ErrorContains(t, bad.ValidateBasic(), "is not a valid integer")
+
+	bad = valid()
+	bad.HeaderProof = make([][]byte, types.MaxProofDepth+1)
+	require.ErrorContains(t, bad.ValidateBasic(), "header proof too long")
 }
 
 func TestMsgChallengeDistributionValidateBasic(t *testing.T) {
-	require.NoError(t, (&types.MsgChallengeDistribution{Challenger: addrA, Date: "2025-07-22"}).ValidateBasic())
-	require.ErrorContains(t, (&types.MsgChallengeDistribution{Challenger: "bad", Date: "2025-07-22"}).ValidateBasic(), "invalid challenger")
-	require.ErrorContains(t, (&types.MsgChallengeDistribution{Challenger: addrA, Date: ""}).ValidateBasic(), "date cannot be empty")
+	require.NoError(t, (&types.MsgChallengeDistribution{Challenger: addrA, Date: "2025-07-22", DistroType: "type1"}).ValidateBasic())
+	require.ErrorContains(t, (&types.MsgChallengeDistribution{Challenger: "bad", Date: "2025-07-22", DistroType: "type1"}).ValidateBasic(), "invalid challenger")
+	require.ErrorContains(t, (&types.MsgChallengeDistribution{Challenger: addrA, Date: "2025-07-22"}).ValidateBasic(), "distro_type cannot be empty")
+	require.ErrorContains(t, (&types.MsgChallengeDistribution{Challenger: addrA, Date: "", DistroType: "type1"}).ValidateBasic(), "date cannot be empty")
 }
 
 func TestMsgReviveDistributionValidateBasic(t *testing.T) {
-	require.NoError(t, (&types.MsgReviveDistribution{Authority: addrA, Date: "2025-07-22"}).ValidateBasic())
-	require.ErrorContains(t, (&types.MsgReviveDistribution{Authority: "bad", Date: "2025-07-22"}).ValidateBasic(), "invalid authority")
-	require.ErrorContains(t, (&types.MsgReviveDistribution{Authority: addrA, Date: "nope"}).ValidateBasic(), "YYYY-MM-DD")
+	require.NoError(t, (&types.MsgReviveDistribution{Authority: addrA, Date: "2025-07-22", DistroType: "type1"}).ValidateBasic())
+	require.ErrorContains(t, (&types.MsgReviveDistribution{Authority: "bad", Date: "2025-07-22", DistroType: "type1"}).ValidateBasic(), "invalid authority")
+	require.ErrorContains(t, (&types.MsgReviveDistribution{Authority: addrA, Date: "2025-07-22"}).ValidateBasic(), "distro_type cannot be empty")
+	require.ErrorContains(t, (&types.MsgReviveDistribution{Authority: addrA, Date: "nope", DistroType: "type1"}).ValidateBasic(), "YYYY-MM-DD")
 }
 
 // TestParamsRejectsZeroReviewDelay covers L2: a zero review delay removes the
