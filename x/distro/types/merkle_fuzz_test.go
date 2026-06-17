@@ -12,12 +12,11 @@ import (
 // deterministic. The seed corpus runs under `go test`; extended fuzzing with
 // `go test -fuzz=FuzzLeafHashNoPanic`.
 func FuzzLeafHashNoPanic(f *testing.F) {
-	f.Add(uint64(0), "tsc1addr", "1000", "type1", "1000")
-	f.Add(uint64(1<<63), "", "", "", "")
-	f.Fuzz(func(t *testing.T, nonce uint64, addr, total, cat, amt string) {
-		cats := map[string]string{cat: amt}
-		h1 := types.LeafHash(nonce, addr, total, cats)
-		h2 := types.LeafHash(nonce, addr, total, cats)
+	f.Add(uint64(0), "2025-07-22", "type1", "tsc1addr", "node", "1000", "aTSC")
+	f.Add(uint64(1<<63), "", "", "", "", "", "")
+	f.Fuzz(func(t *testing.T, nonce uint64, date, distroType, addr, category, amount, denom string) {
+		h1 := types.LeafHash(nonce, date, distroType, addr, category, amount, denom)
+		h2 := types.LeafHash(nonce, date, distroType, addr, category, amount, denom)
 		require.Equal(t, h1, h2, "LeafHash must be deterministic")
 		require.Len(t, h1, 32)
 	})
@@ -40,8 +39,8 @@ func FuzzMerkleRoundTrip(f *testing.F) {
 	f.Add(uint64(0), "a", uint64(1), "b")
 	f.Add(uint64(7), "tsc1x", uint64(7), "tsc1y")
 	f.Fuzz(func(t *testing.T, n0 uint64, a0 string, n1 uint64, a1 string) {
-		leaf0 := types.LeafHash(n0, a0, "1", map[string]string{"c": "1"})
-		leaf1 := types.LeafHash(n1, a1, "1", map[string]string{"c": "1"})
+		leaf0 := types.LeafHash(n0, "2025-07-22", "type1", a0, "c", "1", "aTSC")
+		leaf1 := types.LeafHash(n1, "2025-07-22", "type1", a1, "c", "1", "aTSC")
 		root := types.HashPair(leaf0, leaf1)
 
 		// Both leaves verify against the root with the other as the sole sibling,

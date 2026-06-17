@@ -85,26 +85,30 @@ message MsgSubmitDistributionRoot {
 
 message MsgSubmitDistributionRootResponse {}
 
-// MsgClaim claims a reward from a finalized (live) day's distribution. The leaf
-// is reconstructed from (nonce, address, total, categories) and verified against
-// the canonical root via the supplied merkle proof.
+// MsgClaim claims a single (category, amount) reward from a finalized (live)
+// (day, type) distribution. Each merkle leaf represents one category/amount for
+// one earner; the leaf is reconstructed from
+// (nonce, address, category, amount, denom) and verified against the canonical
+// root via the supplied merkle proof.
 message MsgClaim {
   option (cosmos.msg.v1.signer) = "claimer";
 
+  // claimer signs and submits the tx; it need not be the reward earner.
   string claimer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // date is the distribution day in YYYY-MM-DD form.
   string date = 2;
   uint64 nonce = 3;
   // distro_type is the distribution type id being claimed against.
-  string distro_type = 8;
-  string address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // total is the full reward amount for this leaf. It must equal the sum of the
-  // category amounts.
-  string total = 5;
-  // categories breaks the total down by reward category (e.g. "type1"). The
-  // merkle leaf commits to this map, so the breakdown cannot be tampered with.
-  map<string, string> categories = 6;
-  repeated bytes proof = 7;
+  string distro_type = 4;
+  // address is the reward earner that receives the minted amount.
+  string address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // category is the reward category this leaf belongs to.
+  string category = 6;
+  // amount is the reward amount for this leaf.
+  string amount = 7;
+  // denom is the reward denom (must be the module denom).
+  string denom = 8;
+  repeated bytes proof = 9;
 }
 
 message MsgClaimResponse {}

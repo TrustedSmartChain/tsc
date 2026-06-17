@@ -122,17 +122,26 @@ full window rather than being measured from its stale calendar date.
   day; if it still fails to reach consensus it simply re-expires, and may be
   revived again. A revived day that reaches consensus mints from its original
   calendar day's halving budget.
-- **Claim** — users call `MsgClaim` with a merkle proof of
-  `(nonce, address, total, categories)` against the canonical root. `total` must
-  equal the sum of the `categories` amounts, and the leaf commits to the full
-  category breakdown, so it cannot be tampered with. The proof length and the
-  category count are bounded (`MaxProofDepth`, `MaxCategories`) so a malformed
-  claim cannot force unbounded pre-verification work. Rewards are minted on demand
-  and each `(date, nonce)` can be claimed once. The cumulative amount claimed per
-  day is capped at that day's halving budget (with `max_supply` as a final bound),
-  so a finalized root can never mint beyond the day's emission allocation. Each
-  claim also accumulates per-category running totals for the day (see
-  `ClaimTotalByCategory`).
+- **Claim** — each merkle leaf is a single `(category, amount)` reward for one
+  earner. Users call `MsgClaim` with a merkle proof of
+  `(nonce, date, distro_type, address, category, amount, denom)` against the
+  canonical root; the leaf commits to exactly those fields, so none can be
+  tampered with (and a leaf can't be replayed against another day/type). The
+  `claimer` signs the tx but need not be the earner — `address` (the earner)
+  receives the minted `amount`. `denom` must be the module denom, and `category`
+  must be one the type configures. The proof length is bounded (`MaxProofDepth`)
+  so a malformed claim cannot force unbounded pre-verification work. Rewards are
+  minted on demand and each `(date, type, nonce)` can be claimed once. Claims are
+  capped by the
+  **stored header totals**, not re-derived from the budget: the cumulative amount
+  claimed for each category may not exceed that category's `totals_by_category`
+  amount in the finalized header, and (by their sum) the type's whole distributable
+  total. Because the header was already validated against the type/day budget at
+  submission, this keeps minting within the emission curve while letting claims
+  trust the committed totals (with `max_supply` as a final bound). Each claim's
+  per-category running totals are accumulated for the day (see
+  `ClaimTotalByCategory`). A `(day, type)` finalized without a header (e.g. one
+  seeded directly via genesis) falls back to the budget-derived caps.
 
 Distribution `status` values: `VOTING` (0), `LIVE` (1), `PENDING` (2),
 `UNDER_REVIEW` (3), `EXPIRED` (4).
@@ -192,7 +201,7 @@ challenger on `UNDER_REVIEW`, parseable bond/claimed amounts, and that
 |---|---|---|
 | `MsgSubmitDistributionRoot` | `signer` | License-gated; carries `distro_type` and a header leaf (`version`, `totals_by_category`) with an inclusion `header_proof`. `date` must be in `[current − vote_window_days, current]` and ≥ the start date. Verifies header inclusion + budget caps; opens/updates a `VOTING` `(day, type)`. |
 | `MsgChallengeDistribution` | `challenger` | License-gated; only on a `PENDING` `(day, type)`; escrows `challenge_bond`. |
-| `MsgClaim` | `claimer` | Permissionless (proof-gated); pays the leaf's `address` the `total`, broken down by `categories` (which must sum to `total`), against the `(date, distro_type)` distribution. Requires `LIVE`. |
+| `MsgClaim` | `claimer` | Permissionless (proof-gated); pays the leaf's `address` (the earner) a single `(category, amount)` in `denom` against the `(date, distro_type)` distribution. `claimer` only signs. Requires `LIVE`. |
 | `MsgReviveDistribution` | gov authority | Reopens an `EXPIRED` `(day, type)` for voting with a fresh window. Authority-gated (submitted via a gov proposal). |
 | `MsgUpdateParams` | gov authority | Updates `Params`. |
 
@@ -229,12 +238,12 @@ are exposed at runtime through `Query/Audit` so operators can verify a live node
 The off-chain node app and the chain must agree byte-for-byte. The tree is a
 domain-separated SHA-256 binary tree with **commutative (sorted-pair)** inner
 hashing, so a proof is just the ordered list of sibling hashes — no direction
-bits. The leaf commits to the full per-category breakdown; categories are
-emitted in ascending key order so the leaf is independent of map iteration order:
+bits. Each reward leaf commits to a single `(category, amount)` for one earner:
 
 - **Reward leaf**:
-  `sha256(0x00 || uint64BE(nonce) || lp(addr) || lp(total) || uint32BE(numCategories) || for each (key,value) sorted by key: lp(key) || lp(value))`
-  where `lp(x) = uint32BE(len(x)) || x`.
+  `sha256(0x00 || uint64BE(nonce) || lp(date) || lp(distro_type) || lp(address) || lp(category) || lp(amount) || lp(denom))`
+  where `lp(x) = uint32BE(len(x)) || x`. Binding `date` and `distro_type` into the
+  leaf means it can never be replayed against another day's or type's root.
 - **Header leaf** (`types.HeaderLeafHash`):
   `sha256(0x02 || lp(distroType) || lp(date) || uint64BE(version) || uint32BE(numCategories) || for each (key,value) sorted by key: lp(key) || lp(value))`.
   The distinct `0x02` domain prefix keeps a header leaf from ever colliding with a

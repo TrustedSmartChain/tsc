@@ -72,10 +72,10 @@ func TestReviveExpiredReopensToConsensus(t *testing.T) {
 
 	// Re-vote to consensus on the (old) day-1 date even though it is far older
 	// than the voting window — the day is already open, so the age-gate is skipped.
-	rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), total: "1000", cats: map[string]string{"type1": "1000"}}}
-	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(1), 0, defaultHeaderTotals(), rewards)
+	rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), category: "type1", amount: "1000"}}
+	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(1), 0, headerTotalsFromRewards(rewards), rewards)
 	for _, v := range voters {
-		f.submitRoot(t, v, 1, root, hproof)
+		f.submitRoot(t, v, 1, root, hproof, headerTotalsFromRewards(rewards))
 	}
 
 	// Advance: consensus -> PENDING (since=current) -> LIVE after the review delay.
@@ -93,7 +93,7 @@ func TestReviveExpiredReopensToConsensus(t *testing.T) {
 	// The revived day's rewards are now claimable, minted from day 1's budget.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(1), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: rewardProofs[0],
+		Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.NoError(t, err)
 	require.Equal(t, math.NewInt(1000), f.bank.balances[recipient.String()].AmountOf(testDenom))

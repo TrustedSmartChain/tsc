@@ -295,10 +295,10 @@ func TestDistributionFlow(t *testing.T) {
 	// Build the merkle tree the voting nodes would have produced for root A: a
 	// header leaf plus two reward leaves.
 	rewards := []rewardLeaf{
-		{nonce: 0, addr: recipient.String(), total: "1000", cats: map[string]string{"type1": "1000"}},
-		{nonce: 1, addr: voters[0].String(), total: "2000", cats: map[string]string{"type1": "2000"}},
+		{nonce: 0, addr: recipient.String(), category: "type1", amount: "1000"},
+		{nonce: 1, addr: voters[0].String(), category: "type1", amount: "2000"},
 	}
-	rootA, hproofA, rewardProofs := buildSubmission(defaultType, dateOf(1), 0, defaultHeaderTotals(), rewards)
+	rootA, hproofA, rewardProofs := buildSubmission(defaultType, dateOf(1), 0, headerTotalsFromRewards(rewards), rewards)
 	rootB, hproofB := headerOnlySubmission(dateOf(1), 1) // distinct, losing root
 
 	stake := map[string]math.Int{
@@ -326,14 +326,14 @@ func TestDistributionFlow(t *testing.T) {
 	const epoch = int64(1)
 	// voters 0,1,2 vote root A (license 3/4 = 0.75, stake 70/100 = 0.70).
 	for _, v := range []sdk.AccAddress{voters[0], voters[1], voters[2]} {
-		f.submitRoot(t, v, epoch, rootA, hproofA)
+		f.submitRoot(t, v, epoch, rootA, hproofA, headerTotalsFromRewards(rewards))
 	}
 	// voter 3 votes root B (version 1).
-	f.submitRootVersion(t, voters[3], epoch, 1, rootB, hproofB)
+	f.submitRootVersion(t, voters[3], epoch, 1, rootB, hproofB, defaultHeaderTotals())
 
 	// Before finalization, claims are rejected.
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: rewardProofs[0],
+		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.ErrorContains(t, err, "not live")
 
@@ -346,7 +346,7 @@ func TestDistributionFlow(t *testing.T) {
 
 	// Claims are still rejected while pending.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: rewardProofs[0],
+		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.ErrorContains(t, err, "not live")
 
@@ -359,21 +359,21 @@ func TestDistributionFlow(t *testing.T) {
 
 	// Claim reward nonce 0 for the recipient.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: rewardProofs[0],
+		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.NoError(t, err)
 	require.Equal(t, math.NewInt(1000), f.bank.balances[recipient.String()].AmountOf(testDenom))
 
 	// Double claim of the same nonce is rejected.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: rewardProofs[0],
+		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.ErrorContains(t, err, "already claimed")
 
 	// A claim with a tampered amount (for the still-unclaimed nonce 1) fails
 	// proof verification.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: voters[0].String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 1, Address: voters[0].String(), Total: "9999", Categories: map[string]string{"type1": "9999"}, Proof: rewardProofs[1],
+		Claimer: voters[0].String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 1, Address: voters[0].String(), Category: "type1", Amount: "9999", Denom: testDenom, Proof: rewardProofs[1],
 	})
 	require.ErrorContains(t, err, "invalid merkle proof")
 }
@@ -407,41 +407,99 @@ func TestTallyBelowThresholdStaysVoting(t *testing.T) {
 	require.Equal(t, types.DISTRIBUTION_STATUS_VOTING, ed.Status)
 }
 
-func TestClaimRespectsEpochBudget(t *testing.T) {
+// TestClaimRespectsHeaderTotals checks that cumulative claims for a (day, type)
+// are capped at the stored header's declared total, independent of how many
+// reward leaves the finalized tree contains. (The per-day emission budget itself
+// is enforced when the header is submitted; see TestSubmitRejectsHeaderOverBudget.)
+func TestClaimRespectsHeaderTotals(t *testing.T) {
 	f, voters := fourVoterConsensus(t)
 	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
 
-	// nonce 0 claims more than a single day's halving allocation; nonce 1 is small.
 	const epoch = int64(1)
-	overBudget := "1000000000000000000000000" // 1e24, far above one day's budget but below MaxSupply
+	// Three claimable leaves of 1000 each, but the header only commits 2500 to
+	// type1 — so cumulative claims are capped at the header total, not the tree.
 	rewards := []rewardLeaf{
-		{nonce: 0, addr: recipient.String(), total: overBudget, cats: map[string]string{"type1": overBudget}},
-		{nonce: 1, addr: recipient.String(), total: "1000", cats: map[string]string{"type1": "1000"}},
+		{nonce: 0, addr: recipient.String(), category: "type1", amount: "1000"},
+		{nonce: 1, addr: recipient.String(), category: "type1", amount: "1000"},
+		{nonce: 2, addr: recipient.String(), category: "type1", amount: "1000"},
 	}
-	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, defaultHeaderTotals(), rewards)
+	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, map[string]string{"type1": "2500"}, rewards)
 
 	for _, v := range voters {
-		f.submitRoot(t, v, epoch, root, hproof)
+		f.submitRoot(t, v, epoch, root, hproof, map[string]string{"type1": "2500"})
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))   // -> PENDING
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1)) // -> LIVE
 
-	// A within-budget claim succeeds.
+	// The first two claims fit within the header total (1000, then 2000 cumulative).
+	for _, n := range []uint64{0, 1} {
+		_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
+			Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: n, Address: recipient.String(),
+			Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs[n],
+		})
+		require.NoError(t, err)
+	}
+
+	// The third would push the cumulative type1 total to 3000 > 2500, so it is
+	// rejected by the header cap.
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 1, Address: recipient.String(), Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: rewardProofs[1],
+		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 2, Address: recipient.String(),
+		Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs[2],
 	})
-	require.NoError(t, err)
+	require.ErrorContains(t, err, "exceed")
 
-	// A claim exceeding the epoch's halving budget is rejected (before max supply).
-	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(), Total: overBudget, Categories: map[string]string{"type1": overBudget}, Proof: rewardProofs[0],
-	})
-	require.ErrorContains(t, err, "budget")
-
-	// The cumulative claimed amount reflects only the successful claim.
+	// The cumulative claimed amount reflects only the two successful claims.
 	ed, err := f.k.Distributions.Get(f.ctx, collections.Join(dateOf(epoch), defaultType))
 	require.NoError(t, err)
-	require.Equal(t, "1000", ed.ClaimedAmount)
+	require.Equal(t, "2000", ed.ClaimedAmount)
+}
+
+// TestSubmitRejectsHeaderOverBudget checks that a submission whose header totals
+// exceed the (day, type) budget is rejected at submit, so claims never need to
+// re-derive the emission budget.
+func TestSubmitRejectsHeaderOverBudget(t *testing.T) {
+	f, voters := fourVoterConsensus(t)
+	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
+
+	const epoch = int64(1)
+	overBudget := "1000000000000000000000000" // 1e24, far above one day's budget but below MaxSupply
+	rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), category: "type1", amount: overBudget}}
+	root, hproof, _ := buildSubmission(defaultType, dateOf(epoch), 0, map[string]string{"type1": overBudget}, rewards)
+
+	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
+		Signer: voters[0].String(), Date: dateOf(epoch), DistroType: defaultType,
+		MerkleRoot: root, Version: 0, TotalsByCategory: map[string]string{"type1": overBudget}, HeaderProof: hproof,
+	})
+	require.ErrorContains(t, err, "exceed")
+}
+
+// TestClaimRespectsCategoryHeaderTotal checks the per-category header cap: a claim
+// whose category total exceeds that category's header amount is rejected even
+// when the type's overall distributable total still has room.
+func TestClaimRespectsCategoryHeaderTotal(t *testing.T) {
+	f, voters := fourVoterConsensus(t)
+	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
+
+	const epoch = int64(1)
+	// Header allows type1 <= 1000 and type2 <= 2000 (type total 3000). The single
+	// reward claims 1500 in type1 — within the type total but over the type1 cap.
+	header := map[string]string{"type1": "1000", "type2": "2000"}
+	rewards := []rewardLeaf{
+		{nonce: 0, addr: recipient.String(), category: "type1", amount: "1500"},
+	}
+	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, header, rewards)
+
+	for _, v := range voters {
+		f.submitRoot(t, v, epoch, root, hproof, header)
+	}
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))
+	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1))
+
+	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
+		Category: "type1", Amount: "1500", Denom: testDenom, Proof: rewardProofs[0],
+	})
+	require.ErrorContains(t, err, "category")
 }
 
 func TestClaimCategoryTotals(t *testing.T) {
@@ -449,35 +507,40 @@ func TestClaimCategoryTotals(t *testing.T) {
 	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
 
 	const epoch = int64(1)
-	// nonce 0 splits across two categories; nonce 1 adds to one of them.
-	cats0 := map[string]string{"type1": "1000", "type2": "2000"}
-	cats1 := map[string]string{"type1": "1500"}
+	// Single-category leaves: nonces 0 (type1) and 1 (type2) make up the old
+	// multi-category leaf; nonce 2 adds further to type1.
 	rewards := []rewardLeaf{
-		{nonce: 0, addr: recipient.String(), total: "3000", cats: cats0},
-		{nonce: 1, addr: recipient.String(), total: "1500", cats: cats1},
+		{nonce: 0, addr: recipient.String(), category: "type1", amount: "1000"},
+		{nonce: 1, addr: recipient.String(), category: "type2", amount: "2000"},
+		{nonce: 2, addr: recipient.String(), category: "type1", amount: "1500"},
 	}
-	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, defaultHeaderTotals(), rewards)
+	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, headerTotalsFromRewards(rewards), rewards)
 
 	for _, v := range voters {
-		f.submitRoot(t, v, epoch, root, hproof)
+		f.submitRoot(t, v, epoch, root, hproof, headerTotalsFromRewards(rewards))
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))   // -> PENDING
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1)) // -> LIVE
 
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: "3000", Categories: cats0, Proof: rewardProofs[0],
+		Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.NoError(t, err)
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 1, Address: recipient.String(),
-		Total: "1500", Categories: cats1, Proof: rewardProofs[1],
+		Category: "type2", Amount: "2000", Denom: testDenom, Proof: rewardProofs[1],
+	})
+	require.NoError(t, err)
+	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
+		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 2, Address: recipient.String(),
+		Category: "type1", Amount: "1500", Denom: testDenom, Proof: rewardProofs[2],
 	})
 	require.NoError(t, err)
 
 	querier := keeper.NewQuerier(f.k)
 
-	// type1 accumulates across both claims, type2 from the first only.
+	// type1 accumulates across the two type1 claims, type2 from the type2 claim.
 	byDate, err := querier.ClaimTotalByCategory(f.ctx, &types.QueryClaimTotalByCategoryRequest{Date: dateOf(epoch), DistroType: defaultType})
 	require.NoError(t, err)
 	require.Equal(t, dateOf(epoch), byDate.Date)
@@ -486,10 +549,10 @@ func TestClaimCategoryTotals(t *testing.T) {
 	// dateOf(1) is exactly the default start date.
 	require.Equal(t, types.DefaultDistributionStartDate, dateOf(epoch))
 
-	// Both nonces were claimed; ClaimsByDate lists them in ascending order.
+	// All nonces were claimed; ClaimsByDate lists them in ascending order.
 	claims, err := querier.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(epoch), DistroType: defaultType})
 	require.NoError(t, err)
-	require.Equal(t, []uint64{0, 1}, claims.Nonces)
+	require.Equal(t, []uint64{0, 1, 2}, claims.Nonces)
 
 	// A day with no claims returns an empty list.
 	empty, err := querier.ClaimsByDate(f.ctx, &types.QueryClaimsByDateRequest{Date: dateOf(epoch + 1), DistroType: defaultType})
@@ -502,40 +565,32 @@ func TestClaimRejectsInconsistentCategories(t *testing.T) {
 	recipient := simtestutil.CreateIncrementalAccounts(1)[0]
 
 	const epoch = int64(1)
-	cats := map[string]string{"type1": "1000", "type2": "2000"}
-	// A second reward leaf so the tree (and proof) is non-trivial.
+	// Two single-category reward leaves so the tree (and proof) is non-trivial.
 	rewards := []rewardLeaf{
-		{nonce: 0, addr: recipient.String(), total: "3000", cats: cats},
-		{nonce: 1, addr: recipient.String(), total: "5", cats: map[string]string{"type1": "5"}},
+		{nonce: 0, addr: recipient.String(), category: "type1", amount: "1000"},
+		{nonce: 1, addr: recipient.String(), category: "type1", amount: "5"},
 	}
-	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, defaultHeaderTotals(), rewards)
+	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, headerTotalsFromRewards(rewards), rewards)
 
 	for _, v := range voters {
-		f.submitRoot(t, v, epoch, root, hproof)
+		f.submitRoot(t, v, epoch, root, hproof, headerTotalsFromRewards(rewards))
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1))
 
-	// total != sum(categories) is rejected before proof verification.
+	// A tampered amount (not the leaf's committed amount) fails the merkle proof.
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: "9999", Categories: cats, Proof: rewardProofs[0],
-	})
-	require.ErrorContains(t, err, "does not equal total")
-
-	// A tampered breakdown (correct total) fails the merkle proof.
-	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
-		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: "3000", Categories: map[string]string{"type1": "2000", "type2": "1000"}, Proof: rewardProofs[0],
+		Category: "type1", Amount: "9999", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.ErrorContains(t, err, "invalid merkle proof")
 
-	// Empty categories are rejected.
+	// A tampered category (not the leaf's committed category) fails the merkle proof.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: "3000", Categories: nil, Proof: rewardProofs[0],
+		Category: "type2", Amount: "1000", Denom: testDenom, Proof: rewardProofs[0],
 	})
-	require.ErrorContains(t, err, "categories must not be empty")
+	require.ErrorContains(t, err, "invalid merkle proof")
 }
 
 // TestClaimRejectsUnconfiguredCategory checks a claim whose reward breakdown
@@ -549,20 +604,22 @@ func TestClaimRejectsUnconfiguredCategory(t *testing.T) {
 	const epoch = int64(1)
 	// "type3" is not one of the default type's configured categories
 	// ("type1"/"type2"), but LeafHash does not check config, so the tree is valid.
+	// The amount (1) stays within the header total so the config check — not the
+	// header cap — is what rejects the claim.
 	rewards := []rewardLeaf{
-		{nonce: 0, addr: recipient.String(), total: "1000", cats: map[string]string{"type3": "1000"}},
+		{nonce: 0, addr: recipient.String(), category: "type3", amount: "1"},
 	}
 	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, defaultHeaderTotals(), rewards)
 
 	for _, v := range voters {
-		f.submitRoot(t, v, epoch, root, hproof)
+		f.submitRoot(t, v, epoch, root, hproof, defaultHeaderTotals())
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1))
 
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: "1000", Categories: map[string]string{"type3": "1000"}, Proof: rewardProofs[0],
+		Category: "type3", Amount: "1", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.ErrorContains(t, err, "is not configured for distribution type")
 }
@@ -580,16 +637,16 @@ func TestClaimFourLeafProof(t *testing.T) {
 	// Build a tree with a header leaf plus four reward leaves, yielding multi-level
 	// (depth > 1) inclusion proofs for the reward leaves.
 	rewards := []rewardLeaf{
-		{nonce: 0, addr: accs[0].String(), total: "10", cats: map[string]string{"type1": "10"}},
-		{nonce: 1, addr: accs[1].String(), total: "20", cats: map[string]string{"type1": "20"}},
-		{nonce: 2, addr: accs[2].String(), total: "30", cats: map[string]string{"type1": "30"}},
-		{nonce: 3, addr: accs[3].String(), total: "40", cats: map[string]string{"type1": "40"}},
+		{nonce: 0, addr: accs[0].String(), category: "type1", amount: "10"},
+		{nonce: 1, addr: accs[1].String(), category: "type1", amount: "20"},
+		{nonce: 2, addr: accs[2].String(), category: "type1", amount: "30"},
+		{nonce: 3, addr: accs[3].String(), category: "type1", amount: "40"},
 	}
-	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, defaultHeaderTotals(), rewards)
+	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, headerTotalsFromRewards(rewards), rewards)
 	require.Greater(t, len(rewardProofs[2]), 1, "this test must exercise a multi-element proof")
 
 	for _, v := range voters {
-		f.submitRoot(t, v, epoch, root, hproof)
+		f.submitRoot(t, v, epoch, root, hproof, headerTotalsFromRewards(rewards))
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))   // -> PENDING
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1)) // -> LIVE
@@ -597,7 +654,7 @@ func TestClaimFourLeafProof(t *testing.T) {
 	// Claim reward 2 with its multi-element inclusion proof.
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: accs[2].String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 2, Address: accs[2].String(),
-		Total: "30", Categories: map[string]string{"type1": "30"}, Proof: rewardProofs[2],
+		Category: "type1", Amount: "30", Denom: testDenom, Proof: rewardProofs[2],
 	})
 	require.NoError(t, err)
 	require.Equal(t, math.NewInt(30), f.bank.balances[accs[2].String()].AmountOf(testDenom))
@@ -605,7 +662,7 @@ func TestClaimFourLeafProof(t *testing.T) {
 	// And reward 0.
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: accs[0].String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: accs[0].String(),
-		Total: "10", Categories: map[string]string{"type1": "10"}, Proof: rewardProofs[0],
+		Category: "type1", Amount: "10", Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.NoError(t, err)
 	require.Equal(t, math.NewInt(10), f.bank.balances[accs[0].String()].AmountOf(testDenom))
@@ -617,7 +674,7 @@ func TestClaimFourLeafProof(t *testing.T) {
 	}
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: accs[1].String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 1, Address: accs[1].String(),
-		Total: "20", Categories: map[string]string{"type1": "20"}, Proof: reversed,
+		Category: "type1", Amount: "20", Denom: testDenom, Proof: reversed,
 	})
 	require.ErrorContains(t, err, "invalid merkle proof")
 }
@@ -683,13 +740,13 @@ func TestCategoryTotalsIsolatedByDate(t *testing.T) {
 	f := setupDistribution(t, staking, licenses, 3) // current day = 3, so days 1 and 2 are open
 
 	// Each day has a single reward leaf (alongside the header leaf).
-	day1Rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), total: "1000", cats: map[string]string{"type1": "1000"}}}
-	day2Rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), total: "2000", cats: map[string]string{"type1": "2000"}}}
-	root1, hproof1, rewardProofs1 := buildSubmission(defaultType, dateOf(1), 0, defaultHeaderTotals(), day1Rewards)
-	root2, hproof2, rewardProofs2 := buildSubmission(defaultType, dateOf(2), 0, defaultHeaderTotals(), day2Rewards)
+	day1Rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), category: "type1", amount: "1000"}}
+	day2Rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), category: "type1", amount: "2000"}}
+	root1, hproof1, rewardProofs1 := buildSubmission(defaultType, dateOf(1), 0, headerTotalsFromRewards(day1Rewards), day1Rewards)
+	root2, hproof2, rewardProofs2 := buildSubmission(defaultType, dateOf(2), 0, headerTotalsFromRewards(day2Rewards), day2Rewards)
 	for _, v := range voters {
-		f.submitRoot(t, v, 1, root1, hproof1)
-		f.submitRoot(t, v, 2, root2, hproof2)
+		f.submitRoot(t, v, 1, root1, hproof1, headerTotalsFromRewards(day1Rewards))
+		f.submitRoot(t, v, 2, root2, hproof2, headerTotalsFromRewards(day2Rewards))
 	}
 	// Advance: day1 -> LIVE by epoch 2, day2 -> LIVE by epoch 3 (review delay 1).
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", 1))
@@ -698,12 +755,12 @@ func TestCategoryTotalsIsolatedByDate(t *testing.T) {
 
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(1), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: "1000", Categories: map[string]string{"type1": "1000"}, Proof: rewardProofs1[0],
+		Category: "type1", Amount: "1000", Denom: testDenom, Proof: rewardProofs1[0],
 	})
 	require.NoError(t, err)
 	_, err = f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(2), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: "2000", Categories: map[string]string{"type1": "2000"}, Proof: rewardProofs2[0],
+		Category: "type1", Amount: "2000", Denom: testDenom, Proof: rewardProofs2[0],
 	})
 	require.NoError(t, err)
 
@@ -726,10 +783,10 @@ func TestClaimRespectsMaxSupply(t *testing.T) {
 
 	const epoch = int64(1)
 	amount := "100000000000000000000" // 1e20, comfortably within day 1's budget
-	rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), total: amount, cats: map[string]string{"type1": amount}}}
-	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, defaultHeaderTotals(), rewards)
+	rewards := []rewardLeaf{{nonce: 0, addr: recipient.String(), category: "type1", amount: amount}}
+	root, hproof, rewardProofs := buildSubmission(defaultType, dateOf(epoch), 0, map[string]string{"type1": amount}, rewards)
 	for _, v := range voters {
-		f.submitRoot(t, v, epoch, root, hproof)
+		f.submitRoot(t, v, epoch, root, hproof, map[string]string{"type1": amount})
 	}
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch))   // -> PENDING
 	require.NoError(t, f.k.EpochHooks().AfterEpochEnd(f.ctx, "day", epoch+1)) // -> LIVE
@@ -742,7 +799,7 @@ func TestClaimRespectsMaxSupply(t *testing.T) {
 
 	_, err := f.msgServer.Claim(f.ctx, &types.MsgClaim{
 		Claimer: recipient.String(), Date: dateOf(epoch), DistroType: defaultType, Nonce: 0, Address: recipient.String(),
-		Total: amount, Categories: map[string]string{"type1": amount}, Proof: rewardProofs[0],
+		Category: "type1", Amount: amount, Denom: testDenom, Proof: rewardProofs[0],
 	})
 	require.ErrorContains(t, err, "max supply exceeded")
 }
@@ -835,24 +892,26 @@ func fourVoterConsensus(t *testing.T) (*distFixture, []sdk.AccAddress) {
 func (f *distFixture) submit(t *testing.T, signer sdk.AccAddress, epoch int64, version uint64) {
 	t.Helper()
 	root, hproof := headerOnlySubmission(dateOf(epoch), version)
-	f.submitRootVersion(t, signer, epoch, version, root, hproof)
+	f.submitRootVersion(t, signer, epoch, version, root, hproof, defaultHeaderTotals())
 }
 
 // submitRoot votes a pre-built (version 0) root with its header inclusion proof.
-// Used by claim tests that build a reward tree with buildSubmission, which always
-// uses version 0.
-func (f *distFixture) submitRoot(t *testing.T, signer sdk.AccAddress, epoch int64, root []byte, headerProof [][]byte) {
+// totals must be the header totals_by_category the root was built with, since the
+// submit handler recomputes the header leaf from them to verify inclusion. Used
+// by claim tests that build a reward tree with buildSubmission (always version 0).
+func (f *distFixture) submitRoot(t *testing.T, signer sdk.AccAddress, epoch int64, root []byte, headerProof [][]byte, totals map[string]string) {
 	t.Helper()
-	f.submitRootVersion(t, signer, epoch, 0, root, headerProof)
+	f.submitRootVersion(t, signer, epoch, 0, root, headerProof, totals)
 }
 
 // submitRootVersion votes a pre-built root whose header leaf was built at the
-// given version; the submitted Version must match the header for inclusion.
-func (f *distFixture) submitRootVersion(t *testing.T, signer sdk.AccAddress, epoch int64, version uint64, root []byte, headerProof [][]byte) {
+// given version and totals; the submitted Version and TotalsByCategory must match
+// the header for inclusion to verify.
+func (f *distFixture) submitRootVersion(t *testing.T, signer sdk.AccAddress, epoch int64, version uint64, root []byte, headerProof [][]byte, totals map[string]string) {
 	t.Helper()
 	_, err := f.msgServer.SubmitDistributionRoot(f.ctx, &types.MsgSubmitDistributionRoot{
 		Signer: signer.String(), Date: dateOf(epoch), DistroType: defaultType,
-		MerkleRoot: root, Version: version, TotalsByCategory: defaultHeaderTotals(), HeaderProof: headerProof,
+		MerkleRoot: root, Version: version, TotalsByCategory: totals, HeaderProof: headerProof,
 	})
 	require.NoError(t, err)
 }

@@ -2318,131 +2318,49 @@ func (x *fastReflection_MsgSubmitDistributionRootResponse) ProtoMethods() *proto
 	}
 }
 
-var _ protoreflect.Map = (*_MsgClaim_6_map)(nil)
+var _ protoreflect.List = (*_MsgClaim_9_list)(nil)
 
-type _MsgClaim_6_map struct {
-	m *map[string]string
-}
-
-func (x *_MsgClaim_6_map) Len() int {
-	if x.m == nil {
-		return 0
-	}
-	return len(*x.m)
-}
-
-func (x *_MsgClaim_6_map) Range(f func(protoreflect.MapKey, protoreflect.Value) bool) {
-	if x.m == nil {
-		return
-	}
-	for k, v := range *x.m {
-		mapKey := (protoreflect.MapKey)(protoreflect.ValueOfString(k))
-		mapValue := protoreflect.ValueOfString(v)
-		if !f(mapKey, mapValue) {
-			break
-		}
-	}
-}
-
-func (x *_MsgClaim_6_map) Has(key protoreflect.MapKey) bool {
-	if x.m == nil {
-		return false
-	}
-	keyUnwrapped := key.String()
-	concreteValue := keyUnwrapped
-	_, ok := (*x.m)[concreteValue]
-	return ok
-}
-
-func (x *_MsgClaim_6_map) Clear(key protoreflect.MapKey) {
-	if x.m == nil {
-		return
-	}
-	keyUnwrapped := key.String()
-	concreteKey := keyUnwrapped
-	delete(*x.m, concreteKey)
-}
-
-func (x *_MsgClaim_6_map) Get(key protoreflect.MapKey) protoreflect.Value {
-	if x.m == nil {
-		return protoreflect.Value{}
-	}
-	keyUnwrapped := key.String()
-	concreteKey := keyUnwrapped
-	v, ok := (*x.m)[concreteKey]
-	if !ok {
-		return protoreflect.Value{}
-	}
-	return protoreflect.ValueOfString(v)
-}
-
-func (x *_MsgClaim_6_map) Set(key protoreflect.MapKey, value protoreflect.Value) {
-	if !key.IsValid() || !value.IsValid() {
-		panic("invalid key or value provided")
-	}
-	keyUnwrapped := key.String()
-	concreteKey := keyUnwrapped
-	valueUnwrapped := value.String()
-	concreteValue := valueUnwrapped
-	(*x.m)[concreteKey] = concreteValue
-}
-
-func (x *_MsgClaim_6_map) Mutable(key protoreflect.MapKey) protoreflect.Value {
-	panic("should not call Mutable on protoreflect.Map whose value is not of type protoreflect.Message")
-}
-
-func (x *_MsgClaim_6_map) NewValue() protoreflect.Value {
-	v := ""
-	return protoreflect.ValueOfString(v)
-}
-
-func (x *_MsgClaim_6_map) IsValid() bool {
-	return x.m != nil
-}
-
-var _ protoreflect.List = (*_MsgClaim_7_list)(nil)
-
-type _MsgClaim_7_list struct {
+type _MsgClaim_9_list struct {
 	list *[][]byte
 }
 
-func (x *_MsgClaim_7_list) Len() int {
+func (x *_MsgClaim_9_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_MsgClaim_7_list) Get(i int) protoreflect.Value {
+func (x *_MsgClaim_9_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfBytes((*x.list)[i])
 }
 
-func (x *_MsgClaim_7_list) Set(i int, value protoreflect.Value) {
+func (x *_MsgClaim_9_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Bytes()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_MsgClaim_7_list) Append(value protoreflect.Value) {
+func (x *_MsgClaim_9_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Bytes()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_MsgClaim_7_list) AppendMutable() protoreflect.Value {
+func (x *_MsgClaim_9_list) AppendMutable() protoreflect.Value {
 	panic(fmt.Errorf("AppendMutable can not be called on message MsgClaim at list field Proof as it is not of Message kind"))
 }
 
-func (x *_MsgClaim_7_list) Truncate(n int) {
+func (x *_MsgClaim_9_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_MsgClaim_7_list) NewElement() protoreflect.Value {
+func (x *_MsgClaim_9_list) NewElement() protoreflect.Value {
 	var v []byte
 	return protoreflect.ValueOfBytes(v)
 }
 
-func (x *_MsgClaim_7_list) IsValid() bool {
+func (x *_MsgClaim_9_list) IsValid() bool {
 	return x.list != nil
 }
 
@@ -2453,8 +2371,9 @@ var (
 	fd_MsgClaim_nonce       protoreflect.FieldDescriptor
 	fd_MsgClaim_distro_type protoreflect.FieldDescriptor
 	fd_MsgClaim_address     protoreflect.FieldDescriptor
-	fd_MsgClaim_total       protoreflect.FieldDescriptor
-	fd_MsgClaim_categories  protoreflect.FieldDescriptor
+	fd_MsgClaim_category    protoreflect.FieldDescriptor
+	fd_MsgClaim_amount      protoreflect.FieldDescriptor
+	fd_MsgClaim_denom       protoreflect.FieldDescriptor
 	fd_MsgClaim_proof       protoreflect.FieldDescriptor
 )
 
@@ -2466,8 +2385,9 @@ func init() {
 	fd_MsgClaim_nonce = md_MsgClaim.Fields().ByName("nonce")
 	fd_MsgClaim_distro_type = md_MsgClaim.Fields().ByName("distro_type")
 	fd_MsgClaim_address = md_MsgClaim.Fields().ByName("address")
-	fd_MsgClaim_total = md_MsgClaim.Fields().ByName("total")
-	fd_MsgClaim_categories = md_MsgClaim.Fields().ByName("categories")
+	fd_MsgClaim_category = md_MsgClaim.Fields().ByName("category")
+	fd_MsgClaim_amount = md_MsgClaim.Fields().ByName("amount")
+	fd_MsgClaim_denom = md_MsgClaim.Fields().ByName("denom")
 	fd_MsgClaim_proof = md_MsgClaim.Fields().ByName("proof")
 }
 
@@ -2566,20 +2486,26 @@ func (x *fastReflection_MsgClaim) Range(f func(protoreflect.FieldDescriptor, pro
 			return
 		}
 	}
-	if x.Total != "" {
-		value := protoreflect.ValueOfString(x.Total)
-		if !f(fd_MsgClaim_total, value) {
+	if x.Category != "" {
+		value := protoreflect.ValueOfString(x.Category)
+		if !f(fd_MsgClaim_category, value) {
 			return
 		}
 	}
-	if len(x.Categories) != 0 {
-		value := protoreflect.ValueOfMap(&_MsgClaim_6_map{m: &x.Categories})
-		if !f(fd_MsgClaim_categories, value) {
+	if x.Amount != "" {
+		value := protoreflect.ValueOfString(x.Amount)
+		if !f(fd_MsgClaim_amount, value) {
+			return
+		}
+	}
+	if x.Denom != "" {
+		value := protoreflect.ValueOfString(x.Denom)
+		if !f(fd_MsgClaim_denom, value) {
 			return
 		}
 	}
 	if len(x.Proof) != 0 {
-		value := protoreflect.ValueOfList(&_MsgClaim_7_list{list: &x.Proof})
+		value := protoreflect.ValueOfList(&_MsgClaim_9_list{list: &x.Proof})
 		if !f(fd_MsgClaim_proof, value) {
 			return
 		}
@@ -2609,10 +2535,12 @@ func (x *fastReflection_MsgClaim) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.DistroType != ""
 	case "distro.v1.MsgClaim.address":
 		return x.Address != ""
-	case "distro.v1.MsgClaim.total":
-		return x.Total != ""
-	case "distro.v1.MsgClaim.categories":
-		return len(x.Categories) != 0
+	case "distro.v1.MsgClaim.category":
+		return x.Category != ""
+	case "distro.v1.MsgClaim.amount":
+		return x.Amount != ""
+	case "distro.v1.MsgClaim.denom":
+		return x.Denom != ""
 	case "distro.v1.MsgClaim.proof":
 		return len(x.Proof) != 0
 	default:
@@ -2641,10 +2569,12 @@ func (x *fastReflection_MsgClaim) Clear(fd protoreflect.FieldDescriptor) {
 		x.DistroType = ""
 	case "distro.v1.MsgClaim.address":
 		x.Address = ""
-	case "distro.v1.MsgClaim.total":
-		x.Total = ""
-	case "distro.v1.MsgClaim.categories":
-		x.Categories = nil
+	case "distro.v1.MsgClaim.category":
+		x.Category = ""
+	case "distro.v1.MsgClaim.amount":
+		x.Amount = ""
+	case "distro.v1.MsgClaim.denom":
+		x.Denom = ""
 	case "distro.v1.MsgClaim.proof":
 		x.Proof = nil
 	default:
@@ -2678,20 +2608,20 @@ func (x *fastReflection_MsgClaim) Get(descriptor protoreflect.FieldDescriptor) p
 	case "distro.v1.MsgClaim.address":
 		value := x.Address
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.MsgClaim.total":
-		value := x.Total
+	case "distro.v1.MsgClaim.category":
+		value := x.Category
 		return protoreflect.ValueOfString(value)
-	case "distro.v1.MsgClaim.categories":
-		if len(x.Categories) == 0 {
-			return protoreflect.ValueOfMap(&_MsgClaim_6_map{})
-		}
-		mapValue := &_MsgClaim_6_map{m: &x.Categories}
-		return protoreflect.ValueOfMap(mapValue)
+	case "distro.v1.MsgClaim.amount":
+		value := x.Amount
+		return protoreflect.ValueOfString(value)
+	case "distro.v1.MsgClaim.denom":
+		value := x.Denom
+		return protoreflect.ValueOfString(value)
 	case "distro.v1.MsgClaim.proof":
 		if len(x.Proof) == 0 {
-			return protoreflect.ValueOfList(&_MsgClaim_7_list{})
+			return protoreflect.ValueOfList(&_MsgClaim_9_list{})
 		}
-		listValue := &_MsgClaim_7_list{list: &x.Proof}
+		listValue := &_MsgClaim_9_list{list: &x.Proof}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
@@ -2723,15 +2653,15 @@ func (x *fastReflection_MsgClaim) Set(fd protoreflect.FieldDescriptor, value pro
 		x.DistroType = value.Interface().(string)
 	case "distro.v1.MsgClaim.address":
 		x.Address = value.Interface().(string)
-	case "distro.v1.MsgClaim.total":
-		x.Total = value.Interface().(string)
-	case "distro.v1.MsgClaim.categories":
-		mv := value.Map()
-		cmv := mv.(*_MsgClaim_6_map)
-		x.Categories = *cmv.m
+	case "distro.v1.MsgClaim.category":
+		x.Category = value.Interface().(string)
+	case "distro.v1.MsgClaim.amount":
+		x.Amount = value.Interface().(string)
+	case "distro.v1.MsgClaim.denom":
+		x.Denom = value.Interface().(string)
 	case "distro.v1.MsgClaim.proof":
 		lv := value.List()
-		clv := lv.(*_MsgClaim_7_list)
+		clv := lv.(*_MsgClaim_9_list)
 		x.Proof = *clv.list
 	default:
 		if fd.IsExtension() {
@@ -2753,17 +2683,11 @@ func (x *fastReflection_MsgClaim) Set(fd protoreflect.FieldDescriptor, value pro
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaim) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "distro.v1.MsgClaim.categories":
-		if x.Categories == nil {
-			x.Categories = make(map[string]string)
-		}
-		value := &_MsgClaim_6_map{m: &x.Categories}
-		return protoreflect.ValueOfMap(value)
 	case "distro.v1.MsgClaim.proof":
 		if x.Proof == nil {
 			x.Proof = [][]byte{}
 		}
-		value := &_MsgClaim_7_list{list: &x.Proof}
+		value := &_MsgClaim_9_list{list: &x.Proof}
 		return protoreflect.ValueOfList(value)
 	case "distro.v1.MsgClaim.claimer":
 		panic(fmt.Errorf("field claimer of message distro.v1.MsgClaim is not mutable"))
@@ -2775,8 +2699,12 @@ func (x *fastReflection_MsgClaim) Mutable(fd protoreflect.FieldDescriptor) proto
 		panic(fmt.Errorf("field distro_type of message distro.v1.MsgClaim is not mutable"))
 	case "distro.v1.MsgClaim.address":
 		panic(fmt.Errorf("field address of message distro.v1.MsgClaim is not mutable"))
-	case "distro.v1.MsgClaim.total":
-		panic(fmt.Errorf("field total of message distro.v1.MsgClaim is not mutable"))
+	case "distro.v1.MsgClaim.category":
+		panic(fmt.Errorf("field category of message distro.v1.MsgClaim is not mutable"))
+	case "distro.v1.MsgClaim.amount":
+		panic(fmt.Errorf("field amount of message distro.v1.MsgClaim is not mutable"))
+	case "distro.v1.MsgClaim.denom":
+		panic(fmt.Errorf("field denom of message distro.v1.MsgClaim is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.MsgClaim"))
@@ -2800,14 +2728,15 @@ func (x *fastReflection_MsgClaim) NewField(fd protoreflect.FieldDescriptor) prot
 		return protoreflect.ValueOfString("")
 	case "distro.v1.MsgClaim.address":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.MsgClaim.total":
+	case "distro.v1.MsgClaim.category":
 		return protoreflect.ValueOfString("")
-	case "distro.v1.MsgClaim.categories":
-		m := make(map[string]string)
-		return protoreflect.ValueOfMap(&_MsgClaim_6_map{m: &m})
+	case "distro.v1.MsgClaim.amount":
+		return protoreflect.ValueOfString("")
+	case "distro.v1.MsgClaim.denom":
+		return protoreflect.ValueOfString("")
 	case "distro.v1.MsgClaim.proof":
 		list := [][]byte{}
-		return protoreflect.ValueOfList(&_MsgClaim_7_list{list: &list})
+		return protoreflect.ValueOfList(&_MsgClaim_9_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: distro.v1.MsgClaim"))
@@ -2896,30 +2825,17 @@ func (x *fastReflection_MsgClaim) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.Total)
+		l = len(x.Category)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if len(x.Categories) > 0 {
-			SiZeMaP := func(k string, v string) {
-				mapEntrySize := 1 + len(k) + runtime.Sov(uint64(len(k))) + 1 + len(v) + runtime.Sov(uint64(len(v)))
-				n += mapEntrySize + 1 + runtime.Sov(uint64(mapEntrySize))
-			}
-			if options.Deterministic {
-				sortme := make([]string, 0, len(x.Categories))
-				for k := range x.Categories {
-					sortme = append(sortme, k)
-				}
-				sort.Strings(sortme)
-				for _, k := range sortme {
-					v := x.Categories[k]
-					SiZeMaP(k, v)
-				}
-			} else {
-				for k, v := range x.Categories {
-					SiZeMaP(k, v)
-				}
-			}
+		l = len(x.Amount)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Denom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if len(x.Proof) > 0 {
 			for _, b := range x.Proof {
@@ -2956,76 +2872,47 @@ func (x *fastReflection_MsgClaim) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.DistroType) > 0 {
-			i -= len(x.DistroType)
-			copy(dAtA[i:], x.DistroType)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.DistroType)))
-			i--
-			dAtA[i] = 0x42
-		}
 		if len(x.Proof) > 0 {
 			for iNdEx := len(x.Proof) - 1; iNdEx >= 0; iNdEx-- {
 				i -= len(x.Proof[iNdEx])
 				copy(dAtA[i:], x.Proof[iNdEx])
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Proof[iNdEx])))
 				i--
-				dAtA[i] = 0x3a
+				dAtA[i] = 0x4a
 			}
 		}
-		if len(x.Categories) > 0 {
-			MaRsHaLmAp := func(k string, v string) (protoiface.MarshalOutput, error) {
-				baseI := i
-				i -= len(v)
-				copy(dAtA[i:], v)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(v)))
-				i--
-				dAtA[i] = 0x12
-				i -= len(k)
-				copy(dAtA[i:], k)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(k)))
-				i--
-				dAtA[i] = 0xa
-				i = runtime.EncodeVarint(dAtA, i, uint64(baseI-i))
-				i--
-				dAtA[i] = 0x32
-				return protoiface.MarshalOutput{}, nil
-			}
-			if options.Deterministic {
-				keysForCategories := make([]string, 0, len(x.Categories))
-				for k := range x.Categories {
-					keysForCategories = append(keysForCategories, string(k))
-				}
-				sort.Slice(keysForCategories, func(i, j int) bool {
-					return keysForCategories[i] < keysForCategories[j]
-				})
-				for iNdEx := len(keysForCategories) - 1; iNdEx >= 0; iNdEx-- {
-					v := x.Categories[string(keysForCategories[iNdEx])]
-					out, err := MaRsHaLmAp(keysForCategories[iNdEx], v)
-					if err != nil {
-						return out, err
-					}
-				}
-			} else {
-				for k := range x.Categories {
-					v := x.Categories[k]
-					out, err := MaRsHaLmAp(k, v)
-					if err != nil {
-						return out, err
-					}
-				}
-			}
-		}
-		if len(x.Total) > 0 {
-			i -= len(x.Total)
-			copy(dAtA[i:], x.Total)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Total)))
+		if len(x.Denom) > 0 {
+			i -= len(x.Denom)
+			copy(dAtA[i:], x.Denom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Denom)))
 			i--
-			dAtA[i] = 0x2a
+			dAtA[i] = 0x42
+		}
+		if len(x.Amount) > 0 {
+			i -= len(x.Amount)
+			copy(dAtA[i:], x.Amount)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Amount)))
+			i--
+			dAtA[i] = 0x3a
+		}
+		if len(x.Category) > 0 {
+			i -= len(x.Category)
+			copy(dAtA[i:], x.Category)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Category)))
+			i--
+			dAtA[i] = 0x32
 		}
 		if len(x.Address) > 0 {
 			i -= len(x.Address)
 			copy(dAtA[i:], x.Address)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Address)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.DistroType) > 0 {
+			i -= len(x.DistroType)
+			copy(dAtA[i:], x.DistroType)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.DistroType)))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -3180,7 +3067,7 @@ func (x *fastReflection_MsgClaim) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 8:
+			case 4:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DistroType", wireType)
 				}
@@ -3212,7 +3099,7 @@ func (x *fastReflection_MsgClaim) ProtoMethods() *protoiface.Methods {
 				}
 				x.DistroType = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 4:
+			case 5:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
 				}
@@ -3244,9 +3131,9 @@ func (x *fastReflection_MsgClaim) ProtoMethods() *protoiface.Methods {
 				}
 				x.Address = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 5:
+			case 6:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Category", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -3274,13 +3161,13 @@ func (x *fastReflection_MsgClaim) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Total = string(dAtA[iNdEx:postIndex])
+				x.Category = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 6:
+			case 7:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Categories", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
 				}
-				var msglen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -3290,120 +3177,57 @@ func (x *fastReflection_MsgClaim) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					msglen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if msglen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + msglen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.Categories == nil {
-					x.Categories = make(map[string]string)
-				}
-				var mapkey string
-				var mapvalue string
-				for iNdEx < postIndex {
-					entryPreIndex := iNdEx
-					var wire uint64
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-						}
-						if iNdEx >= l {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						wire |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					fieldNum := int32(wire >> 3)
-					if fieldNum == 1 {
-						var stringLenmapkey uint64
-						for shift := uint(0); ; shift += 7 {
-							if shift >= 64 {
-								return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-							}
-							if iNdEx >= l {
-								return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-							}
-							b := dAtA[iNdEx]
-							iNdEx++
-							stringLenmapkey |= uint64(b&0x7F) << shift
-							if b < 0x80 {
-								break
-							}
-						}
-						intStringLenmapkey := int(stringLenmapkey)
-						if intStringLenmapkey < 0 {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-						}
-						postStringIndexmapkey := iNdEx + intStringLenmapkey
-						if postStringIndexmapkey < 0 {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-						}
-						if postStringIndexmapkey > l {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-						}
-						mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
-						iNdEx = postStringIndexmapkey
-					} else if fieldNum == 2 {
-						var stringLenmapvalue uint64
-						for shift := uint(0); ; shift += 7 {
-							if shift >= 64 {
-								return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-							}
-							if iNdEx >= l {
-								return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-							}
-							b := dAtA[iNdEx]
-							iNdEx++
-							stringLenmapvalue |= uint64(b&0x7F) << shift
-							if b < 0x80 {
-								break
-							}
-						}
-						intStringLenmapvalue := int(stringLenmapvalue)
-						if intStringLenmapvalue < 0 {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-						}
-						postStringIndexmapvalue := iNdEx + intStringLenmapvalue
-						if postStringIndexmapvalue < 0 {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-						}
-						if postStringIndexmapvalue > l {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-						}
-						mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
-						iNdEx = postStringIndexmapvalue
-					} else {
-						iNdEx = entryPreIndex
-						skippy, err := runtime.Skip(dAtA[iNdEx:])
-						if err != nil {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-						}
-						if (skippy < 0) || (iNdEx+skippy) < 0 {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-						}
-						if (iNdEx + skippy) > postIndex {
-							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-						}
-						iNdEx += skippy
-					}
-				}
-				x.Categories[mapkey] = mapvalue
+				x.Amount = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 7:
+			case 8:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Denom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 9:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Proof", wireType)
 				}
@@ -5846,28 +5670,32 @@ func (*MsgSubmitDistributionRootResponse) Descriptor() ([]byte, []int) {
 	return file_distro_v1_tx_proto_rawDescGZIP(), []int{3}
 }
 
-// MsgClaim claims a reward from a finalized (live) day's distribution. The leaf
-// is reconstructed from (nonce, address, total, categories) and verified against
-// the canonical root via the supplied merkle proof.
+// MsgClaim claims a single (category, amount) reward from a finalized (live)
+// (day, type) distribution. Each merkle leaf represents one category/amount for
+// one earner; the leaf is reconstructed from
+// (nonce, address, category, amount, denom) and verified against the canonical
+// root via the supplied merkle proof.
 type MsgClaim struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// claimer signs and submits the tx; it need not be the reward earner.
 	Claimer string `protobuf:"bytes,1,opt,name=claimer,proto3" json:"claimer,omitempty"`
 	// date is the distribution day in YYYY-MM-DD form.
 	Date  string `protobuf:"bytes,2,opt,name=date,proto3" json:"date,omitempty"`
 	Nonce uint64 `protobuf:"varint,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
 	// distro_type is the distribution type id being claimed against.
-	DistroType string `protobuf:"bytes,8,opt,name=distro_type,json=distroType,proto3" json:"distro_type,omitempty"`
-	Address    string `protobuf:"bytes,4,opt,name=address,proto3" json:"address,omitempty"`
-	// total is the full reward amount for this leaf. It must equal the sum of the
-	// category amounts.
-	Total string `protobuf:"bytes,5,opt,name=total,proto3" json:"total,omitempty"`
-	// categories breaks the total down by reward category (e.g. "type1"). The
-	// merkle leaf commits to this map, so the breakdown cannot be tampered with.
-	Categories map[string]string `protobuf:"bytes,6,rep,name=categories,proto3" json:"categories,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Proof      [][]byte          `protobuf:"bytes,7,rep,name=proof,proto3" json:"proof,omitempty"`
+	DistroType string `protobuf:"bytes,4,opt,name=distro_type,json=distroType,proto3" json:"distro_type,omitempty"`
+	// address is the reward earner that receives the minted amount.
+	Address string `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	// category is the reward category this leaf belongs to.
+	Category string `protobuf:"bytes,6,opt,name=category,proto3" json:"category,omitempty"`
+	// amount is the reward amount for this leaf.
+	Amount string `protobuf:"bytes,7,opt,name=amount,proto3" json:"amount,omitempty"`
+	// denom is the reward denom (must be the module denom).
+	Denom string   `protobuf:"bytes,8,opt,name=denom,proto3" json:"denom,omitempty"`
+	Proof [][]byte `protobuf:"bytes,9,rep,name=proof,proto3" json:"proof,omitempty"`
 }
 
 func (x *MsgClaim) Reset() {
@@ -5925,18 +5753,25 @@ func (x *MsgClaim) GetAddress() string {
 	return ""
 }
 
-func (x *MsgClaim) GetTotal() string {
+func (x *MsgClaim) GetCategory() string {
 	if x != nil {
-		return x.Total
+		return x.Category
 	}
 	return ""
 }
 
-func (x *MsgClaim) GetCategories() map[string]string {
+func (x *MsgClaim) GetAmount() string {
 	if x != nil {
-		return x.Categories
+		return x.Amount
 	}
-	return nil
+	return ""
+}
+
+func (x *MsgClaim) GetDenom() string {
+	if x != nil {
+		return x.Denom
+	}
+	return ""
 }
 
 func (x *MsgClaim) GetProof() [][]byte {
@@ -6189,7 +6024,7 @@ var file_distro_v1_tx_proto_rawDesc = []byte{
 	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x3a, 0x0b, 0x82, 0xe7, 0xb0, 0x2a,
 	0x06, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x22, 0x23, 0x0a, 0x21, 0x4d, 0x73, 0x67, 0x53, 0x75,
 	0x62, 0x6d, 0x69, 0x74, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x6f, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xfb, 0x02, 0x0a,
+	0x52, 0x6f, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xab, 0x02, 0x0a,
 	0x08, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x32, 0x0a, 0x07, 0x63, 0x6c, 0x61,
 	0x69, 0x6d, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
@@ -6197,22 +6032,17 @@ var file_distro_v1_tx_proto_rawDesc = []byte{
 	0x04, 0x64, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x64, 0x61, 0x74,
 	0x65, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04,
 	0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x64, 0x69, 0x73, 0x74, 0x72,
-	0x6f, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x64, 0x69,
+	0x6f, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x64, 0x69,
 	0x73, 0x74, 0x72, 0x6f, 0x54, 0x79, 0x70, 0x65, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x65, 0x73, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x14, 0x0a, 0x05,
-	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x74,
-	0x61, 0x6c, 0x12, 0x43, 0x0a, 0x0a, 0x63, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73,
-	0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x64, 0x69, 0x73, 0x74, 0x72, 0x6f, 0x2e,
-	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x2e, 0x43, 0x61, 0x74, 0x65,
-	0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x0a, 0x63, 0x61, 0x74,
-	0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66,
-	0x18, 0x07, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x1a, 0x3d, 0x0a,
-	0x0f, 0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79,
-	0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b,
-	0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x3a, 0x0c, 0x82, 0xe7,
+	0x69, 0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x1a, 0x0a, 0x08,
+	0x63, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
+	0x63, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x79, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75,
+	0x6e, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
+	0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18,
+	0x09, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x3a, 0x0c, 0x82, 0xe7,
 	0xb0, 0x2a, 0x07, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x72, 0x22, 0x12, 0x0a, 0x10, 0x4d, 0x73,
 	0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x9a,
 	0x01, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x43, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x6e, 0x67, 0x65, 0x44,
@@ -6307,7 +6137,7 @@ func file_distro_v1_tx_proto_rawDescGZIP() []byte {
 	return file_distro_v1_tx_proto_rawDescData
 }
 
-var file_distro_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_distro_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_distro_v1_tx_proto_goTypes = []interface{}{
 	(*MsgUpdateParams)(nil),                   // 0: distro.v1.MsgUpdateParams
 	(*MsgUpdateParamsResponse)(nil),           // 1: distro.v1.MsgUpdateParamsResponse
@@ -6320,28 +6150,26 @@ var file_distro_v1_tx_proto_goTypes = []interface{}{
 	(*MsgReviveDistribution)(nil),             // 8: distro.v1.MsgReviveDistribution
 	(*MsgReviveDistributionResponse)(nil),     // 9: distro.v1.MsgReviveDistributionResponse
 	nil,                                       // 10: distro.v1.MsgSubmitDistributionRoot.TotalsByCategoryEntry
-	nil,                                       // 11: distro.v1.MsgClaim.CategoriesEntry
-	(*Params)(nil),                            // 12: distro.v1.Params
+	(*Params)(nil),                            // 11: distro.v1.Params
 }
 var file_distro_v1_tx_proto_depIdxs = []int32{
-	12, // 0: distro.v1.MsgUpdateParams.params:type_name -> distro.v1.Params
+	11, // 0: distro.v1.MsgUpdateParams.params:type_name -> distro.v1.Params
 	10, // 1: distro.v1.MsgSubmitDistributionRoot.totals_by_category:type_name -> distro.v1.MsgSubmitDistributionRoot.TotalsByCategoryEntry
-	11, // 2: distro.v1.MsgClaim.categories:type_name -> distro.v1.MsgClaim.CategoriesEntry
-	0,  // 3: distro.v1.Msg.UpdateParams:input_type -> distro.v1.MsgUpdateParams
-	2,  // 4: distro.v1.Msg.SubmitDistributionRoot:input_type -> distro.v1.MsgSubmitDistributionRoot
-	4,  // 5: distro.v1.Msg.Claim:input_type -> distro.v1.MsgClaim
-	6,  // 6: distro.v1.Msg.ChallengeDistribution:input_type -> distro.v1.MsgChallengeDistribution
-	8,  // 7: distro.v1.Msg.ReviveDistribution:input_type -> distro.v1.MsgReviveDistribution
-	1,  // 8: distro.v1.Msg.UpdateParams:output_type -> distro.v1.MsgUpdateParamsResponse
-	3,  // 9: distro.v1.Msg.SubmitDistributionRoot:output_type -> distro.v1.MsgSubmitDistributionRootResponse
-	5,  // 10: distro.v1.Msg.Claim:output_type -> distro.v1.MsgClaimResponse
-	7,  // 11: distro.v1.Msg.ChallengeDistribution:output_type -> distro.v1.MsgChallengeDistributionResponse
-	9,  // 12: distro.v1.Msg.ReviveDistribution:output_type -> distro.v1.MsgReviveDistributionResponse
-	8,  // [8:13] is the sub-list for method output_type
-	3,  // [3:8] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	0,  // 2: distro.v1.Msg.UpdateParams:input_type -> distro.v1.MsgUpdateParams
+	2,  // 3: distro.v1.Msg.SubmitDistributionRoot:input_type -> distro.v1.MsgSubmitDistributionRoot
+	4,  // 4: distro.v1.Msg.Claim:input_type -> distro.v1.MsgClaim
+	6,  // 5: distro.v1.Msg.ChallengeDistribution:input_type -> distro.v1.MsgChallengeDistribution
+	8,  // 6: distro.v1.Msg.ReviveDistribution:input_type -> distro.v1.MsgReviveDistribution
+	1,  // 7: distro.v1.Msg.UpdateParams:output_type -> distro.v1.MsgUpdateParamsResponse
+	3,  // 8: distro.v1.Msg.SubmitDistributionRoot:output_type -> distro.v1.MsgSubmitDistributionRootResponse
+	5,  // 9: distro.v1.Msg.Claim:output_type -> distro.v1.MsgClaimResponse
+	7,  // 10: distro.v1.Msg.ChallengeDistribution:output_type -> distro.v1.MsgChallengeDistributionResponse
+	9,  // 11: distro.v1.Msg.ReviveDistribution:output_type -> distro.v1.MsgReviveDistributionResponse
+	7,  // [7:12] is the sub-list for method output_type
+	2,  // [2:7] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_distro_v1_tx_proto_init() }
@@ -6478,7 +6306,7 @@ func file_distro_v1_tx_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_distro_v1_tx_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

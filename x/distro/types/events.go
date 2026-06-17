@@ -21,6 +21,7 @@ const (
 	AttributeKeyNonce          = "nonce"
 	AttributeKeyClaimer        = "claimer"
 	AttributeKeyAddress        = "address"
+	AttributeKeyCategory       = "category"
 	AttributeKeyAmount         = "amount"
 	AttributeKeyChallenger     = "challenger"
 	AttributeKeyBond           = "bond"

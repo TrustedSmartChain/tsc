@@ -5,8 +5,8 @@
     "merkle_vectors_test.go re-derives every value from the inputs on each run, so this",
     "file cannot drift from the code. Off-chain workers must reproduce all of it exactly.",
     "",
-    "Leaf hash:  sha256(0x00 || uint64BE(nonce) || lp(address) || lp(total) || uint32BE(numCategories)",
-    "            || for each (key,value) sorted ascending by raw byte order of key: lp(key) || lp(value))",
+    "Each leaf is a single (category, amount) reward for one earner on a (date, distro type).",
+    "Leaf hash:  sha256(0x00 || uint64BE(nonce) || lp(date) || lp(distro_type) || lp(address) || lp(category) || lp(amount) || lp(denom))",
     "            where lp(x) = uint32BE(len(x)) || x.",
     "Inner node: sha256(0x01 || min(a,b) || max(a,b))  (children sorted bytewise, so proofs need no direction bits).",
     "",
@@ -16,10 +16,9 @@
     "a level where the node was promoted contributes no sibling. Verification folds the",
     "proof into the leaf with the inner-node rule and compares to the root.",
     "",
-    "Empty categories are NOT a valid leaf: the chain rejects claims with an empty",
-    "category map (types.ValidateClaimAmounts: 'categories must not be empty'), and the",
-    "total must equal the sum of the category amounts. No vector covers an empty map",
-    "because no such leaf can ever be claimed."
+    "A claimable leaf has a positive amount and a non-empty category and denom; the",
+    "submitted tree typically also contains a header leaf (domain prefix 0x02), which is",
+    "not shown here — these vectors cover the reward-leaf encoding only."
   ],
   "cases": [
     {
@@ -28,17 +27,18 @@
       "leaves": [
         {
           "nonce": 0,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1alice",
-          "total": "42",
-          "categories": {
-            "node": "42"
-          }
+          "category": "node",
+          "amount": "42",
+          "denom": "aTSC"
         }
       ],
       "leaf_hashes": [
-        "540223311a49c48cde22543951434e146a4b3d67af7b00437ef43a6bc68cc0a7"
+        "b922c7662072322f4c48540bb51f6020246e59fc735cd00c09966e0b12f000cc"
       ],
-      "root": "540223311a49c48cde22543951434e146a4b3d67af7b00437ef43a6bc68cc0a7",
+      "root": "b922c7662072322f4c48540bb51f6020246e59fc735cd00c09966e0b12f000cc",
       "proofs": [
         []
       ]
@@ -48,32 +48,34 @@
       "leaves": [
         {
           "nonce": 0,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1alice",
-          "total": "100",
-          "categories": {
-            "node": "100"
-          }
+          "category": "node",
+          "amount": "100",
+          "denom": "aTSC"
         },
         {
           "nonce": 1,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1bob",
-          "total": "200",
-          "categories": {
-            "node": "200"
-          }
+          "category": "node",
+          "amount": "200",
+          "denom": "aTSC"
         }
       ],
       "leaf_hashes": [
-        "619cc937c692b2b2a6ed2ca452b3632c46cbeab8ca9a9cf55aa7a3ac80cfb863",
-        "431167c55f25b932e2b11f00ec9595d3a0422e0f3c455e8d453ac006146988c2"
+        "7ace491c553dab54d87253dbed4d3a50e301e393af8ced24efd9538023520d6e",
+        "6d6055f88855adac8a4a88ab5968cdb9318aaf071f710e5e8575176dbef47e14"
       ],
-      "root": "fdd7d4375d7281165460978d293223415015cadb2abe0f31d560bfe86c3ebf57",
+      "root": "918bcbe9529462d1b65bd63e827e905400f8014c184a05b3acbaefa1979c5e81",
       "proofs": [
         [
-          "431167c55f25b932e2b11f00ec9595d3a0422e0f3c455e8d453ac006146988c2"
+          "6d6055f88855adac8a4a88ab5968cdb9318aaf071f710e5e8575176dbef47e14"
         ],
         [
-          "619cc937c692b2b2a6ed2ca452b3632c46cbeab8ca9a9cf55aa7a3ac80cfb863"
+          "7ace491c553dab54d87253dbed4d3a50e301e393af8ced24efd9538023520d6e"
         ]
       ]
     },
@@ -83,128 +85,133 @@
       "leaves": [
         {
           "nonce": 0,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1alice",
-          "total": "10",
-          "categories": {
-            "node": "10"
-          }
+          "category": "node",
+          "amount": "10",
+          "denom": "aTSC"
         },
         {
           "nonce": 1,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1bob",
-          "total": "20",
-          "categories": {
-            "node": "20"
-          }
+          "category": "node",
+          "amount": "20",
+          "denom": "aTSC"
         },
         {
           "nonce": 2,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1carol",
-          "total": "30",
-          "categories": {
-            "node": "30"
-          }
+          "category": "node",
+          "amount": "30",
+          "denom": "aTSC"
         },
         {
           "nonce": 3,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1dave",
-          "total": "40",
-          "categories": {
-            "node": "40"
-          }
+          "category": "node",
+          "amount": "40",
+          "denom": "aTSC"
         },
         {
           "nonce": 4,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1erin",
-          "total": "50",
-          "categories": {
-            "node": "50"
-          }
+          "category": "node",
+          "amount": "50",
+          "denom": "aTSC"
         }
       ],
       "leaf_hashes": [
-        "0d394115f9e1b91aad5435fbf6144d694bcc938756e1392b3137e9cb5454b6d9",
-        "754a5d8aa041b1a6c5b78037ef0f8eb113dbcfc99da8a12e44111941b8c56f08",
-        "d0588c01a97be97a652fbc7569d29163a6528419289d5291bbf018a465076221",
-        "aa7a1985133186f17df6dffe7f816e5945ef17ee38c90f12129de8a7c989c4b3",
-        "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+        "7c7534bc4eab845b5bdb5f1f36a22407fca063b1bad05805cd8c6d115394f8f8",
+        "a45d4195e5136ab37844e3c3fc03ae05eaacfd780cd75849fd19465567a1bc59",
+        "58a2e6c36125dcadf4742f923851391bc12d396a5a49e112cb847ec1e7221e85",
+        "b236ded01051b430266bdf786e3185479cd42ee8100bd32fa7ddc9e17b8cd862",
+        "8ee65cfe0559f62ee7598b955a7033ec36dd08b3bca2056177606a8c0a016313"
       ],
-      "root": "b6d2164d6075d0646fc25275949893f22f19f0eeffba19aa492b78720346b6df",
+      "root": "169c82a4b0e6dd6f0d7a92ea9c081700844bea26ee184439890b0aabb59ac2a8",
       "proofs": [
         [
-          "754a5d8aa041b1a6c5b78037ef0f8eb113dbcfc99da8a12e44111941b8c56f08",
-          "40146c1f29900708000a2b0e4ffa8c510da9caef285195b6dc3d7e9a7616783f",
-          "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+          "a45d4195e5136ab37844e3c3fc03ae05eaacfd780cd75849fd19465567a1bc59",
+          "f67b520931602093ae32f12053671d9afff6e9d8d46961047cd68baf27955f7d",
+          "8ee65cfe0559f62ee7598b955a7033ec36dd08b3bca2056177606a8c0a016313"
         ],
         [
-          "0d394115f9e1b91aad5435fbf6144d694bcc938756e1392b3137e9cb5454b6d9",
-          "40146c1f29900708000a2b0e4ffa8c510da9caef285195b6dc3d7e9a7616783f",
-          "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+          "7c7534bc4eab845b5bdb5f1f36a22407fca063b1bad05805cd8c6d115394f8f8",
+          "f67b520931602093ae32f12053671d9afff6e9d8d46961047cd68baf27955f7d",
+          "8ee65cfe0559f62ee7598b955a7033ec36dd08b3bca2056177606a8c0a016313"
         ],
         [
-          "aa7a1985133186f17df6dffe7f816e5945ef17ee38c90f12129de8a7c989c4b3",
-          "31aea395b391e92e40c560069c09c008f8bccfe33db05e3315c30c4e90dad6fe",
-          "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+          "b236ded01051b430266bdf786e3185479cd42ee8100bd32fa7ddc9e17b8cd862",
+          "c0703022fe1ecfd82668e0d323a7d3707ab54b6d4b4ebd729e917302f3b23370",
+          "8ee65cfe0559f62ee7598b955a7033ec36dd08b3bca2056177606a8c0a016313"
         ],
         [
-          "d0588c01a97be97a652fbc7569d29163a6528419289d5291bbf018a465076221",
-          "31aea395b391e92e40c560069c09c008f8bccfe33db05e3315c30c4e90dad6fe",
-          "f0361e9d89b0006a8a9b22bc244c14f3f4cd543e438a7570773a3e8dd0c75f39"
+          "58a2e6c36125dcadf4742f923851391bc12d396a5a49e112cb847ec1e7221e85",
+          "c0703022fe1ecfd82668e0d323a7d3707ab54b6d4b4ebd729e917302f3b23370",
+          "8ee65cfe0559f62ee7598b955a7033ec36dd08b3bca2056177606a8c0a016313"
         ],
         [
-          "01fbfbb928aaae53db8abb1c738abe79f4bd6cb2bd5d89782a78664f42bd2c25"
+          "79aa70c5c272b4b4741c6d5fa6539c6397ad38af7167e62f90f7624c8f56f40e"
         ]
       ]
     },
     {
-      "name": "multi_category",
-      "note": "Categories are encoded sorted ascending by raw byte order: 'Zeta' (0x5A...) sorts before 'alpha' (0x61...), and 'a10' sorts before 'a2'. Encoding them in any other order produces a different leaf hash.",
+      "name": "mixed_categories",
+      "note": "Leaves in different categories for the same earner each get their own nonce and leaf; the leaf commits to (nonce, date, distro_type, address, category, amount, denom), so changing any field changes the hash.",
       "leaves": [
         {
           "nonce": 7,
+          "date": "2025-07-22",
+          "distro_type": "type1",
           "address": "tsc1alice",
-          "total": "600",
-          "categories": {
-            "Zeta": "100",
-            "alpha": "200",
-            "beta": "300"
-          }
+          "category": "team",
+          "amount": "100",
+          "denom": "aTSC"
         },
         {
           "nonce": 8,
-          "address": "tsc1bob",
-          "total": "33",
-          "categories": {
-            "a10": "11",
-            "a2": "22"
-          }
+          "date": "2025-07-22",
+          "distro_type": "type1",
+          "address": "tsc1alice",
+          "category": "node",
+          "amount": "200",
+          "denom": "aTSC"
         },
         {
           "nonce": 9,
-          "address": "tsc1carol",
-          "total": "5",
-          "categories": {
-            "node": "5"
-          }
+          "date": "2025-07-22",
+          "distro_type": "type1",
+          "address": "tsc1bob",
+          "category": "node",
+          "amount": "5",
+          "denom": "aTSC"
         }
       ],
       "leaf_hashes": [
-        "ca02151b871c76de092e38bc13677d7dacc32ce2b80314d25838554e3c56d4bf",
-        "734c83879ea8cff40d4dc8ce04275daa7c260464ce461cbe2f233e705eb1ff8b",
-        "8a8c5a1d0d87daa2b477b31d5f225226de7bfb7f739a87089c8e60b5ba9b8e1d"
+        "2cfaf4728672acc792e436a8c9bf9af592b57ef8e56c8d0db66dcc89a78f2997",
+        "25ba616b215ba21076c0ae03604c98c03edd596bb3bfe670e808f6d29b044d4b",
+        "a379ad7e2d8f3c80cab2657a671d97a54543f5a10290bf521a91f3f9fe6c7e68"
       ],
-      "root": "71d6430a9160598b2cfc51404b05ba815573d3d1604eca060a828312b34eef3a",
+      "root": "fb7b3276fc1e43897ed9c49fb260dbd902f4790f6382dc82d34fcd0783f3f0f5",
       "proofs": [
         [
-          "734c83879ea8cff40d4dc8ce04275daa7c260464ce461cbe2f233e705eb1ff8b",
-          "8a8c5a1d0d87daa2b477b31d5f225226de7bfb7f739a87089c8e60b5ba9b8e1d"
+          "25ba616b215ba21076c0ae03604c98c03edd596bb3bfe670e808f6d29b044d4b",
+          "a379ad7e2d8f3c80cab2657a671d97a54543f5a10290bf521a91f3f9fe6c7e68"
         ],
         [
-          "ca02151b871c76de092e38bc13677d7dacc32ce2b80314d25838554e3c56d4bf",
-          "8a8c5a1d0d87daa2b477b31d5f225226de7bfb7f739a87089c8e60b5ba9b8e1d"
+          "2cfaf4728672acc792e436a8c9bf9af592b57ef8e56c8d0db66dcc89a78f2997",
+          "a379ad7e2d8f3c80cab2657a671d97a54543f5a10290bf521a91f3f9fe6c7e68"
         ],
         [
-          "272e3f94f6955f701799950225fd578b2d9f1197158ab465522abf5d0136255d"
+          "5f902f36ff2d85d32b92ce0581577bd15caf61bbba544782b0ce1c7a8a5c2425"
         ]
       ]
     }

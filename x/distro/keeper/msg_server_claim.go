@@ -14,10 +14,12 @@ import (
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
 
-// Claim mints and pays out a reward from a finalized (live) day's distribution.
-// The leaf is reconstructed from (nonce, address, total, categories) and verified
-// against the canonical root. Funds are minted on demand and sent to the reward
-// address. A given (date, nonce) can be claimed at most once.
+// Claim mints and pays out a single (category, amount) reward from a finalized
+// (live) (day, type) distribution. The leaf is reconstructed from
+// (nonce, address, category, amount, denom) and verified against the canonical
+// root. Funds are minted on demand and sent to the reward address (the earner);
+// the claimer signs the tx but need not be the earner. A given
+// (date, type, nonce) can be claimed at most once.
 func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.MsgClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
@@ -28,32 +30,37 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 	if err != nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "invalid reward address")
 	}
-	// Validate total/categories consistency (positive total, non-empty bounded
-	// categories each positive, summing to total). The merkle leaf commits to this
-	// map, so the canonical root already pins the expected breakdown — this rejects
-	// internally inconsistent claims before proof verification. Shared with
-	// MsgClaim.ValidateBasic so the two cannot drift.
-	total, err := types.ValidateClaimAmounts(msg.Total, msg.Categories)
+	if msg.Category == "" {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "category cannot be empty")
+	}
+	// amount is the value minted and budget-checked for this claim.
+	amount, err := types.ValidateClaimAmount(msg.Amount)
 	if err != nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
-
-	// amount is the value minted and budget-checked for this claim.
-	amount := total
 
 	params, err := ms.k.Params.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// The claim must target a configured distribution type.
+	// The reward denom must be the module denom; budget and supply are tracked in it.
+	if msg.Denom != params.Denom {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "denom %q must be the module denom %q", msg.Denom, params.Denom)
+	}
+
+	// The claim must target a configured distribution type and category.
 	distroType, ok := params.FindDistributionType(msg.DistroType)
 	if !ok {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "unknown distribution type %q", msg.DistroType)
 	}
+	if _, ok := distroType.FindCategory(msg.Category); !ok {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "category %q is not configured for distribution type %q", msg.Category, msg.DistroType)
+	}
 
 	// The (day, type) must have reached consensus.
-	ed, err := ms.k.Distributions.Get(ctx, collections.Join(msg.Date, msg.DistroType))
+	distKey := collections.Join(msg.Date, msg.DistroType)
+	ed, err := ms.k.Distributions.Get(ctx, distKey)
 	if err != nil {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no distribution for date %q type %q", msg.Date, msg.DistroType)
 	}
@@ -66,7 +73,7 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 	if claimed, err := ms.k.Claimed.Has(ctx, claimedKey); err != nil {
 		return nil, err
 	} else if claimed {
-		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "reward %d for date %q already claimed", msg.Nonce, msg.Date)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "reward %d for date %q type %q already claimed", msg.Nonce, msg.Date, msg.DistroType)
 	}
 
 	// Bound the proof length: a valid proof is at most the tree depth, so an
@@ -76,40 +83,67 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "merkle proof too long: %d exceeds max depth %d", len(msg.Proof), types.MaxProofDepth)
 	}
 
-	// Verify the merkle proof against the canonical root.
-	leaf := types.LeafHash(msg.Nonce, msg.Address, msg.Total, msg.Categories)
+	// Verify the merkle proof against the canonical root. The leaf commits to
+	// exactly (nonce, date, distro_type, address, category, amount, denom).
+	leaf := types.LeafHash(msg.Nonce, msg.Date, msg.DistroType, msg.Address, msg.Category, msg.Amount, msg.Denom)
 	if !types.VerifyProof(ed.MerkleRoot, leaf, msg.Proof) {
 		return nil, errorsmod.Wrap(sdkerrors.ErrUnauthorized, "invalid merkle proof")
 	}
 
-	// Enforce the per-(day, type) emission budget: the day's halving allocation
-	// scaled by the type's configured percentage. The cumulative amount claimed
-	// for this (day, type) may not exceed it. This bounds on-demand minting to the
-	// emission curve so a finalized root cannot mint beyond the type's budget.
+	// Cap the claim by the stored header totals. The header (captured at consensus,
+	// and validated against the type/day budget at submission) records the
+	// authoritative per-category totals this distribution pays out for the day, so
+	// claims need only respect it rather than re-deriving the budget. A LIVE day
+	// with no header (e.g. one seeded directly via genesis) falls back to the
+	// budget-derived caps.
 	dayBudget, err := dateBudget(params, msg.Date)
 	if err != nil {
 		return nil, err
 	}
 	typeBudget := types.TypeBudget(dayBudget, distroType.Percentage)
+	headerTotals, headerSum, hasHeader := storedHeaderTotals(ed, typeBudget)
+
+	// Type-level cap: the cumulative amount claimed across all categories may not
+	// exceed the type's distributable total.
 	claimed, ok := math.NewIntFromString(ed.ClaimedAmount)
 	if !ok || ed.ClaimedAmount == "" {
 		claimed = math.ZeroInt()
 	}
 	newClaimed := claimed.Add(amount)
-	if newClaimed.GT(typeBudget) {
+	if newClaimed.GT(headerSum) {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest,
-			"claim would exceed date %q type %q budget: claimed %s + %s > %s", msg.Date, msg.DistroType, claimed, amount, typeBudget)
+			"claim would exceed date %q type %q distributable total: claimed %s + %s > %s", msg.Date, msg.DistroType, claimed, amount, headerSum)
 	}
 
-	// Every claimed category must be one configured on the distribution type.
-	// Validated before minting so an unknown category fails fast (the leaf already
-	// committed to this breakdown, so this also rejects a finalized root whose
-	// reward categories drifted from the type config). The per-category budget cap
-	// (when the type sets category percentages) is enforced below.
-	for category := range msg.Categories {
-		if _, ok := distroType.FindCategory(category); !ok {
-			return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "category %q is not configured for distribution type %q", category, msg.DistroType)
+	// Per-category cap: this category's cumulative claimed total may not exceed the
+	// header's declared total for it (or, with no header, the configured category
+	// cap, or the type total when the type does not cap categories).
+	catKey := collections.Join3(msg.Date, msg.DistroType, msg.Category)
+	catRunning := amount
+	if existing, err := ms.k.ClaimTotals.Get(ctx, catKey); err == nil {
+		prev, ok := math.NewIntFromString(existing.Total)
+		if !ok {
+			prev = math.ZeroInt()
 		}
+		catRunning = prev.Add(amount)
+	} else if !errors.Is(err, collections.ErrNotFound) {
+		return nil, err
+	}
+	categoryCap := headerSum
+	switch {
+	case hasHeader:
+		c, ok := headerTotals[msg.Category]
+		if !ok {
+			c = math.ZeroInt()
+		}
+		categoryCap = c
+	case distroType.HasCategoryPercentages():
+		cat, _ := distroType.FindCategory(msg.Category) // existence checked above
+		categoryCap = types.CategoryCap(typeBudget, cat.Percentage)
+	}
+	if catRunning.GT(categoryCap) {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest,
+			"claim would exceed category %q cap for date %q type %q: %s > %s", msg.Category, msg.Date, msg.DistroType, catRunning, categoryCap)
 	}
 
 	// Mint on demand, respecting max supply as a final safety bound.
@@ -130,50 +164,21 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 		return nil, err
 	}
 
-	// Record the claimed nonce and the updated per-epoch claimed total.
+	// Record the claimed nonce and the updated type- and category-level totals.
 	if err := ms.k.Claimed.Set(ctx, claimedKey); err != nil {
 		return nil, err
 	}
 	ed.ClaimedAmount = newClaimed.String()
-	if err := ms.k.Distributions.Set(ctx, collections.Join(msg.Date, msg.DistroType), ed); err != nil {
+	if err := ms.k.Distributions.Set(ctx, distKey, ed); err != nil {
 		return nil, err
 	}
-
-	// When the type configures category percentages, each category's cumulative
-	// claim is additionally capped at its share of the type budget.
-	perCategoryCaps := distroType.HasCategoryPercentages()
-
-	// Accumulate the per-category claimed totals for this (day, type) so they can
-	// be queried via Query/ClaimTotalByCategory.
-	for category, raw := range msg.Categories {
-		catAmount, _ := math.NewIntFromString(raw) // already validated above
-		key := collections.Join3(msg.Date, msg.DistroType, category)
-		running := catAmount
-		if existing, err := ms.k.ClaimTotals.Get(ctx, key); err == nil {
-			prev, ok := math.NewIntFromString(existing.Total)
-			if !ok {
-				prev = math.ZeroInt()
-			}
-			running = prev.Add(catAmount)
-		} else if !errors.Is(err, collections.ErrNotFound) {
-			return nil, err
-		}
-		if perCategoryCaps {
-			cat, _ := distroType.FindCategory(category) // existence checked above
-			cap := types.CategoryCap(typeBudget, cat.Percentage)
-			if running.GT(cap) {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest,
-					"claim would exceed category %q cap for date %q type %q: %s > %s", category, msg.Date, msg.DistroType, running, cap)
-			}
-		}
-		if err := ms.k.ClaimTotals.Set(ctx, key, types.CategoryClaimTotal{
-			Date:       msg.Date,
-			Category:   category,
-			Total:      running.String(),
-			DistroType: msg.DistroType,
-		}); err != nil {
-			return nil, err
-		}
+	if err := ms.k.ClaimTotals.Set(ctx, catKey, types.CategoryClaimTotal{
+		Date:       msg.Date,
+		Category:   msg.Category,
+		Total:      catRunning.String(),
+		DistroType: msg.DistroType,
+	}); err != nil {
+		return nil, err
 	}
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
@@ -182,8 +187,31 @@ func (ms msgServer) Claim(goCtx context.Context, msg *types.MsgClaim) (*types.Ms
 		sdk.NewAttribute(types.AttributeKeyDistroType, msg.DistroType),
 		sdk.NewAttribute(types.AttributeKeyNonce, strconv.FormatUint(msg.Nonce, 10)),
 		sdk.NewAttribute(types.AttributeKeyAddress, msg.Address),
-		sdk.NewAttribute(types.AttributeKeyAmount, msg.Total),
+		sdk.NewAttribute(types.AttributeKeyCategory, msg.Category),
+		sdk.NewAttribute(types.AttributeKeyAmount, msg.Amount),
 	))
 
 	return &types.MsgClaimResponse{}, nil
+}
+
+// storedHeaderTotals returns the per-category claim caps and their sum from a
+// distribution's stored header (captured at consensus and already validated
+// against the type/day budget at submission). The bool reports whether a header
+// was present; when it is not (e.g. a LIVE day seeded directly via genesis) it
+// returns (nil, typeBudget, false) so callers fall back to the budget caps.
+func storedHeaderTotals(ed types.Distribution, typeBudget math.Int) (map[string]math.Int, math.Int, bool) {
+	if ed.Header == nil || len(ed.Header.TotalsByCategory) == 0 {
+		return nil, typeBudget, false
+	}
+	totals := make(map[string]math.Int, len(ed.Header.TotalsByCategory))
+	sum := math.ZeroInt()
+	for category, raw := range ed.Header.TotalsByCategory {
+		v, ok := math.NewIntFromString(raw)
+		if !ok {
+			v = math.ZeroInt()
+		}
+		totals[category] = v
+		sum = sum.Add(v)
+	}
+	return totals, sum, true
 }

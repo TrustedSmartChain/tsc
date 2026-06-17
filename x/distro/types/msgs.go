@@ -28,44 +28,18 @@ func validateDateString(date string) error {
 	return nil
 }
 
-// ValidateClaimAmounts checks the total/categories consistency shared by
-// MsgClaim.ValidateBasic and the claim handler: total is a positive integer; the
-// categories are non-empty, within MaxCategories, each named and a positive
-// integer; and they sum to total. It returns the parsed total so callers don't
-// re-parse it. This is the single source of truth for the rule, so the stateless
-// and stateful paths cannot drift apart.
-func ValidateClaimAmounts(total string, categories map[string]string) (math.Int, error) {
-	t, ok := math.NewIntFromString(total)
+// ValidateClaimAmount checks a single claim leaf's amount: a positive integer. It
+// returns the parsed amount so callers don't re-parse it, keeping the stateless
+// and stateful paths from drifting apart.
+func ValidateClaimAmount(amount string) (math.Int, error) {
+	a, ok := math.NewIntFromString(amount)
 	if !ok {
-		return math.ZeroInt(), fmt.Errorf("total is not a valid integer")
+		return math.ZeroInt(), fmt.Errorf("amount is not a valid integer")
 	}
-	if !t.IsPositive() {
-		return math.ZeroInt(), fmt.Errorf("total must be positive")
+	if !a.IsPositive() {
+		return math.ZeroInt(), fmt.Errorf("amount must be positive")
 	}
-	if len(categories) == 0 {
-		return math.ZeroInt(), fmt.Errorf("categories must not be empty")
-	}
-	if len(categories) > MaxCategories {
-		return math.ZeroInt(), fmt.Errorf("too many categories: %d exceeds max %d", len(categories), MaxCategories)
-	}
-	sum := math.ZeroInt()
-	for category, raw := range categories {
-		if category == "" {
-			return math.ZeroInt(), fmt.Errorf("category name must not be empty")
-		}
-		amount, ok := math.NewIntFromString(raw)
-		if !ok {
-			return math.ZeroInt(), fmt.Errorf("category %q amount is not a valid integer", category)
-		}
-		if !amount.IsPositive() {
-			return math.ZeroInt(), fmt.Errorf("category %q amount must be positive", category)
-		}
-		sum = sum.Add(amount)
-	}
-	if !sum.Equal(t) {
-		return math.ZeroInt(), fmt.Errorf("categories sum %s does not equal total %s", sum, t)
-	}
-	return t, nil
+	return a, nil
 }
 
 // NewMsgUpdateParams creates new instance of MsgUpdateParams
@@ -180,10 +154,10 @@ func (msg *MsgSubmitDistributionRoot) ValidateBasic() error {
 	return nil
 }
 
-// ValidateBasic statelessly validates a claim: addresses parse, the total is a
-// positive integer, the category breakdown is non-empty and sums to the total,
-// and the proof is within the maximum depth. The handler re-checks these against
-// chain state; this rejects malformed claims before they reach it.
+// ValidateBasic statelessly validates a claim: addresses parse, the date is well
+// formed, distro_type/category/denom are present, the amount is a positive
+// integer, and the proof is within the maximum depth. The handler re-checks these
+// against chain state; this rejects malformed claims before they reach it.
 func (msg *MsgClaim) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Claimer); err != nil {
 		return errors.Wrap(err, "invalid claimer address")
@@ -197,7 +171,13 @@ func (msg *MsgClaim) ValidateBasic() error {
 	if msg.DistroType == "" {
 		return fmt.Errorf("distro_type cannot be empty")
 	}
-	if _, err := ValidateClaimAmounts(msg.Total, msg.Categories); err != nil {
+	if msg.Category == "" {
+		return fmt.Errorf("category cannot be empty")
+	}
+	if msg.Denom == "" {
+		return fmt.Errorf("denom cannot be empty")
+	}
+	if _, err := ValidateClaimAmount(msg.Amount); err != nil {
 		return err
 	}
 	if len(msg.Proof) > MaxProofDepth {

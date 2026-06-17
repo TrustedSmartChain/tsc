@@ -8,50 +8,36 @@ import (
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
 
-// cat is a small helper for a single-category breakdown whose amount equals the
-// leaf total.
-func cat(amount string) map[string]string {
-	return map[string]string{"type1": amount}
-}
+// Fixed reward-leaf fields used across the merkle tests.
+const (
+	leafDenom = "aTSC"
+	leafDate  = "2025-07-22"
+	leafType  = "type1"
+)
 
 func TestLeafHashDeterministic(t *testing.T) {
-	a := types.LeafHash(1, "tsc1abc", "1000", cat("1000"))
-	b := types.LeafHash(1, "tsc1abc", "1000", cat("1000"))
+	a := types.LeafHash(1, leafDate, leafType, "tsc1abc", "type1", "1000", leafDenom)
+	b := types.LeafHash(1, leafDate, leafType, "tsc1abc", "type1", "1000", leafDenom)
 	require.Equal(t, a, b)
 	require.Len(t, a, 32)
 }
 
-func TestLeafHashCategoryOrderIndependent(t *testing.T) {
-	// The leaf is built from categories sorted by key, so map iteration order
-	// must not affect the hash.
-	a := types.LeafHash(1, "tsc1abc", "3000", map[string]string{"type1": "1000", "type2": "2000"})
-	b := types.LeafHash(1, "tsc1abc", "3000", map[string]string{"type2": "2000", "type1": "1000"})
-	require.Equal(t, a, b)
-}
-
-func TestLeafHashCommitsToCategories(t *testing.T) {
-	// Same total, different category breakdown => different leaf.
-	require.NotEqual(t,
-		types.LeafHash(1, "tsc1abc", "3000", map[string]string{"type1": "1000", "type2": "2000"}),
-		types.LeafHash(1, "tsc1abc", "3000", map[string]string{"type1": "2000", "type2": "1000"}),
-	)
-	// Same breakdown values, different category names => different leaf.
-	require.NotEqual(t,
-		types.LeafHash(1, "tsc1abc", "1000", map[string]string{"type1": "1000"}),
-		types.LeafHash(1, "tsc1abc", "1000", map[string]string{"type2": "1000"}),
-	)
+func TestLeafHashCommitsToFields(t *testing.T) {
+	base := types.LeafHash(1, leafDate, leafType, "tsc1abc", "type1", "1000", leafDenom)
+	// Each committed field changes the leaf when changed.
+	require.NotEqual(t, base, types.LeafHash(2, leafDate, leafType, "tsc1abc", "type1", "1000", leafDenom)) // nonce
+	require.NotEqual(t, base, types.LeafHash(1, leafDate, leafType, "tsc1xyz", "type1", "1000", leafDenom)) // address
+	require.NotEqual(t, base, types.LeafHash(1, leafDate, leafType, "tsc1abc", "type2", "1000", leafDenom)) // category
+	require.NotEqual(t, base, types.LeafHash(1, leafDate, leafType, "tsc1abc", "type1", "2000", leafDenom)) // amount
+	require.NotEqual(t, base, types.LeafHash(1, leafDate, leafType, "tsc1abc", "type1", "1000", "other"))   // denom
 }
 
 func TestLeafHashFieldBoundaryUnambiguous(t *testing.T) {
-	// Length-prefixing must keep ("ab","c") distinct from ("a","bc").
+	// Length-prefixing must keep ("ab","c") distinct from ("a","bc") across the
+	// address/category boundary.
 	require.NotEqual(t,
-		types.LeafHash(1, "ab", "c", nil),
-		types.LeafHash(1, "a", "bc", nil),
-	)
-	// Different nonce => different leaf.
-	require.NotEqual(t,
-		types.LeafHash(1, "tsc1abc", "1000", cat("1000")),
-		types.LeafHash(2, "tsc1abc", "1000", cat("1000")),
+		types.LeafHash(1, leafDate, leafType, "ab", "c", "1", leafDenom),
+		types.LeafHash(1, leafDate, leafType, "a", "bc", "1", leafDenom),
 	)
 }
 
@@ -66,7 +52,7 @@ func TestHeaderLeafHashDomainSeparated(t *testing.T) {
 	// A header leaf and a reward leaf with otherwise-similar inputs must not
 	// collide: the header uses a distinct domain prefix (0x02).
 	header := types.HeaderLeafHash("type1", "2025-07-22", 0, map[string]string{"x": "1"})
-	reward := types.LeafHash(0, "type1", "2025-07-22", map[string]string{"x": "1"})
+	reward := types.LeafHash(0, leafDate, leafType, "type1", "2025-07-22", "x", "1")
 	require.NotEqual(t, header, reward)
 }
 
@@ -81,30 +67,30 @@ func TestHeaderLeafHashCommitsToFields(t *testing.T) {
 // TestHeaderLeafInclusion checks a header leaf can be proven against a tree root
 // using VerifyProof, mirroring the submit-time inclusion check.
 func TestHeaderLeafInclusion(t *testing.T) {
-	header := types.HeaderLeafHash("type1", "2025-07-22", 1, map[string]string{"x": "100"})
-	reward := types.LeafHash(0, "tsc1a", "100", cat("100"))
+	header := types.HeaderLeafHash("type1", "2025-07-22", 1, map[string]string{"type1": "100"})
+	reward := types.LeafHash(0, leafDate, leafType, "tsc1a", "type1", "100", leafDenom)
 	root := types.HashPair(header, reward)
 	require.True(t, types.VerifyProof(root, header, [][]byte{reward}))
 	require.True(t, types.VerifyProof(root, reward, [][]byte{header}))
 }
 
 func TestHashPairCommutative(t *testing.T) {
-	a := types.LeafHash(1, "a", "1", cat("1"))
-	b := types.LeafHash(2, "b", "2", cat("2"))
+	a := types.LeafHash(1, leafDate, leafType, "a", "type1", "1", leafDenom)
+	b := types.LeafHash(2, leafDate, leafType, "b", "type1", "2", leafDenom)
 	require.Equal(t, types.HashPair(a, b), types.HashPair(b, a))
 }
 
 func TestVerifyProofSingleLeaf(t *testing.T) {
-	leaf := types.LeafHash(0, "tsc1only", "42", cat("42"))
+	leaf := types.LeafHash(0, leafDate, leafType, "tsc1only", "type1", "42", leafDenom)
 	// A single-leaf tree: the root is the leaf, proof is empty.
 	require.True(t, types.VerifyProof(leaf, leaf, nil))
 }
 
 func TestVerifyProofFourLeaves(t *testing.T) {
-	l0 := types.LeafHash(0, "tsc1a", "10", cat("10"))
-	l1 := types.LeafHash(1, "tsc1b", "20", cat("20"))
-	l2 := types.LeafHash(2, "tsc1c", "30", cat("30"))
-	l3 := types.LeafHash(3, "tsc1d", "40", cat("40"))
+	l0 := types.LeafHash(0, leafDate, leafType, "tsc1a", "type1", "10", leafDenom)
+	l1 := types.LeafHash(1, leafDate, leafType, "tsc1b", "type1", "20", leafDenom)
+	l2 := types.LeafHash(2, leafDate, leafType, "tsc1c", "type1", "30", leafDenom)
+	l3 := types.LeafHash(3, leafDate, leafType, "tsc1d", "type1", "40", leafDenom)
 
 	n01 := types.HashPair(l0, l1)
 	n23 := types.HashPair(l2, l3)
@@ -118,14 +104,14 @@ func TestVerifyProofFourLeaves(t *testing.T) {
 }
 
 func TestVerifyProofRejectsTampering(t *testing.T) {
-	l0 := types.LeafHash(0, "tsc1a", "10", cat("10"))
-	l1 := types.LeafHash(1, "tsc1b", "20", cat("20"))
-	l2 := types.LeafHash(2, "tsc1c", "30", cat("30"))
-	l3 := types.LeafHash(3, "tsc1d", "40", cat("40"))
+	l0 := types.LeafHash(0, leafDate, leafType, "tsc1a", "type1", "10", leafDenom)
+	l1 := types.LeafHash(1, leafDate, leafType, "tsc1b", "type1", "20", leafDenom)
+	l2 := types.LeafHash(2, leafDate, leafType, "tsc1c", "type1", "30", leafDenom)
+	l3 := types.LeafHash(3, leafDate, leafType, "tsc1d", "type1", "40", leafDenom)
 	root := types.HashPair(types.HashPair(l0, l1), types.HashPair(l2, l3))
 
 	// Wrong amount for the claimed leaf.
-	bad := types.LeafHash(0, "tsc1a", "9999", cat("9999"))
+	bad := types.LeafHash(0, leafDate, leafType, "tsc1a", "type1", "9999", leafDenom)
 	require.False(t, types.VerifyProof(root, bad, [][]byte{l1, types.HashPair(l2, l3)}))
 
 	// Correct leaf, corrupted sibling.

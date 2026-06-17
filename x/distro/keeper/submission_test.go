@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"strconv"
+
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
 
@@ -17,12 +19,32 @@ func defaultHeaderTotals() map[string]string {
 	return map[string]string{"type1": "1"}
 }
 
-// rewardLeaf describes a reward entry (a LeafHash input) for buildSubmission.
+// rewardLeaf describes a single (category, amount) reward entry (a LeafHash
+// input) for buildSubmission. Each leaf represents one category/amount; the denom
+// is testDenom (the module denom).
 type rewardLeaf struct {
-	nonce uint64
-	addr  string
-	total string
-	cats  map[string]string
+	nonce    uint64
+	addr     string
+	category string
+	amount   string
+}
+
+// headerTotalsFromRewards sums the reward leaves' amounts per category, yielding
+// header totals_by_category that exactly cover the rewards. Claim caps are taken
+// from the stored header, so claim tests use this so every in-tree reward is
+// claimable (and the header stays within the day budget). Inputs are small
+// integers in tests, so int64 accumulation is sufficient.
+func headerTotalsFromRewards(rewards []rewardLeaf) map[string]string {
+	sums := map[string]int64{}
+	for _, r := range rewards {
+		n, _ := strconv.ParseInt(r.amount, 10, 64)
+		sums[r.category] += n
+	}
+	totals := make(map[string]string, len(sums))
+	for cat, n := range sums {
+		totals[cat] = strconv.FormatInt(n, 10)
+	}
+	return totals
 }
 
 // buildMerkleTree returns the root and per-leaf inclusion proofs for the given
@@ -71,7 +93,7 @@ func buildSubmission(distroType, date string, version uint64, totals map[string]
 	leaves := make([][]byte, 0, len(rewards)+1)
 	leaves = append(leaves, types.HeaderLeafHash(distroType, date, version, totals))
 	for _, r := range rewards {
-		leaves = append(leaves, types.LeafHash(r.nonce, r.addr, r.total, r.cats))
+		leaves = append(leaves, types.LeafHash(r.nonce, date, distroType, r.addr, r.category, r.amount, testDenom))
 	}
 	root, proofs := buildMerkleTree(leaves)
 	headerProof = proofs[0]

@@ -41,51 +41,43 @@ const MaxProofDepth = 64
 // distributions use a small, fixed set of categories; 100 is a generous bound.
 const MaxCategories = 100
 
-// LeafHash returns the leaf hash for a single reward entry.
+// LeafHash returns the leaf hash for a single reward entry: one (category,
+// amount) for one earner on a given (date, distro type). Each leaf represents a
+// single category/amount rather than an aggregate of all of an earner's
+// categories.
 //
 // The leaf preimage is:
 //
 //	0x00 || uint64BE(nonce)
-//	     || uint32BE(len(addr))  || addr
-//	     || uint32BE(len(total)) || total
-//	     || uint32BE(numCategories)
-//	     || for each (key,value) sorted ascending by key:
-//	          uint32BE(len(key)) || key || uint32BE(len(value)) || value
+//	     || uint32BE(len(date))        || date
+//	     || uint32BE(len(distro_type)) || distro_type
+//	     || uint32BE(len(address))     || address
+//	     || uint32BE(len(category))    || category
+//	     || uint32BE(len(amount))      || amount
+//	     || uint32BE(len(denom))       || denom
 //
-// Length-prefixing every variable-length field makes the boundaries between
-// them unambiguous. Categories are emitted in ascending key order so the leaf
-// is independent of the map's iteration order. The leaf commits to the full
-// category breakdown, so a claimer cannot present a different breakdown than the
-// one the canonical root was built from.
+// Length-prefixing every variable-length field makes the boundaries between them
+// unambiguous, so the leaf commits to exactly (nonce, date, distro_type, address,
+// category, amount, denom) and a claimer cannot present different values than the
+// ones the canonical root was built from. Binding date and distro_type into the
+// leaf means a leaf can never be replayed against a different day's or type's root.
 //
 // IMPORTANT: the off-chain node that builds the distribution roots MUST encode
-// the categories in this exact (sorted, length-prefixed) form or every on-chain
-// proof will fail.
-func LeafHash(nonce uint64, addr, total string, categories map[string]string) []byte {
-	buf := make([]byte, 0, 1+8+4+len(addr)+4+len(total)+4)
+// the leaf in this exact (length-prefixed) form or every on-chain proof will fail.
+func LeafHash(nonce uint64, date, distroType, address, category, amount, denom string) []byte {
+	buf := make([]byte, 0, 1+8+4+len(date)+4+len(distroType)+4+len(address)+4+len(category)+4+len(amount)+4+len(denom))
 	buf = append(buf, leafPrefix)
 
 	var n [8]byte
 	binary.BigEndian.PutUint64(n[:], nonce)
 	buf = append(buf, n[:]...)
 
-	buf = appendLenPrefixed(buf, []byte(addr))
-	buf = appendLenPrefixed(buf, []byte(total))
-
-	keys := make([]string, 0, len(categories))
-	for k := range categories {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	var count [4]byte
-	binary.BigEndian.PutUint32(count[:], uint32(len(keys)))
-	buf = append(buf, count[:]...)
-
-	for _, k := range keys {
-		buf = appendLenPrefixed(buf, []byte(k))
-		buf = appendLenPrefixed(buf, []byte(categories[k]))
-	}
+	buf = appendLenPrefixed(buf, []byte(date))
+	buf = appendLenPrefixed(buf, []byte(distroType))
+	buf = appendLenPrefixed(buf, []byte(address))
+	buf = appendLenPrefixed(buf, []byte(category))
+	buf = appendLenPrefixed(buf, []byte(amount))
+	buf = appendLenPrefixed(buf, []byte(denom))
 
 	sum := sha256.Sum256(buf)
 	return sum[:]

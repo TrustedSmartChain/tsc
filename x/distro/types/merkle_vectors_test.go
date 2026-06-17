@@ -28,11 +28,16 @@ var updateVectors = flag.Bool("update-merkle-vectors", false, "regenerate testda
 
 const vectorsPath = "testdata/merkle_vectors.json"
 
+// merkleVectorLeaf is a single (category, amount) reward entry — one leaf
+// represents one category/amount for one earner on a given (date, distro type).
 type merkleVectorLeaf struct {
-	Nonce      uint64            `json:"nonce"`
-	Address    string            `json:"address"`
-	Total      string            `json:"total"`
-	Categories map[string]string `json:"categories"`
+	Nonce      uint64 `json:"nonce"`
+	Date       string `json:"date"`
+	DistroType string `json:"distro_type"`
+	Address    string `json:"address"`
+	Category   string `json:"category"`
+	Amount     string `json:"amount"`
+	Denom      string `json:"denom"`
 }
 
 type merkleVectorCase struct {
@@ -57,33 +62,33 @@ func vectorInputs() []merkleVectorCase {
 		{
 			Name:   "single_leaf",
 			Note:   "A single-leaf tree: the root is the leaf hash itself and the proof is empty.",
-			Leaves: []merkleVectorLeaf{{Nonce: 0, Address: "tsc1alice", Total: "42", Categories: map[string]string{"node": "42"}}},
+			Leaves: []merkleVectorLeaf{{Nonce: 0, Date: "2025-07-22", DistroType: "type1", Address: "tsc1alice", Category: "node", Amount: "42", Denom: "aTSC"}},
 		},
 		{
 			Name: "two_leaves",
 			Leaves: []merkleVectorLeaf{
-				{Nonce: 0, Address: "tsc1alice", Total: "100", Categories: map[string]string{"node": "100"}},
-				{Nonce: 1, Address: "tsc1bob", Total: "200", Categories: map[string]string{"node": "200"}},
+				{Nonce: 0, Date: "2025-07-22", DistroType: "type1", Address: "tsc1alice", Category: "node", Amount: "100", Denom: "aTSC"},
+				{Nonce: 1, Date: "2025-07-22", DistroType: "type1", Address: "tsc1bob", Category: "node", Amount: "200", Denom: "aTSC"},
 			},
 		},
 		{
 			Name: "five_leaves",
 			Note: "Odd leaf count: the unpaired trailing node at a level is promoted to the next level unchanged (no duplication), so proofs have unequal lengths.",
 			Leaves: []merkleVectorLeaf{
-				{Nonce: 0, Address: "tsc1alice", Total: "10", Categories: map[string]string{"node": "10"}},
-				{Nonce: 1, Address: "tsc1bob", Total: "20", Categories: map[string]string{"node": "20"}},
-				{Nonce: 2, Address: "tsc1carol", Total: "30", Categories: map[string]string{"node": "30"}},
-				{Nonce: 3, Address: "tsc1dave", Total: "40", Categories: map[string]string{"node": "40"}},
-				{Nonce: 4, Address: "tsc1erin", Total: "50", Categories: map[string]string{"node": "50"}},
+				{Nonce: 0, Date: "2025-07-22", DistroType: "type1", Address: "tsc1alice", Category: "node", Amount: "10", Denom: "aTSC"},
+				{Nonce: 1, Date: "2025-07-22", DistroType: "type1", Address: "tsc1bob", Category: "node", Amount: "20", Denom: "aTSC"},
+				{Nonce: 2, Date: "2025-07-22", DistroType: "type1", Address: "tsc1carol", Category: "node", Amount: "30", Denom: "aTSC"},
+				{Nonce: 3, Date: "2025-07-22", DistroType: "type1", Address: "tsc1dave", Category: "node", Amount: "40", Denom: "aTSC"},
+				{Nonce: 4, Date: "2025-07-22", DistroType: "type1", Address: "tsc1erin", Category: "node", Amount: "50", Denom: "aTSC"},
 			},
 		},
 		{
-			Name: "multi_category",
-			Note: "Categories are encoded sorted ascending by raw byte order: 'Zeta' (0x5A...) sorts before 'alpha' (0x61...), and 'a10' sorts before 'a2'. Encoding them in any other order produces a different leaf hash.",
+			Name: "mixed_categories",
+			Note: "Leaves in different categories for the same earner each get their own nonce and leaf; the leaf commits to (nonce, date, distro_type, address, category, amount, denom), so changing any field changes the hash.",
 			Leaves: []merkleVectorLeaf{
-				{Nonce: 7, Address: "tsc1alice", Total: "600", Categories: map[string]string{"Zeta": "100", "alpha": "200", "beta": "300"}},
-				{Nonce: 8, Address: "tsc1bob", Total: "33", Categories: map[string]string{"a10": "11", "a2": "22"}},
-				{Nonce: 9, Address: "tsc1carol", Total: "5", Categories: map[string]string{"node": "5"}},
+				{Nonce: 7, Date: "2025-07-22", DistroType: "type1", Address: "tsc1alice", Category: "team", Amount: "100", Denom: "aTSC"},
+				{Nonce: 8, Date: "2025-07-22", DistroType: "type1", Address: "tsc1alice", Category: "node", Amount: "200", Denom: "aTSC"},
+				{Nonce: 9, Date: "2025-07-22", DistroType: "type1", Address: "tsc1bob", Category: "node", Amount: "5", Denom: "aTSC"},
 			},
 		},
 	}
@@ -96,8 +101,8 @@ func vectorDescription() []string {
 		"merkle_vectors_test.go re-derives every value from the inputs on each run, so this",
 		"file cannot drift from the code. Off-chain workers must reproduce all of it exactly.",
 		"",
-		"Leaf hash:  sha256(0x00 || uint64BE(nonce) || lp(address) || lp(total) || uint32BE(numCategories)",
-		"            || for each (key,value) sorted ascending by raw byte order of key: lp(key) || lp(value))",
+		"Each leaf is a single (category, amount) reward for one earner on a (date, distro type).",
+		"Leaf hash:  sha256(0x00 || uint64BE(nonce) || lp(date) || lp(distro_type) || lp(address) || lp(category) || lp(amount) || lp(denom))",
 		"            where lp(x) = uint32BE(len(x)) || x.",
 		"Inner node: sha256(0x01 || min(a,b) || max(a,b))  (children sorted bytewise, so proofs need no direction bits).",
 		"",
@@ -107,10 +112,9 @@ func vectorDescription() []string {
 		"a level where the node was promoted contributes no sibling. Verification folds the",
 		"proof into the leaf with the inner-node rule and compares to the root.",
 		"",
-		"Empty categories are NOT a valid leaf: the chain rejects claims with an empty",
-		"category map (types.ValidateClaimAmounts: 'categories must not be empty'), and the",
-		"total must equal the sum of the category amounts. No vector covers an empty map",
-		"because no such leaf can ever be claimed.",
+		"A claimable leaf has a positive amount and a non-empty category and denom; the",
+		"submitted tree typically also contains a header leaf (domain prefix 0x02), which is",
+		"not shown here — these vectors cover the reward-leaf encoding only.",
 	}
 }
 
@@ -156,7 +160,7 @@ func computeCase(c merkleVectorCase) merkleVectorCase {
 	leafHashes := make([][]byte, len(c.Leaves))
 	c.LeafHashes = make([]string, len(c.Leaves))
 	for i, l := range c.Leaves {
-		leafHashes[i] = types.LeafHash(l.Nonce, l.Address, l.Total, l.Categories)
+		leafHashes[i] = types.LeafHash(l.Nonce, l.Date, l.DistroType, l.Address, l.Category, l.Amount, l.Denom)
 		c.LeafHashes[i] = hex.EncodeToString(leafHashes[i])
 	}
 
@@ -196,7 +200,7 @@ func TestMerkleVectors(t *testing.T) {
 	for _, c := range file.Cases {
 		names[c.Name] = true
 	}
-	for _, want := range []string{"single_leaf", "two_leaves", "five_leaves", "multi_category"} {
+	for _, want := range []string{"single_leaf", "two_leaves", "five_leaves", "mixed_categories"} {
 		require.True(t, names[want], "fixture is missing required case %q", want)
 	}
 
@@ -204,11 +208,13 @@ func TestMerkleVectors(t *testing.T) {
 		t.Run(c.Name, func(t *testing.T) {
 			require.NotEmpty(t, c.Leaves)
 
-			// Every fixture leaf must be a claimable breakdown (positive amounts
-			// summing to total), so the vectors stay representative of real claims.
+			// Every fixture leaf must be a claimable reward (positive amount,
+			// non-empty category and denom), so the vectors stay representative.
 			for _, l := range c.Leaves {
-				_, err := types.ValidateClaimAmounts(l.Total, l.Categories)
-				require.NoError(t, err, "fixture leaf is not a valid claim")
+				_, err := types.ValidateClaimAmount(l.Amount)
+				require.NoError(t, err, "fixture leaf has an invalid amount")
+				require.NotEmpty(t, l.Category, "fixture leaf has an empty category")
+				require.NotEmpty(t, l.Denom, "fixture leaf has an empty denom")
 			}
 
 			// Re-derive everything from the stored inputs and compare to the
@@ -233,7 +239,7 @@ func TestMerkleVectors(t *testing.T) {
 				require.True(t, types.VerifyProof(root, leaf, proof), "leaf %d proof does not verify", i)
 
 				// And a tampered leaf must not verify with the same proof.
-				bad := types.LeafHash(c.Leaves[i].Nonce+1, c.Leaves[i].Address, c.Leaves[i].Total, c.Leaves[i].Categories)
+				bad := types.LeafHash(c.Leaves[i].Nonce+1, c.Leaves[i].Date, c.Leaves[i].DistroType, c.Leaves[i].Address, c.Leaves[i].Category, c.Leaves[i].Amount, c.Leaves[i].Denom)
 				require.False(t, types.VerifyProof(root, bad, proof))
 			}
 		})

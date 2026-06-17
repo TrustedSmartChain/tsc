@@ -1,24 +1,12 @@
 package types_test
 
 import (
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 )
-
-// manyCategories builds a category map with n distinct entries (used to exceed
-// the MaxCategories bound). The count check fires before the sum check, so the
-// values are immaterial.
-func manyCategories(n int) map[string]string {
-	m := make(map[string]string, n)
-	for i := 0; i < n; i++ {
-		m["cat"+strconv.Itoa(i)] = "1"
-	}
-	return m
-}
 
 // valid tsc addresses (the default params' addresses are well-formed).
 var (
@@ -34,8 +22,9 @@ func TestMsgClaimValidateBasic(t *testing.T) {
 			DistroType: "type1",
 			Nonce:      0,
 			Address:    addrB,
-			Total:      "3000",
-			Categories: map[string]string{"type1": "1000", "type2": "2000"},
+			Category:   "type1",
+			Amount:     "3000",
+			Denom:      "aTSC",
 			Proof:      [][]byte{[]byte("sibling")},
 		}
 	}
@@ -51,16 +40,12 @@ func TestMsgClaimValidateBasic(t *testing.T) {
 		{"bad reward address", func(m *types.MsgClaim) { m.Address = "not-an-address" }, "invalid reward address"},
 		{"empty date", func(m *types.MsgClaim) { m.Date = "" }, "date cannot be empty"},
 		{"malformed date", func(m *types.MsgClaim) { m.Date = "2025/07/22" }, "YYYY-MM-DD"},
-		{"non-integer total", func(m *types.MsgClaim) { m.Total = "abc" }, "total is not a valid integer"},
-		{"non-positive total", func(m *types.MsgClaim) { m.Total = "0" }, "total must be positive"},
-		{"empty categories", func(m *types.MsgClaim) { m.Categories = nil }, "categories must not be empty"},
-		{"empty category name", func(m *types.MsgClaim) { m.Categories = map[string]string{"": "3000"} }, "category name must not be empty"},
-		{"bad category amount", func(m *types.MsgClaim) { m.Categories = map[string]string{"type1": "x"} }, "is not a valid integer"},
-		{"non-positive category", func(m *types.MsgClaim) { m.Categories = map[string]string{"type1": "0"} }, "must be positive"},
 		{"empty distro type", func(m *types.MsgClaim) { m.DistroType = "" }, "distro_type cannot be empty"},
-		{"sum mismatch", func(m *types.MsgClaim) { m.Categories = map[string]string{"type1": "1"} }, "does not equal total"},
+		{"empty category", func(m *types.MsgClaim) { m.Category = "" }, "category cannot be empty"},
+		{"empty denom", func(m *types.MsgClaim) { m.Denom = "" }, "denom cannot be empty"},
+		{"non-integer amount", func(m *types.MsgClaim) { m.Amount = "abc" }, "amount is not a valid integer"},
+		{"non-positive amount", func(m *types.MsgClaim) { m.Amount = "0" }, "amount must be positive"},
 		{"proof too long", func(m *types.MsgClaim) { m.Proof = make([][]byte, types.MaxProofDepth+1) }, "merkle proof too long"},
-		{"too many categories", func(m *types.MsgClaim) { m.Categories = manyCategories(types.MaxCategories + 1) }, "too many categories"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
