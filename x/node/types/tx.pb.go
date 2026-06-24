@@ -39,6 +39,9 @@ type MsgCheckIn struct {
 func (m *MsgCheckIn) Reset()         { *m = MsgCheckIn{} }
 func (m *MsgCheckIn) String() string { return proto.CompactTextString(m) }
 func (*MsgCheckIn) ProtoMessage()    {}
+func (*MsgCheckIn) Descriptor() ([]byte, []int) {
+	return fileDescriptor_node_v1_tx, []int{0}
+}
 
 func (m *MsgCheckIn) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -80,6 +83,9 @@ type MsgCheckInResponse struct{}
 func (m *MsgCheckInResponse) Reset()         { *m = MsgCheckInResponse{} }
 func (m *MsgCheckInResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgCheckInResponse) ProtoMessage()    {}
+func (*MsgCheckInResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_node_v1_tx, []int{1}
+}
 
 func (m *MsgCheckInResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -108,10 +114,15 @@ func (m *MsgCheckInResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgCheckInResponse proto.InternalMessageInfo
 
+// fileDescriptor_node_v1_tx holds the gzipped FileDescriptorProto for
+// node/v1/tx.proto so that Descriptor() methods can reference it.
+var fileDescriptor_node_v1_tx []byte
+
 func init() {
+	fileDescriptor_node_v1_tx = mustGzipNodeTx(buildNodeTxFileDesc())
 	proto.RegisterType((*MsgCheckIn)(nil), "node.v1.MsgCheckIn")
 	proto.RegisterType((*MsgCheckInResponse)(nil), "node.v1.MsgCheckInResponse")
-	proto.RegisterFile("node/v1/tx.proto", mustGzipNodeTx(buildNodeTxFileDesc()))
+	proto.RegisterFile("node/v1/tx.proto", fileDescriptor_node_v1_tx)
 }
 
 // buildNodeTxFileDesc programmatically constructs the FileDescriptorProto for
