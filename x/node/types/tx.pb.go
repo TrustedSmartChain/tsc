@@ -12,6 +12,7 @@ import (
 	math "math"
 	math_bits "math/bits"
 
+	msgv1 "cosmossdk.io/api/cosmos/msg/v1"
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/msgservice"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
@@ -21,6 +22,8 @@ import (
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	pbproto "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -119,26 +122,45 @@ var xxx_messageInfo_MsgCheckInResponse proto.InternalMessageInfo
 var fileDescriptor_node_v1_tx []byte
 
 func init() {
-	fileDescriptor_node_v1_tx = mustGzipNodeTx(buildNodeTxFileDesc())
+	fdp := nodeV1TxFDProto()
+
+	b, err := pbproto.Marshal(fdp)
+	if err != nil {
+		panic(fmt.Sprintf("node/v1/tx.proto: marshal descriptor: %v", err))
+	}
+	fileDescriptor_node_v1_tx = mustGzipNodeTx(b)
+
 	proto.RegisterType((*MsgCheckIn)(nil), "node.v1.MsgCheckIn")
 	proto.RegisterType((*MsgCheckInResponse)(nil), "node.v1.MsgCheckInResponse")
 	proto.RegisterFile("node/v1/tx.proto", fileDescriptor_node_v1_tx)
+
+	// Register in protoregistry.GlobalFiles so the HybridResolver (used by the
+	// cosmos SDK tx signing system via anyutil.Unpack) finds our descriptor with
+	// the cosmos.msg.v1.signer annotation, enabling gasless MsgCheckIn txs.
+	if fd, fdErr := protodesc.NewFile(fdp, protoregistry.GlobalFiles); fdErr == nil {
+		_ = protoregistry.GlobalFiles.RegisterFile(fd)
+	}
 }
 
-// buildNodeTxFileDesc programmatically constructs the FileDescriptorProto for
-// node/v1/tx.proto. This replaces the gzipped bytes that protoc would normally
-// generate. The descriptor has no imports so it resolves without dependencies.
-func buildNodeTxFileDesc() []byte {
-	fd := &descriptorpb.FileDescriptorProto{
-		Name:    pbproto.String("node/v1/tx.proto"),
-		Package: pbproto.String("node.v1"),
-		Syntax:  pbproto.String("proto3"),
+// nodeV1TxFDProto builds the FileDescriptorProto for node/v1/tx.proto with the
+// cosmos.msg.v1.signer annotation on MsgCheckIn so the signing system can
+// identify the signer field without a custom getter.
+func nodeV1TxFDProto() *descriptorpb.FileDescriptorProto {
+	checkInOpts := &descriptorpb.MessageOptions{}
+	pbproto.SetExtension(checkInOpts, msgv1.E_Signer, []string{"address"})
+
+	return &descriptorpb.FileDescriptorProto{
+		Name:       pbproto.String("node/v1/tx.proto"),
+		Package:    pbproto.String("node.v1"),
+		Syntax:     pbproto.String("proto3"),
+		Dependency: []string{"cosmos/msg/v1/msg.proto"},
 		Options: &descriptorpb.FileOptions{
 			GoPackage: pbproto.String("github.com/TrustedSmartChain/tsc/v3/x/node/types"),
 		},
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: pbproto.String("MsgCheckIn"),
+				Name:    pbproto.String("MsgCheckIn"),
+				Options: checkInOpts,
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
 						Name:     pbproto.String("address"),
@@ -164,11 +186,6 @@ func buildNodeTxFileDesc() []byte {
 			},
 		},
 	}
-	b, err := pbproto.Marshal(fd)
-	if err != nil {
-		panic(fmt.Sprintf("node/v1/tx.proto: marshal descriptor: %v", err))
-	}
-	return b
 }
 
 func mustGzipNodeTx(b []byte) []byte {
