@@ -37,11 +37,13 @@ type AppModuleBasic struct {
 
 type AppModule struct {
 	AppModuleBasic
+	keeper keeper.Keeper
 }
 
-func NewAppModule(cdc codec.Codec) *AppModule {
+func NewAppModule(cdc codec.Codec, k keeper.Keeper) *AppModule {
 	return &AppModule{
 		AppModuleBasic: AppModuleBasic{cdc: cdc},
+		keeper:         k,
 	}
 }
 
@@ -92,7 +94,7 @@ func (a AppModule) QuerierRoute() string {
 }
 
 func (a AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl())
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(a.keeper))
 }
 
 func (a AppModule) ConsensusVersion() uint64 {

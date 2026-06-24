@@ -39,6 +39,7 @@ import (
 	distrotypes "github.com/TrustedSmartChain/tsc/v3/x/distro/types"
 	lockup "github.com/TrustedSmartChain/tsc/v3/x/lockup"
 	lockupkeeper "github.com/TrustedSmartChain/tsc/v3/x/lockup/keeper"
+	nodekeeper "github.com/TrustedSmartChain/tsc/v3/x/node/keeper"
 	lockuptypes "github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
 	node "github.com/TrustedSmartChain/tsc/v3/x/node"
 	nodetypes "github.com/TrustedSmartChain/tsc/v3/x/node/types"
@@ -165,8 +166,8 @@ const (
 	NodeDir      = ".tsc"
 	Bech32Prefix = "tsc"
 
-	ChainID    = "tsc_87878-1"
-	EVMChainID = uint64(87878)
+	ChainID    = "tsc_8878788-1"
+	EVMChainID = uint64(8878788)
 )
 
 func init() {
@@ -270,6 +271,7 @@ type ChainApp struct {
 	DistroKeeper   distrokeeper.Keeper
 	LockupKeeper   lockupkeeper.Keeper
 	LicensesKeeper licenseskeeper.Keeper
+	NodeKeeper     nodekeeper.Keeper
 
 	// Wasm keeper
 	WasmKeeper wasmkeeper.Keeper
@@ -361,6 +363,7 @@ func NewChainApp(
 		distrotypes.StoreKey,
 		lockuptypes.StoreKey,
 		licensestypes.StoreKey,
+		nodetypes.StoreKey,
 		// CosmWasm keys
 		wasmtypes.StoreKey,
 	)
@@ -600,6 +603,11 @@ func NewChainApp(
 		authAddr,
 	)
 
+	app.NodeKeeper = nodekeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[nodetypes.StoreKey]),
+		logger,
+	)
+
 	// Cosmos EVM keepers
 	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(
 		appCodec,
@@ -827,7 +835,7 @@ func NewChainApp(
 		distro.NewAppModule(appCodec, app.DistroKeeper),
 		lockup.NewAppModule(appCodec, app.LockupKeeper),
 		licenses.NewAppModule(appCodec, app.LicensesKeeper),
-		node.NewAppModule(appCodec),
+		node.NewAppModule(appCodec, app.NodeKeeper),
 		// CosmWasm module
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
