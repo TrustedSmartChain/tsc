@@ -8,6 +8,9 @@ web/
 .vscode
 build/
 
+# Windows null device artifact created by bash misinterpreting CMD-style redirects
+NUL
+
 lockup-test/
 
 .claude/
