@@ -4,8 +4,13 @@
 package types
 
 import (
+	"bytes"
+	"compress/gzip"
 	context "context"
 	fmt "fmt"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/msgservice"
@@ -15,9 +20,8 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	io "io"
-	math "math"
-	math_bits "math/bits"
+	pbproto "google.golang.org/protobuf/proto"
+	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 )
 
 var _ = proto.Marshal
@@ -107,6 +111,65 @@ var xxx_messageInfo_MsgCheckInResponse proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*MsgCheckIn)(nil), "node.v1.MsgCheckIn")
 	proto.RegisterType((*MsgCheckInResponse)(nil), "node.v1.MsgCheckInResponse")
+	proto.RegisterFile("node/v1/tx.proto", mustGzipNodeTx(buildNodeTxFileDesc()))
+}
+
+// buildNodeTxFileDesc programmatically constructs the FileDescriptorProto for
+// node/v1/tx.proto. This replaces the gzipped bytes that protoc would normally
+// generate. The descriptor has no imports so it resolves without dependencies.
+func buildNodeTxFileDesc() []byte {
+	fd := &descriptorpb.FileDescriptorProto{
+		Name:    pbproto.String("node/v1/tx.proto"),
+		Package: pbproto.String("node.v1"),
+		Syntax:  pbproto.String("proto3"),
+		Options: &descriptorpb.FileOptions{
+			GoPackage: pbproto.String("github.com/TrustedSmartChain/tsc/v3/x/node/types"),
+		},
+		MessageType: []*descriptorpb.DescriptorProto{
+			{
+				Name: pbproto.String("MsgCheckIn"),
+				Field: []*descriptorpb.FieldDescriptorProto{
+					{
+						Name:     pbproto.String("address"),
+						Number:   pbproto.Int32(1),
+						Type:     descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
+						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
+						JsonName: pbproto.String("address"),
+					},
+				},
+			},
+			{Name: pbproto.String("MsgCheckInResponse")},
+		},
+		Service: []*descriptorpb.ServiceDescriptorProto{
+			{
+				Name: pbproto.String("Msg"),
+				Method: []*descriptorpb.MethodDescriptorProto{
+					{
+						Name:       pbproto.String("CheckIn"),
+						InputType:  pbproto.String(".node.v1.MsgCheckIn"),
+						OutputType: pbproto.String(".node.v1.MsgCheckInResponse"),
+					},
+				},
+			},
+		},
+	}
+	b, err := pbproto.Marshal(fd)
+	if err != nil {
+		panic(fmt.Sprintf("node/v1/tx.proto: marshal descriptor: %v", err))
+	}
+	return b
+}
+
+func mustGzipNodeTx(b []byte) []byte {
+	var buf bytes.Buffer
+	w := gzip.NewWriter(&buf)
+	if _, err := w.Write(b); err != nil {
+		panic(err)
+	}
+	if err := w.Close(); err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
 }
 
 // gRPC client/server
