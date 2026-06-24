@@ -67,6 +67,10 @@ func (a AppModuleBasic) GetTxCmd() *cobra.Command {
 	return nodecli.NewTxCmd()
 }
 
+func (a AppModuleBasic) GetQueryCmd() *cobra.Command {
+	return nodecli.NewQueryCmd()
+}
+
 func (a AppModuleBasic) RegisterRESTRoutes(_ client.Context, _ *mux.Router) {}
 
 func (a AppModuleBasic) RegisterGRPCGatewayRoutes(_ client.Context, _ *runtime.ServeMux) {}
@@ -95,6 +99,7 @@ func (a AppModule) QuerierRoute() string {
 
 func (a AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(a.keeper))
+	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServerImpl(a.keeper))
 }
 
 func (a AppModule) ConsensusVersion() uint64 {
