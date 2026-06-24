@@ -40,6 +40,8 @@ import (
 	lockup "github.com/TrustedSmartChain/tsc/v3/x/lockup"
 	lockupkeeper "github.com/TrustedSmartChain/tsc/v3/x/lockup/keeper"
 	lockuptypes "github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
+	node "github.com/TrustedSmartChain/tsc/v3/x/node"
+	nodetypes "github.com/TrustedSmartChain/tsc/v3/x/node/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -825,6 +827,7 @@ func NewChainApp(
 		distro.NewAppModule(appCodec, app.DistroKeeper),
 		lockup.NewAppModule(appCodec, app.LockupKeeper),
 		licenses.NewAppModule(appCodec, app.LicensesKeeper),
+		node.NewAppModule(appCodec),
 		// CosmWasm module
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
@@ -881,6 +884,7 @@ func NewChainApp(
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
 		licensestypes.ModuleName,
+		nodetypes.ModuleName,
 	)
 
 	// NOTE: the feemarket module should go last in order of end blockers that are actually doing something,
@@ -907,6 +911,7 @@ func NewChainApp(
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
 		licensestypes.ModuleName,
+		nodetypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -948,6 +953,7 @@ func NewChainApp(
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
 		licensestypes.ModuleName,
+		nodetypes.ModuleName,
 	}
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)

@@ -1,0 +1,29 @@
+syntax = "proto3";
+package node.v1;
+
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/v3/x/node/types";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // CheckIn records a node check-in for the given address.
+  rpc CheckIn(MsgCheckIn) returns (MsgCheckInResponse) {
+    option (google.api.http).post = "/tsc/node/v1/tx/check_in";
+  }
+}
+
+// MsgCheckIn is sent by a node to record a daily check-in.
+message MsgCheckIn {
+  option (cosmos.msg.v1.signer) = "address";
+
+  // address is the node's wallet address.
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// MsgCheckInResponse is the response type for MsgCheckIn.
+message MsgCheckInResponse {}

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package node.module.v1;
+
+import "cosmos/app/v1alpha1/module.proto";
+
+// Module is the app config object of the module.
+message Module {
+  option (cosmos.app.v1alpha1.module) = {
+    go_import : "github.com/TrustedSmartChain/tsc/v3"
+  };
+}
