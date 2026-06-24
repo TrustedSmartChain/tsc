@@ -8,6 +8,7 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 
+	"github.com/spf13/cobra"
 	"cosmossdk.io/core/appmodule"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -16,6 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	nodecli "github.com/TrustedSmartChain/tsc/v3/x/node/client/cli"
 	"github.com/TrustedSmartChain/tsc/v3/x/node/keeper"
 	"github.com/TrustedSmartChain/tsc/v3/x/node/types"
 )
@@ -57,6 +59,10 @@ func (a AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncoding
 		return err
 	}
 	return gs.Validate()
+}
+
+func (a AppModuleBasic) GetTxCmd() *cobra.Command {
+	return nodecli.NewTxCmd()
 }
 
 func (a AppModuleBasic) RegisterRESTRoutes(_ client.Context, _ *mux.Router) {}
