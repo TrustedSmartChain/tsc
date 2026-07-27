@@ -16,6 +16,7 @@ import (
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
 	"github.com/cosmos/evm/x/vm"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
+	licensetypes "github.com/webstack-sdk/webstack/x/license/types"
 )
 
 // GenesisState of the blockchain is represented here as a map of raw json
@@ -35,8 +36,11 @@ func NewEVMGenesisState() *evmtypes.GenesisState {
 	evmGenState.Params.EvmDenom = BaseDenom
 	evmGenState.Params.ExtendedDenomOptions = &evmtypes.ExtendedDenomOptions{ExtendedDenom: BaseDenom}
 
-	// Include the default precompiles plus the custom lockup precompile
-	activePrecompiles := append(evmtypes.AvailableStaticPrecompiles, lockupprecompile.LockupPrecompileAddress) //nolint:gocritic // append to new slice
+	// Include the default precompiles plus the custom lockup and license precompiles
+	activePrecompiles := append(evmtypes.AvailableStaticPrecompiles, //nolint:gocritic // append to new slice
+		lockupprecompile.LockupPrecompileAddress,
+		licensetypes.PrecompileAddress,
+	)
 	sort.Strings(activePrecompiles)
 	evmGenState.Params.ActiveStaticPrecompiles = activePrecompiles
 	evmGenState.Preinstalls = evmtypes.DefaultPreinstalls
