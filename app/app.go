@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -142,9 +143,13 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
-	licenses "github.com/webstack-sdk/webstack/x/licenses"
-	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
-	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
+	license "github.com/webstack-sdk/webstack/x/license"
+	licensekeeper "github.com/webstack-sdk/webstack/x/license/keeper"
+	licenseprecompile "github.com/webstack-sdk/webstack/x/license/precompile"
+	licensetypes "github.com/webstack-sdk/webstack/x/license/types"
+	permission "github.com/webstack-sdk/webstack/x/permission"
+	permissionkeeper "github.com/webstack-sdk/webstack/x/permission/keeper"
+	permissiontypes "github.com/webstack-sdk/webstack/x/permission/types"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	// CosmWasm imports
@@ -265,9 +270,10 @@ type ChainApp struct {
 	EVMMempool      *evmmempool.ExperimentalEVMMempool
 
 	// Custom keepers
-	DistroKeeper   distrokeeper.Keeper
-	LockupKeeper   lockupkeeper.Keeper
-	LicensesKeeper licenseskeeper.Keeper
+	DistroKeeper     distrokeeper.Keeper
+	LockupKeeper     lockupkeeper.Keeper
+	LicenseKeeper    licensekeeper.Keeper
+	PermissionKeeper permissionkeeper.Keeper
 
 	// Wasm keeper
 	WasmKeeper wasmkeeper.Keeper
@@ -358,7 +364,8 @@ func NewChainApp(
 		// Custom keys
 		distrotypes.StoreKey,
 		lockuptypes.StoreKey,
-		licensestypes.StoreKey,
+		licensetypes.StoreKey,
+		permissiontypes.StoreKey,
 		// CosmWasm keys
 		wasmtypes.StoreKey,
 	)
@@ -590,13 +597,26 @@ func NewChainApp(
 		app.BankKeeper,
 	)
 
-	// Create the licenses Keeper
-	app.LicensesKeeper = licenseskeeper.NewKeeper(
+	// Create the permission Keeper. It hosts per-module grant namespaces;
+	// consuming modules register their namespace specs (permission vocabulary,
+	// scope validator) below during wiring.
+	app.PermissionKeeper = permissionkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(keys[licensestypes.StoreKey]),
+		runtime.NewKVStoreService(keys[permissiontypes.StoreKey]),
 		logger,
 		authAddr,
 	)
+
+	// Create the license Keeper. Ownership and grants for the license module
+	// live in the permission keeper's "license" namespace.
+	app.LicenseKeeper = licensekeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[licensetypes.StoreKey]),
+		logger,
+		authAddr,
+		app.PermissionKeeper,
+	)
+	license.RegisterNamespace(app.PermissionKeeper, app.LicenseKeeper)
 
 	// Cosmos EVM keepers
 	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(
@@ -647,6 +667,19 @@ func NewChainApp(
 		app.BankKeeper,
 	)
 	app.EVMKeeper.RegisterStaticPrecompile(lockupPrecompile.Address(), lockupPrecompile)
+
+	// Register the license precompile. It claims an application-reserved
+	// address; RegisterStaticPrecompile would silently overwrite, so guard
+	// against a future cosmos/evm release shipping a stock precompile there.
+	if slices.Contains(evmtypes.AvailableStaticPrecompiles, licensetypes.PrecompileAddress) {
+		panic(fmt.Sprintf("precompile address %s is already registered upstream", licensetypes.PrecompileAddress))
+	}
+	licensePrecompile := licenseprecompile.NewPrecompile(
+		app.LicenseKeeper,
+		evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
+		common.HexToAddress(licensetypes.PrecompileAddress),
+	)
+	app.EVMKeeper.RegisterStaticPrecompile(licensePrecompile.Address(), licensePrecompile)
 
 	app.Erc20Keeper = erc20keeper.NewKeeper(
 		keys[erc20types.StoreKey],
@@ -824,7 +857,8 @@ func NewChainApp(
 		// Custom modules
 		distro.NewAppModule(appCodec, app.DistroKeeper),
 		lockup.NewAppModule(appCodec, app.LockupKeeper),
-		licenses.NewAppModule(appCodec, app.LicensesKeeper),
+		license.NewAppModule(appCodec, app.LicenseKeeper),
+		permission.NewAppModule(appCodec, app.PermissionKeeper),
 		// CosmWasm module
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
@@ -880,7 +914,8 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
-		licensestypes.ModuleName,
+		licensetypes.ModuleName,
+		permissiontypes.ModuleName,
 	)
 
 	// NOTE: the feemarket module should go last in order of end blockers that are actually doing something,
@@ -906,7 +941,8 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
-		licensestypes.ModuleName,
+		licensetypes.ModuleName,
+		permissiontypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -947,7 +983,11 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
-		licensestypes.ModuleName,
+		// The permission module initializes after license so grant scopes that
+		// reference license state (e.g. license type ids) can be validated
+		// against it on import.
+		licensetypes.ModuleName,
+		permissiontypes.ModuleName,
 	}
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)
@@ -1308,7 +1348,10 @@ func BlockedAddresses() map[string]bool {
 	// allow the following addresses to receive funds
 	delete(blockedAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
-	blockedPrecompilesHex := append(evmtypes.AvailableStaticPrecompiles, lockupprecompile.LockupPrecompileAddress) //nolint:gocritic
+	blockedPrecompilesHex := append(evmtypes.AvailableStaticPrecompiles, //nolint:gocritic
+		lockupprecompile.LockupPrecompileAddress,
+		licensetypes.PrecompileAddress,
+	)
 	for _, precompile := range blockedPrecompilesHex {
 		blockedAddrs[utils.EthHexToCosmosAddr(precompile).String()] = true
 	}

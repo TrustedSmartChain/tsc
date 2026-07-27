@@ -763,361 +763,7 @@ paths:
                       format: byte
       tags:
         - Msg
-  /webstack/licenses/admin_key/{address}:
-    get:
-      summary: AdminKey queries the admin key grants for a given address.
-      operationId: AdminKey
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              admin_key:
-                type: object
-                properties:
-                  address:
-                    type: string
-                  grants:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        permission:
-                          type: string
-                        license_types:
-                          type: array
-                          items:
-                            type: string
-                      description: >-
-                        AdminKeyGrant defines a permission grant for a specific
-                        set of license types.
-                description: AdminKey defines the set of grants for an address.
-            description: >-
-              QueryAdminKeyResponse is the response type for the Query/AdminKey
-              RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: address
-          in: path
-          required: true
-          type: string
-      tags:
-        - Query
-  /webstack/licenses/admin_keys:
-    get:
-      summary: AdminKeys queries all admin keys.
-      operationId: AdminKeys
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              admin_keys:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    address:
-                      type: string
-                    grants:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          permission:
-                            type: string
-                          license_types:
-                            type: array
-                            items:
-                              type: string
-                        description: >-
-                          AdminKeyGrant defines a permission grant for a
-                          specific set of license types.
-                  description: AdminKey defines the set of grants for an address.
-              pagination:
-                type: object
-                properties:
-                  next_key:
-                    type: string
-                    format: byte
-                    description: |-
-                      next_key is the key to be passed to PageRequest.key to
-                      query the next page most efficiently. It will be empty if
-                      there are no more results.
-                  total:
-                    type: string
-                    format: uint64
-                    title: >-
-                      total is total number of results available if
-                      PageRequest.count_total
-
-                      was set, its value is undefined otherwise
-                description: >-
-                  PageResponse is to be embedded in gRPC response messages where
-                  the
-
-                  corresponding request message has used PageRequest.
-
-                   message SomeResponse {
-                           repeated Bar results = 1;
-                           PageResponse page = 2;
-                   }
-            description: >-
-              QueryAdminKeysResponse is the response type for the
-              Query/AdminKeys RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: pagination.key
-          description: |-
-            key is a value returned in PageResponse.next_key to begin
-            querying the next page most efficiently. Only one of offset or key
-            should be set.
-          in: query
-          required: false
-          type: string
-          format: byte
-        - name: pagination.offset
-          description: >-
-            offset is a numeric offset that can be used when key is unavailable.
-
-            It is less efficient than using key. Only one of offset or key
-            should
-
-            be set.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.limit
-          description: >-
-            limit is the total number of results to be returned in the result
-            page.
-
-            If left empty it will default to a value to be set by each app.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.count_total
-          description: >-
-            count_total is set to true  to indicate that the result set should
-            include
-
-            a count of the total number of items available for pagination in
-            UIs.
-
-            count_total is only respected when offset is used. It is ignored
-            when key
-
-            is set.
-          in: query
-          required: false
-          type: boolean
-        - name: pagination.reverse
-          description: >-
-            reverse is set to true if results are to be returned in the
-            descending order.
-          in: query
-          required: false
-          type: boolean
-      tags:
-        - Query
-  /webstack/licenses/admin_keys_by_license_type/{license_type_id}:
-    get:
-      summary: >-
-        AdminKeysByLicenseType queries admin keys that have grants for a given
-        license type.
-      operationId: AdminKeysByLicenseType
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              admin_keys:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    address:
-                      type: string
-                    grants:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          permission:
-                            type: string
-                          license_types:
-                            type: array
-                            items:
-                              type: string
-                        description: >-
-                          AdminKeyGrant defines a permission grant for a
-                          specific set of license types.
-                  description: AdminKey defines the set of grants for an address.
-              pagination:
-                type: object
-                properties:
-                  next_key:
-                    type: string
-                    format: byte
-                    description: |-
-                      next_key is the key to be passed to PageRequest.key to
-                      query the next page most efficiently. It will be empty if
-                      there are no more results.
-                  total:
-                    type: string
-                    format: uint64
-                    title: >-
-                      total is total number of results available if
-                      PageRequest.count_total
-
-                      was set, its value is undefined otherwise
-                description: >-
-                  PageResponse is to be embedded in gRPC response messages where
-                  the
-
-                  corresponding request message has used PageRequest.
-
-                   message SomeResponse {
-                           repeated Bar results = 1;
-                           PageResponse page = 2;
-                   }
-            description: >-
-              QueryAdminKeysByLicenseTypeResponse is the response type for the
-              Query/AdminKeysByLicenseType RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: license_type_id
-          in: path
-          required: true
-          type: string
-        - name: permission
-          in: query
-          required: false
-          type: string
-        - name: pagination.key
-          description: |-
-            key is a value returned in PageResponse.next_key to begin
-            querying the next page most efficiently. Only one of offset or key
-            should be set.
-          in: query
-          required: false
-          type: string
-          format: byte
-        - name: pagination.offset
-          description: >-
-            offset is a numeric offset that can be used when key is unavailable.
-
-            It is less efficient than using key. Only one of offset or key
-            should
-
-            be set.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.limit
-          description: >-
-            limit is the total number of results to be returned in the result
-            page.
-
-            If left empty it will default to a value to be set by each app.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.count_total
-          description: >-
-            count_total is set to true  to indicate that the result set should
-            include
-
-            a count of the total number of items available for pagination in
-            UIs.
-
-            count_total is only respected when offset is used. It is ignored
-            when key
-
-            is set.
-          in: query
-          required: false
-          type: boolean
-        - name: pagination.reverse
-          description: >-
-            reverse is set to true if results are to be returned in the
-            descending order.
-          in: query
-          required: false
-          type: boolean
-      tags:
-        - Query
-  /webstack/licenses/license/{type_id}/{id}:
+  /webstack/license/license/{type_id}/{id}:
     get:
       summary: License queries a license by type id and license id.
       operationId: License
@@ -1147,10 +793,26 @@ paths:
                     description: start_date is the date from which the license is valid.
                   end_date:
                     type: string
-                    description: end_date is the expiry date. Empty string means no expiry.
+                    description: >-
+                      end_date is the expiry date as issued. Empty string means
+                      no expiry.
+
+                      Revocation does not modify this field.
                   status:
+                    description: status is the license lifecycle state.
                     type: string
-                    description: status is "active" or "revoked".
+                    enum:
+                      - LICENSE_STATUS_UNSPECIFIED
+                      - LICENSE_STATUS_ACTIVE
+                      - LICENSE_STATUS_REVOKED
+                    default: LICENSE_STATUS_UNSPECIFIED
+                  revoked_date:
+                    type: string
+                    description: >-
+                      revoked_date is the date the license was revoked (block
+                      date).
+
+                      Empty unless status is LICENSE_STATUS_REVOKED.
                 description: License represents an issued license instance.
             description: >-
               QueryLicenseResponse is the response type for the Query/License
@@ -1189,7 +851,7 @@ paths:
           format: uint64
       tags:
         - Query
-  /webstack/licenses/license_type/{id}:
+  /webstack/license/license_type/{id}:
     get:
       summary: LicenseType queries a license type by id.
       operationId: LicenseType
@@ -1218,8 +880,16 @@ paths:
                   issued_count:
                     type: string
                     description: >-
-                      issued_count tracks the number of currently active
-                      licenses issued.
+                      issued_count tracks the total number of licenses issued
+                      (used for ID generation).
+                  active_count:
+                    type: string
+                    description: >-
+                      active_count tracks the number of currently active
+                      licenses.
+                  revoked_count:
+                    type: string
+                    description: revoked_count tracks the number of revoked licenses.
                 description: LicenseType defines a template for issuing licenses.
             description: >-
               QueryLicenseTypeResponse is the response type for the
@@ -1253,7 +923,7 @@ paths:
           type: string
       tags:
         - Query
-  /webstack/licenses/license_types:
+  /webstack/license/license_types:
     get:
       summary: LicenseTypes queries all license types.
       operationId: LicenseTypes
@@ -1286,8 +956,16 @@ paths:
                     issued_count:
                       type: string
                       description: >-
-                        issued_count tracks the number of currently active
-                        licenses issued.
+                        issued_count tracks the total number of licenses issued
+                        (used for ID generation).
+                    active_count:
+                      type: string
+                      description: >-
+                        active_count tracks the number of currently active
+                        licenses.
+                    revoked_count:
+                      type: string
+                      description: revoked_count tracks the number of revoked licenses.
                   description: LicenseType defines a template for issuing licenses.
               pagination:
                 type: object
@@ -1398,9 +1076,179 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/licenses/licenses_by_holder/{holder}:
+  /webstack/license/licenses:
     get:
-      summary: LicensesByHolder queries all licenses held by a given address.
+      summary: >-
+        Licenses queries all licenses across all license types, active and
+        revoked.
+      operationId: Licenses
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              licenses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uint64
+                      description: >-
+                        id is the auto-incremented identifier, unique within the
+                        license type.
+                    type:
+                      type: string
+                      description: type is the LicenseType.id this license was issued from.
+                    holder:
+                      type: string
+                      description: holder is the address that owns this license.
+                    start_date:
+                      type: string
+                      description: start_date is the date from which the license is valid.
+                    end_date:
+                      type: string
+                      description: >-
+                        end_date is the expiry date as issued. Empty string
+                        means no expiry.
+
+                        Revocation does not modify this field.
+                    status:
+                      description: status is the license lifecycle state.
+                      type: string
+                      enum:
+                        - LICENSE_STATUS_UNSPECIFIED
+                        - LICENSE_STATUS_ACTIVE
+                        - LICENSE_STATUS_REVOKED
+                      default: LICENSE_STATUS_UNSPECIFIED
+                    revoked_date:
+                      type: string
+                      description: >-
+                        revoked_date is the date the license was revoked (block
+                        date).
+
+                        Empty unless status is LICENSE_STATUS_REVOKED.
+                  description: License represents an issued license instance.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryLicensesResponse is the response type for the Query/Licenses
+              RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/license/licenses_by_holder/{holder}:
+    get:
+      summary: >-
+        LicensesByHolder queries the active licenses held by a given address.
+
+        Revoked licenses are not indexed by holder; use License or
+        LicensesByType
+
+        to look them up.
       operationId: LicensesByHolder
       responses:
         '200':
@@ -1431,11 +1279,25 @@ paths:
                     end_date:
                       type: string
                       description: >-
-                        end_date is the expiry date. Empty string means no
-                        expiry.
+                        end_date is the expiry date as issued. Empty string
+                        means no expiry.
+
+                        Revocation does not modify this field.
                     status:
+                      description: status is the license lifecycle state.
                       type: string
-                      description: status is "active" or "revoked".
+                      enum:
+                        - LICENSE_STATUS_UNSPECIFIED
+                        - LICENSE_STATUS_ACTIVE
+                        - LICENSE_STATUS_REVOKED
+                      default: LICENSE_STATUS_UNSPECIFIED
+                    revoked_date:
+                      type: string
+                      description: >-
+                        revoked_date is the date the license was revoked (block
+                        date).
+
+                        Empty unless status is LICENSE_STATUS_REVOKED.
                   description: License represents an issued license instance.
               pagination:
                 type: object
@@ -1550,11 +1412,12 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/licenses/licenses_by_holder/{holder}/{type_id}:
+  /webstack/license/licenses_by_holder/{holder}/{type_id}:
     get:
-      summary: >-
-        LicensesByHolderAndType queries all licenses held by a given address for
-        a specific type.
+      summary: |-
+        LicensesByHolderAndType queries the active licenses held by a given
+        address for a specific type. Revoked licenses are not indexed by holder;
+        use License or LicensesByType to look them up.
       operationId: LicensesByHolderAndType
       responses:
         '200':
@@ -1585,11 +1448,25 @@ paths:
                     end_date:
                       type: string
                       description: >-
-                        end_date is the expiry date. Empty string means no
-                        expiry.
+                        end_date is the expiry date as issued. Empty string
+                        means no expiry.
+
+                        Revocation does not modify this field.
                     status:
+                      description: status is the license lifecycle state.
                       type: string
-                      description: status is "active" or "revoked".
+                      enum:
+                        - LICENSE_STATUS_UNSPECIFIED
+                        - LICENSE_STATUS_ACTIVE
+                        - LICENSE_STATUS_REVOKED
+                      default: LICENSE_STATUS_UNSPECIFIED
+                    revoked_date:
+                      type: string
+                      description: >-
+                        revoked_date is the date the license was revoked (block
+                        date).
+
+                        Empty unless status is LICENSE_STATUS_REVOKED.
                   description: License represents an issued license instance.
               pagination:
                 type: object
@@ -1708,7 +1585,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/licenses/licenses_by_type/{type_id}:
+  /webstack/license/licenses_by_type/{type_id}:
     get:
       summary: LicensesByType queries all licenses for a given license type.
       operationId: LicensesByType
@@ -1741,11 +1618,25 @@ paths:
                     end_date:
                       type: string
                       description: >-
-                        end_date is the expiry date. Empty string means no
-                        expiry.
+                        end_date is the expiry date as issued. Empty string
+                        means no expiry.
+
+                        Revocation does not modify this field.
                     status:
+                      description: status is the license lifecycle state.
                       type: string
-                      description: status is "active" or "revoked".
+                      enum:
+                        - LICENSE_STATUS_UNSPECIFIED
+                        - LICENSE_STATUS_ACTIVE
+                        - LICENSE_STATUS_REVOKED
+                      default: LICENSE_STATUS_UNSPECIFIED
+                    revoked_date:
+                      type: string
+                      description: >-
+                        revoked_date is the date the license was revoked (block
+                        date).
+
+                        Empty unless status is LICENSE_STATUS_REVOKED.
                   description: License represents an issued license instance.
               pagination:
                 type: object
@@ -1860,168 +1751,11 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/licenses/params:
-    get:
-      summary: Params queries the module parameters.
-      operationId: LicensesParams
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                type: object
-                properties:
-                  owner:
-                    type: string
-                    description: >-
-                      owner is the address that controls license type creation
-                      and admin key management.
-                description: Params defines the parameters for the licenses module.
-            description: >-
-              QueryParamsResponse is the response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      tags:
-        - Query
-  /webstack/licenses/permissions:
-    get:
-      summary: Permissions returns the list of valid admin key permissions.
-      operationId: Permissions
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              permissions:
-                type: array
-                items:
-                  type: string
-            description: >-
-              QueryPermissionsResponse is the response type for the
-              Query/Permissions RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      tags:
-        - Query
-  /webstack/licenses/tx/batch_issue_license:
+  /webstack/license/tx/create_license_type:
     post:
       summary: >-
-        BatchIssueLicense issues multiple licenses in a single transaction.
-        Signer must have the "issue" grant for the license type.
-      operationId: BatchIssueLicense
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              ids:
-                type: array
-                items:
-                  type: string
-                  format: uint64
-            description: >-
-              MsgBatchIssueLicenseResponse is the Msg/BatchIssueLicense response
-              type.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              issuer:
-                type: string
-              license_type_id:
-                type: string
-              entries:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    holder:
-                      type: string
-                    start_date:
-                      type: string
-                    end_date:
-                      type: string
-                  description: >-
-                    BatchIssueLicenseEntry defines a single entry in a batch
-                    issue request.
-            description: MsgBatchIssueLicense is the Msg/BatchIssueLicense request type.
-      tags:
-        - Msg
-  /webstack/licenses/tx/create_license_type:
-    post:
-      summary: >-
-        CreateLicenseType creates a new license type. Signer must be the module
-        owner.
+        CreateLicenseType creates a new license type. Signer must be the license
+        namespace owner.
       operationId: CreateLicenseType
       responses:
         '200':
@@ -2071,12 +1805,12 @@ paths:
             description: MsgCreateLicenseType is the Msg/CreateLicenseType request type.
       tags:
         - Msg
-  /webstack/licenses/tx/issue_license:
+  /webstack/license/tx/issue_licenses:
     post:
       summary: >-
-        IssueLicense issues a new license. Signer must have the "issue" grant
-        for the license type.
-      operationId: IssueLicense
+        IssueLicenses issues one or more licenses. Signer must have the "issue"
+        grant for the license type.
+      operationId: IssueLicenses
       responses:
         '200':
           description: A successful response.
@@ -2088,7 +1822,9 @@ paths:
                 items:
                   type: string
                   format: uint64
-            description: MsgIssueLicenseResponse is the Msg/IssueLicense response type.
+            description: |-
+              MsgIssueLicensesResponse is the Msg/IssueLicenses response type.
+              Ids are the issued license ids, flattened in entry order.
         default:
           description: An unexpected error response.
           schema:
@@ -2120,80 +1856,48 @@ paths:
             properties:
               issuer:
                 type: string
-              license_type_id:
-                type: string
-              holder:
-                type: string
-              start_date:
-                type: string
-              end_date:
-                type: string
-              count:
-                type: string
-                format: uint64
-            description: MsgIssueLicense is the Msg/IssueLicense request type.
-      tags:
-        - Msg
-  /webstack/licenses/tx/remove_admin_key:
-    post:
-      summary: >-
-        RemoveAdminKey removes all admin key grants for an address. Signer must
-        be the module owner.
-      operationId: RemoveAdminKey
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            description: MsgRemoveAdminKeyResponse is the Msg/RemoveAdminKey response type.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
+              entries:
                 type: array
                 items:
                   type: object
                   properties:
-                    type_url:
+                    license_type_id:
                       type: string
-                    value:
+                    holder:
                       type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              owner:
-                type: string
-              address:
-                type: string
-            description: MsgRemoveAdminKey is the Msg/RemoveAdminKey request type.
+                    start_date:
+                      type: string
+                    end_date:
+                      type: string
+                    count:
+                      type: string
+                      format: uint64
+                  description: >-
+                    IssueLicenseEntry defines a single issuance within a
+                    MsgIssueLicenses.
+            description: MsgIssueLicenses is the Msg/IssueLicenses request type.
       tags:
         - Msg
-  /webstack/licenses/tx/revoke_license:
+  /webstack/license/tx/revoke_licenses:
     post:
       summary: >-
-        RevokeLicense deletes a license. Signer must have the "revoke" grant for
-        the license type.
-      operationId: RevokeLicense
+        RevokeLicenses revokes licenses for a holder, revoking the most recently
+        issued first.
+
+        Signer must have the "revoke" grant for the license type.
+      operationId: RevokeLicenses
       responses:
         '200':
           description: A successful response.
           schema:
             type: object
-            description: MsgRevokeLicenseResponse is the Msg/RevokeLicense response type.
+            properties:
+              ids:
+                type: array
+                items:
+                  type: string
+                  format: uint64
+            description: MsgRevokeLicensesResponse is the Msg/RevokeLicenses response type.
         default:
           description: An unexpected error response.
           schema:
@@ -2227,75 +1931,15 @@ paths:
                 type: string
               license_type_id:
                 type: string
-              id:
+              holder:
+                type: string
+              count:
                 type: string
                 format: uint64
-            description: MsgRevokeLicense is the Msg/RevokeLicense request type.
+            description: MsgRevokeLicenses is the Msg/RevokeLicenses request type.
       tags:
         - Msg
-  /webstack/licenses/tx/set_admin_key:
-    post:
-      summary: >-
-        SetAdminKey adds or updates admin key grants for an address. Signer must
-        be the module owner.
-      operationId: SetAdminKey
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            description: MsgSetAdminKeyResponse is the Msg/SetAdminKey response type.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              owner:
-                type: string
-              address:
-                type: string
-              grants:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    permission:
-                      type: string
-                    license_types:
-                      type: array
-                      items:
-                        type: string
-                  description: >-
-                    AdminKeyGrant defines a permission grant for a specific set
-                    of license types.
-            description: MsgSetAdminKey is the Msg/SetAdminKey request type.
-      tags:
-        - Msg
-  /webstack/licenses/tx/transfer_license:
+  /webstack/license/tx/transfer_license:
     post:
       summary: >-
         TransferLicense transfers a license to a new holder. Signer must be the
@@ -2350,64 +1994,11 @@ paths:
             description: MsgTransferLicense is the Msg/TransferLicense request type.
       tags:
         - Msg
-  /webstack/licenses/tx/update_license:
-    post:
-      summary: >-
-        UpdateLicense updates the status of a license. Signer must have the
-        "update" grant for the license type.
-      operationId: UpdateLicense
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            description: MsgUpdateLicenseResponse is the Msg/UpdateLicense response type.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              updater:
-                type: string
-              license_type_id:
-                type: string
-              id:
-                type: string
-                format: uint64
-              status:
-                type: string
-            description: MsgUpdateLicense is the Msg/UpdateLicense request type.
-      tags:
-        - Msg
-  /webstack/licenses/tx/update_license_type:
+  /webstack/license/tx/update_license_type:
     post:
       summary: >-
         UpdateLicenseType updates an existing license type. Signer must be the
-        module owner.
+        license namespace owner.
       operationId: UpdateLicenseType
       responses:
         '200':
@@ -2452,23 +2043,888 @@ paths:
                 type: string
               transferrable:
                 type: boolean
-              max_supply:
-                type: string
-            description: MsgUpdateLicenseType is the Msg/UpdateLicenseType request type.
+            description: >-
+              MsgUpdateLicenseType is the Msg/UpdateLicenseType request type.
+              Only the
+
+              transferrable flag can be updated; max_supply is fixed at
+              creation.
       tags:
         - Msg
-  /webstack/licenses/tx/update_params:
-    post:
-      summary: >-
-        UpdateParams defines a governance operation for updating the module
-        parameters.
-      operationId: LicensesUpdateParams
+  /webstack/permission/grants/{module}:
+    get:
+      summary: Grants queries every grant within a namespace.
+      operationId: Grants
       responses:
         '200':
           description: A successful response.
           schema:
             type: object
-            description: MsgUpdateParamsResponse is the Msg/UpdateParams response type.
+            properties:
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    module:
+                      type: string
+                    grantee:
+                      type: string
+                    permission:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    Grant is a single (module, grantee, permission, scope) entry
+                    — the flat form
+
+                    stored in state and served by queries and genesis. The
+                    permission vocabulary
+
+                    is registered in-process by the consuming module; scope is
+                    an opaque
+
+                    resource identifier owned by that module (e.g. a license
+                    type id) and may be
+
+                    empty for namespaces that do not scope their permissions.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryGrantsResponse is the response type for the Query/Grants RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: module
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/permission/grants/{module}/{grantee}:
+    get:
+      summary: >-
+        GrantsByGrantee queries the grants held by an address within a
+        namespace.
+      operationId: GrantsByGrantee
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    module:
+                      type: string
+                    grantee:
+                      type: string
+                    permission:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    Grant is a single (module, grantee, permission, scope) entry
+                    — the flat form
+
+                    stored in state and served by queries and genesis. The
+                    permission vocabulary
+
+                    is registered in-process by the consuming module; scope is
+                    an opaque
+
+                    resource identifier owned by that module (e.g. a license
+                    type id) and may be
+
+                    empty for namespaces that do not scope their permissions.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryGrantsByGranteeResponse is the response type for the
+              Query/GrantsByGrantee RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: module
+          in: path
+          required: true
+          type: string
+        - name: grantee
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/permission/grants_by_scope/{module}/{scope}:
+    get:
+      summary: >-
+        GrantsByScope queries the grants within a namespace that apply to a
+        scope,
+
+        optionally filtered to a single permission.
+      operationId: GrantsByScope
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    module:
+                      type: string
+                    grantee:
+                      type: string
+                    permission:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    Grant is a single (module, grantee, permission, scope) entry
+                    — the flat form
+
+                    stored in state and served by queries and genesis. The
+                    permission vocabulary
+
+                    is registered in-process by the consuming module; scope is
+                    an opaque
+
+                    resource identifier owned by that module (e.g. a license
+                    type id) and may be
+
+                    empty for namespaces that do not scope their permissions.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryGrantsByScopeResponse is the response type for the
+              Query/GrantsByScope RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: module
+          in: path
+          required: true
+          type: string
+        - name: scope
+          in: path
+          required: true
+          type: string
+        - name: permission
+          description: permission optionally narrows the result to a single permission.
+          in: query
+          required: false
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /webstack/permission/has_permission/{module}/{grantee}/{permission}:
+    get:
+      summary: >-
+        HasPermission reports whether a grantee holds a (permission, scope)
+        grant
+
+        within a namespace.
+      operationId: HasPermission
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              has_permission:
+                type: boolean
+            description: >-
+              QueryHasPermissionResponse is the response type for the
+              Query/HasPermission RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: module
+          in: path
+          required: true
+          type: string
+        - name: grantee
+          in: path
+          required: true
+          type: string
+        - name: permission
+          in: path
+          required: true
+          type: string
+        - name: scope
+          in: query
+          required: false
+          type: string
+      tags:
+        - Query
+  /webstack/permission/module/{module}:
+    get:
+      summary: >-
+        Module queries a registered module's namespace owner and the permission
+
+        vocabulary the module registered in this binary. The owner is empty if
+        it
+
+        has not been set yet.
+      operationId: Module
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              namespace:
+                type: object
+                properties:
+                  module:
+                    type: string
+                    description: module is the consuming module's name (e.g. "license").
+                  owner:
+                    type: string
+                    description: >-
+                      owner is the address that controls grants within this
+                      namespace.
+                description: >-
+                  Namespace is the per-module grant domain. Each consuming
+                  module owns exactly
+
+                  one namespace, keyed by its module name; the namespace owner
+                  is the address
+
+                  allowed to grant and revoke permissions within it.
+              permissions:
+                type: array
+                items:
+                  type: string
+                description: >-
+                  permissions is the valid permission vocabulary the module
+                  registered in
+
+                  this binary, in ascending order.
+            description: >-
+              QueryModuleResponse is the response type for the Query/Module RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: module
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /webstack/permission/modules:
+    get:
+      summary: >-
+        Modules queries every registered module namespace. The owner is empty
+        for
+
+        modules whose namespace owner has not been set yet.
+      operationId: Modules
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              namespaces:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    module:
+                      type: string
+                      description: module is the consuming module's name (e.g. "license").
+                    owner:
+                      type: string
+                      description: >-
+                        owner is the address that controls grants within this
+                        namespace.
+                  description: >-
+                    Namespace is the per-module grant domain. Each consuming
+                    module owns exactly
+
+                    one namespace, keyed by its module name; the namespace owner
+                    is the address
+
+                    allowed to grant and revoke permissions within it.
+            description: >-
+              QueryModulesResponse is the response type for the Query/Modules
+              RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /webstack/permission/tx/grant_permissions:
+    post:
+      summary: |-
+        GrantPermissions merges permission grants for a grantee within a
+        namespace. Signer must be the namespace owner. Existing grants are
+        preserved; new (permission, scope) pairs are unioned in.
+      operationId: GrantPermissions
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgGrantPermissionsResponse is the Msg/GrantPermissions response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+              module:
+                type: string
+              grantee:
+                type: string
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    permission:
+                      type: string
+                    scopes:
+                      type: array
+                      items:
+                        type: string
+                  description: >-
+                    PermissionScopes is one grant entry within a
+                    MsgGrantPermissions: a single
+
+                    permission applied to a set of scopes.
+            description: MsgGrantPermissions is the Msg/GrantPermissions request type.
+      tags:
+        - Msg
+  /webstack/permission/tx/revoke_permissions:
+    post:
+      summary: |-
+        RevokePermissions removes the given (permission, scope) pairs from a
+        grantee within a namespace. Pairs that are not currently granted are
+        silently ignored. Signer must be the namespace owner.
+      operationId: RevokePermissions
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgRevokePermissionsResponse is the Msg/RevokePermissions response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+              module:
+                type: string
+              grantee:
+                type: string
+              permissions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    permission:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    PermissionScope identifies a single (permission, scope) pair
+                    to revoke.
+            description: MsgRevokePermissions is the Msg/RevokePermissions request type.
+      tags:
+        - Msg
+  /webstack/permission/tx/transfer_ownership:
+    post:
+      summary: |-
+        TransferOwnership hands a namespace to a new owner. Signer must be the
+        current namespace owner.
+      operationId: TransferOwnership
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgTransferOwnershipResponse is the Msg/TransferOwnership response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+              module:
+                type: string
+              new_owner:
+                type: string
+            description: MsgTransferOwnership is the Msg/TransferOwnership request type.
+      tags:
+        - Msg
+  /webstack/permission/tx/update_namespace_owner:
+    post:
+      summary: >-
+        UpdateNamespaceOwner sets or rotates the owner of a registered module's
+
+        namespace. Signer must be the module authority (governance); it is how
+        an
+
+        owner is first established outside genesis, and how a lost or
+        compromised
+
+        owner is recovered without the current owner's key.
+      operationId: UpdateNamespaceOwner
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgUpdateNamespaceOwnerResponse is the Msg/UpdateNamespaceOwner
+              response type.
         default:
           description: An unexpected error response.
           schema:
@@ -2500,16 +2956,13 @@ paths:
             properties:
               authority:
                 type: string
-              params:
-                type: object
-                properties:
-                  owner:
-                    type: string
-                    description: >-
-                      owner is the address that controls license type creation
-                      and admin key management.
-                description: Params defines the parameters for the licenses module.
-            description: MsgUpdateParams is the Msg/UpdateParams request type.
+              module:
+                type: string
+              owner:
+                type: string
+            description: >-
+              MsgUpdateNamespaceOwner is the Msg/UpdateNamespaceOwner request
+              type.
       tags:
         - Msg
 definitions:
@@ -2974,39 +3427,7 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
-  licenses.v1.AdminKey:
-    type: object
-    properties:
-      address:
-        type: string
-      grants:
-        type: array
-        items:
-          type: object
-          properties:
-            permission:
-              type: string
-            license_types:
-              type: array
-              items:
-                type: string
-          description: >-
-            AdminKeyGrant defines a permission grant for a specific set of
-            license types.
-    description: AdminKey defines the set of grants for an address.
-  licenses.v1.AdminKeyGrant:
-    type: object
-    properties:
-      permission:
-        type: string
-      license_types:
-        type: array
-        items:
-          type: string
-    description: >-
-      AdminKeyGrant defines a permission grant for a specific set of license
-      types.
-  licenses.v1.License:
+  license.v1.License:
     type: object
     properties:
       id:
@@ -3024,12 +3445,37 @@ definitions:
         description: start_date is the date from which the license is valid.
       end_date:
         type: string
-        description: end_date is the expiry date. Empty string means no expiry.
+        description: |-
+          end_date is the expiry date as issued. Empty string means no expiry.
+          Revocation does not modify this field.
       status:
+        description: status is the license lifecycle state.
         type: string
-        description: status is "active" or "revoked".
+        enum:
+          - LICENSE_STATUS_UNSPECIFIED
+          - LICENSE_STATUS_ACTIVE
+          - LICENSE_STATUS_REVOKED
+        default: LICENSE_STATUS_UNSPECIFIED
+      revoked_date:
+        type: string
+        description: |-
+          revoked_date is the date the license was revoked (block date).
+          Empty unless status is LICENSE_STATUS_REVOKED.
     description: License represents an issued license instance.
-  licenses.v1.LicenseType:
+  license.v1.LicenseStatus:
+    type: string
+    enum:
+      - LICENSE_STATUS_UNSPECIFIED
+      - LICENSE_STATUS_ACTIVE
+      - LICENSE_STATUS_REVOKED
+    default: LICENSE_STATUS_UNSPECIFIED
+    description: |-
+      LicenseStatus enumerates the lifecycle states of a license.
+
+       - LICENSE_STATUS_UNSPECIFIED: LICENSE_STATUS_UNSPECIFIED is the zero value and never valid in state.
+       - LICENSE_STATUS_ACTIVE: LICENSE_STATUS_ACTIVE marks a license that is currently valid.
+       - LICENSE_STATUS_REVOKED: LICENSE_STATUS_REVOKED marks a license that has been revoked.
+  license.v1.LicenseType:
     type: object
     properties:
       id:
@@ -3047,152 +3493,17 @@ definitions:
           unlimited.
       issued_count:
         type: string
-        description: issued_count tracks the number of currently active licenses issued.
-    description: LicenseType defines a template for issuing licenses.
-  licenses.v1.Params:
-    type: object
-    properties:
-      owner:
-        type: string
         description: >-
-          owner is the address that controls license type creation and admin key
-          management.
-    description: Params defines the parameters for the licenses module.
-  licenses.v1.QueryAdminKeyResponse:
-    type: object
-    properties:
-      admin_key:
-        type: object
-        properties:
-          address:
-            type: string
-          grants:
-            type: array
-            items:
-              type: object
-              properties:
-                permission:
-                  type: string
-                license_types:
-                  type: array
-                  items:
-                    type: string
-              description: >-
-                AdminKeyGrant defines a permission grant for a specific set of
-                license types.
-        description: AdminKey defines the set of grants for an address.
-    description: >-
-      QueryAdminKeyResponse is the response type for the Query/AdminKey RPC
-      method.
-  licenses.v1.QueryAdminKeysByLicenseTypeResponse:
-    type: object
-    properties:
-      admin_keys:
-        type: array
-        items:
-          type: object
-          properties:
-            address:
-              type: string
-            grants:
-              type: array
-              items:
-                type: object
-                properties:
-                  permission:
-                    type: string
-                  license_types:
-                    type: array
-                    items:
-                      type: string
-                description: >-
-                  AdminKeyGrant defines a permission grant for a specific set of
-                  license types.
-          description: AdminKey defines the set of grants for an address.
-      pagination:
-        type: object
-        properties:
-          next_key:
-            type: string
-            format: byte
-            description: |-
-              next_key is the key to be passed to PageRequest.key to
-              query the next page most efficiently. It will be empty if
-              there are no more results.
-          total:
-            type: string
-            format: uint64
-            title: >-
-              total is total number of results available if
-              PageRequest.count_total
-
-              was set, its value is undefined otherwise
-        description: |-
-          PageResponse is to be embedded in gRPC response messages where the
-          corresponding request message has used PageRequest.
-
-           message SomeResponse {
-                   repeated Bar results = 1;
-                   PageResponse page = 2;
-           }
-    description: >-
-      QueryAdminKeysByLicenseTypeResponse is the response type for the
-      Query/AdminKeysByLicenseType RPC method.
-  licenses.v1.QueryAdminKeysResponse:
-    type: object
-    properties:
-      admin_keys:
-        type: array
-        items:
-          type: object
-          properties:
-            address:
-              type: string
-            grants:
-              type: array
-              items:
-                type: object
-                properties:
-                  permission:
-                    type: string
-                  license_types:
-                    type: array
-                    items:
-                      type: string
-                description: >-
-                  AdminKeyGrant defines a permission grant for a specific set of
-                  license types.
-          description: AdminKey defines the set of grants for an address.
-      pagination:
-        type: object
-        properties:
-          next_key:
-            type: string
-            format: byte
-            description: |-
-              next_key is the key to be passed to PageRequest.key to
-              query the next page most efficiently. It will be empty if
-              there are no more results.
-          total:
-            type: string
-            format: uint64
-            title: >-
-              total is total number of results available if
-              PageRequest.count_total
-
-              was set, its value is undefined otherwise
-        description: |-
-          PageResponse is to be embedded in gRPC response messages where the
-          corresponding request message has used PageRequest.
-
-           message SomeResponse {
-                   repeated Bar results = 1;
-                   PageResponse page = 2;
-           }
-    description: >-
-      QueryAdminKeysResponse is the response type for the Query/AdminKeys RPC
-      method.
-  licenses.v1.QueryLicenseResponse:
+          issued_count tracks the total number of licenses issued (used for ID
+          generation).
+      active_count:
+        type: string
+        description: active_count tracks the number of currently active licenses.
+      revoked_count:
+        type: string
+        description: revoked_count tracks the number of revoked licenses.
+    description: LicenseType defines a template for issuing licenses.
+  license.v1.QueryLicenseResponse:
     type: object
     properties:
       license:
@@ -3215,15 +3526,29 @@ definitions:
             description: start_date is the date from which the license is valid.
           end_date:
             type: string
-            description: end_date is the expiry date. Empty string means no expiry.
+            description: >-
+              end_date is the expiry date as issued. Empty string means no
+              expiry.
+
+              Revocation does not modify this field.
           status:
+            description: status is the license lifecycle state.
             type: string
-            description: status is "active" or "revoked".
+            enum:
+              - LICENSE_STATUS_UNSPECIFIED
+              - LICENSE_STATUS_ACTIVE
+              - LICENSE_STATUS_REVOKED
+            default: LICENSE_STATUS_UNSPECIFIED
+          revoked_date:
+            type: string
+            description: |-
+              revoked_date is the date the license was revoked (block date).
+              Empty unless status is LICENSE_STATUS_REVOKED.
         description: License represents an issued license instance.
     description: >-
       QueryLicenseResponse is the response type for the Query/License RPC
       method.
-  licenses.v1.QueryLicenseTypeResponse:
+  license.v1.QueryLicenseTypeResponse:
     type: object
     properties:
       license_type:
@@ -3245,13 +3570,19 @@ definitions:
           issued_count:
             type: string
             description: >-
-              issued_count tracks the number of currently active licenses
-              issued.
+              issued_count tracks the total number of licenses issued (used for
+              ID generation).
+          active_count:
+            type: string
+            description: active_count tracks the number of currently active licenses.
+          revoked_count:
+            type: string
+            description: revoked_count tracks the number of revoked licenses.
         description: LicenseType defines a template for issuing licenses.
     description: >-
       QueryLicenseTypeResponse is the response type for the Query/LicenseType
       RPC method.
-  licenses.v1.QueryLicenseTypesResponse:
+  license.v1.QueryLicenseTypesResponse:
     type: object
     properties:
       license_types:
@@ -3275,8 +3606,14 @@ definitions:
             issued_count:
               type: string
               description: >-
-                issued_count tracks the number of currently active licenses
-                issued.
+                issued_count tracks the total number of licenses issued (used
+                for ID generation).
+            active_count:
+              type: string
+              description: active_count tracks the number of currently active licenses.
+            revoked_count:
+              type: string
+              description: revoked_count tracks the number of revoked licenses.
           description: LicenseType defines a template for issuing licenses.
       pagination:
         type: object
@@ -3307,7 +3644,7 @@ definitions:
     description: >-
       QueryLicenseTypesResponse is the response type for the Query/LicenseTypes
       RPC method.
-  licenses.v1.QueryLicensesByHolderAndTypeResponse:
+  license.v1.QueryLicensesByHolderAndTypeResponse:
     type: object
     properties:
       licenses:
@@ -3332,10 +3669,24 @@ definitions:
               description: start_date is the date from which the license is valid.
             end_date:
               type: string
-              description: end_date is the expiry date. Empty string means no expiry.
+              description: >-
+                end_date is the expiry date as issued. Empty string means no
+                expiry.
+
+                Revocation does not modify this field.
             status:
+              description: status is the license lifecycle state.
               type: string
-              description: status is "active" or "revoked".
+              enum:
+                - LICENSE_STATUS_UNSPECIFIED
+                - LICENSE_STATUS_ACTIVE
+                - LICENSE_STATUS_REVOKED
+              default: LICENSE_STATUS_UNSPECIFIED
+            revoked_date:
+              type: string
+              description: |-
+                revoked_date is the date the license was revoked (block date).
+                Empty unless status is LICENSE_STATUS_REVOKED.
           description: License represents an issued license instance.
       pagination:
         type: object
@@ -3366,7 +3717,7 @@ definitions:
     description: >-
       QueryLicensesByHolderAndTypeResponse is the response type for the
       Query/LicensesByHolderAndType RPC method.
-  licenses.v1.QueryLicensesByHolderResponse:
+  license.v1.QueryLicensesByHolderResponse:
     type: object
     properties:
       licenses:
@@ -3391,10 +3742,24 @@ definitions:
               description: start_date is the date from which the license is valid.
             end_date:
               type: string
-              description: end_date is the expiry date. Empty string means no expiry.
+              description: >-
+                end_date is the expiry date as issued. Empty string means no
+                expiry.
+
+                Revocation does not modify this field.
             status:
+              description: status is the license lifecycle state.
               type: string
-              description: status is "active" or "revoked".
+              enum:
+                - LICENSE_STATUS_UNSPECIFIED
+                - LICENSE_STATUS_ACTIVE
+                - LICENSE_STATUS_REVOKED
+              default: LICENSE_STATUS_UNSPECIFIED
+            revoked_date:
+              type: string
+              description: |-
+                revoked_date is the date the license was revoked (block date).
+                Empty unless status is LICENSE_STATUS_REVOKED.
           description: License represents an issued license instance.
       pagination:
         type: object
@@ -3425,7 +3790,7 @@ definitions:
     description: >-
       QueryLicensesByHolderResponse is the response type for the
       Query/LicensesByHolder RPC method.
-  licenses.v1.QueryLicensesByTypeResponse:
+  license.v1.QueryLicensesByTypeResponse:
     type: object
     properties:
       licenses:
@@ -3450,10 +3815,24 @@ definitions:
               description: start_date is the date from which the license is valid.
             end_date:
               type: string
-              description: end_date is the expiry date. Empty string means no expiry.
+              description: >-
+                end_date is the expiry date as issued. Empty string means no
+                expiry.
+
+                Revocation does not modify this field.
             status:
+              description: status is the license lifecycle state.
               type: string
-              description: status is "active" or "revoked".
+              enum:
+                - LICENSE_STATUS_UNSPECIFIED
+                - LICENSE_STATUS_ACTIVE
+                - LICENSE_STATUS_REVOKED
+              default: LICENSE_STATUS_UNSPECIFIED
+            revoked_date:
+              type: string
+              description: |-
+                revoked_date is the date the license was revoked (block date).
+                Empty unless status is LICENSE_STATUS_REVOKED.
           description: License represents an issued license instance.
       pagination:
         type: object
@@ -3484,90 +3863,82 @@ definitions:
     description: >-
       QueryLicensesByTypeResponse is the response type for the
       Query/LicensesByType RPC method.
-  licenses.v1.QueryParamsResponse:
+  license.v1.QueryLicensesResponse:
     type: object
     properties:
-      params:
-        type: object
-        properties:
-          owner:
-            type: string
-            description: >-
-              owner is the address that controls license type creation and admin
-              key management.
-        description: Params defines the parameters for the licenses module.
-    description: QueryParamsResponse is the response type for the Query/Params RPC method.
-  licenses.v1.QueryPermissionsResponse:
-    type: object
-    properties:
-      permissions:
-        type: array
-        items:
-          type: string
-    description: >-
-      QueryPermissionsResponse is the response type for the Query/Permissions
-      RPC method.
-  licenses.v1.BatchIssueLicenseEntry:
-    type: object
-    properties:
-      holder:
-        type: string
-      start_date:
-        type: string
-      end_date:
-        type: string
-    description: BatchIssueLicenseEntry defines a single entry in a batch issue request.
-  licenses.v1.MsgBatchIssueLicense:
-    type: object
-    properties:
-      issuer:
-        type: string
-      license_type_id:
-        type: string
-      entries:
+      licenses:
         type: array
         items:
           type: object
           properties:
+            id:
+              type: string
+              format: uint64
+              description: >-
+                id is the auto-incremented identifier, unique within the license
+                type.
+            type:
+              type: string
+              description: type is the LicenseType.id this license was issued from.
             holder:
               type: string
+              description: holder is the address that owns this license.
             start_date:
               type: string
+              description: start_date is the date from which the license is valid.
             end_date:
               type: string
-          description: >-
-            BatchIssueLicenseEntry defines a single entry in a batch issue
-            request.
-    description: MsgBatchIssueLicense is the Msg/BatchIssueLicense request type.
-  licenses.v1.MsgBatchIssueLicenseResponse:
+              description: >-
+                end_date is the expiry date as issued. Empty string means no
+                expiry.
+
+                Revocation does not modify this field.
+            status:
+              description: status is the license lifecycle state.
+              type: string
+              enum:
+                - LICENSE_STATUS_UNSPECIFIED
+                - LICENSE_STATUS_ACTIVE
+                - LICENSE_STATUS_REVOKED
+              default: LICENSE_STATUS_UNSPECIFIED
+            revoked_date:
+              type: string
+              description: |-
+                revoked_date is the date the license was revoked (block date).
+                Empty unless status is LICENSE_STATUS_REVOKED.
+          description: License represents an issued license instance.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryLicensesResponse is the response type for the Query/Licenses RPC
+      method.
+  license.v1.IssueLicenseEntry:
     type: object
     properties:
-      ids:
-        type: array
-        items:
-          type: string
-          format: uint64
-    description: MsgBatchIssueLicenseResponse is the Msg/BatchIssueLicense response type.
-  licenses.v1.MsgCreateLicenseType:
-    type: object
-    properties:
-      owner:
-        type: string
-      id:
-        type: string
-      transferrable:
-        type: boolean
-      max_supply:
-        type: string
-    description: MsgCreateLicenseType is the Msg/CreateLicenseType request type.
-  licenses.v1.MsgCreateLicenseTypeResponse:
-    type: object
-    description: MsgCreateLicenseTypeResponse is the Msg/CreateLicenseType response type.
-  licenses.v1.MsgIssueLicense:
-    type: object
-    properties:
-      issuer:
-        type: string
       license_type_id:
         type: string
       holder:
@@ -3579,8 +3950,48 @@ definitions:
       count:
         type: string
         format: uint64
-    description: MsgIssueLicense is the Msg/IssueLicense request type.
-  licenses.v1.MsgIssueLicenseResponse:
+    description: IssueLicenseEntry defines a single issuance within a MsgIssueLicenses.
+  license.v1.MsgCreateLicenseType:
+    type: object
+    properties:
+      owner:
+        type: string
+      id:
+        type: string
+      transferrable:
+        type: boolean
+      max_supply:
+        type: string
+    description: MsgCreateLicenseType is the Msg/CreateLicenseType request type.
+  license.v1.MsgCreateLicenseTypeResponse:
+    type: object
+    description: MsgCreateLicenseTypeResponse is the Msg/CreateLicenseType response type.
+  license.v1.MsgIssueLicenses:
+    type: object
+    properties:
+      issuer:
+        type: string
+      entries:
+        type: array
+        items:
+          type: object
+          properties:
+            license_type_id:
+              type: string
+            holder:
+              type: string
+            start_date:
+              type: string
+            end_date:
+              type: string
+            count:
+              type: string
+              format: uint64
+          description: >-
+            IssueLicenseEntry defines a single issuance within a
+            MsgIssueLicenses.
+    description: MsgIssueLicenses is the Msg/IssueLicenses request type.
+  license.v1.MsgIssueLicensesResponse:
     type: object
     properties:
       ids:
@@ -3588,58 +3999,32 @@ definitions:
         items:
           type: string
           format: uint64
-    description: MsgIssueLicenseResponse is the Msg/IssueLicense response type.
-  licenses.v1.MsgRemoveAdminKey:
-    type: object
-    properties:
-      owner:
-        type: string
-      address:
-        type: string
-    description: MsgRemoveAdminKey is the Msg/RemoveAdminKey request type.
-  licenses.v1.MsgRemoveAdminKeyResponse:
-    type: object
-    description: MsgRemoveAdminKeyResponse is the Msg/RemoveAdminKey response type.
-  licenses.v1.MsgRevokeLicense:
+    description: |-
+      MsgIssueLicensesResponse is the Msg/IssueLicenses response type.
+      Ids are the issued license ids, flattened in entry order.
+  license.v1.MsgRevokeLicenses:
     type: object
     properties:
       revoker:
         type: string
       license_type_id:
         type: string
-      id:
+      holder:
+        type: string
+      count:
         type: string
         format: uint64
-    description: MsgRevokeLicense is the Msg/RevokeLicense request type.
-  licenses.v1.MsgRevokeLicenseResponse:
-    type: object
-    description: MsgRevokeLicenseResponse is the Msg/RevokeLicense response type.
-  licenses.v1.MsgSetAdminKey:
+    description: MsgRevokeLicenses is the Msg/RevokeLicenses request type.
+  license.v1.MsgRevokeLicensesResponse:
     type: object
     properties:
-      owner:
-        type: string
-      address:
-        type: string
-      grants:
+      ids:
         type: array
         items:
-          type: object
-          properties:
-            permission:
-              type: string
-            license_types:
-              type: array
-              items:
-                type: string
-          description: >-
-            AdminKeyGrant defines a permission grant for a specific set of
-            license types.
-    description: MsgSetAdminKey is the Msg/SetAdminKey request type.
-  licenses.v1.MsgSetAdminKeyResponse:
-    type: object
-    description: MsgSetAdminKeyResponse is the Msg/SetAdminKey response type.
-  licenses.v1.MsgTransferLicense:
+          type: string
+          format: uint64
+    description: MsgRevokeLicensesResponse is the Msg/RevokeLicenses response type.
+  license.v1.MsgTransferLicense:
     type: object
     properties:
       holder:
@@ -3652,26 +4037,10 @@ definitions:
       recipient:
         type: string
     description: MsgTransferLicense is the Msg/TransferLicense request type.
-  licenses.v1.MsgTransferLicenseResponse:
+  license.v1.MsgTransferLicenseResponse:
     type: object
     description: MsgTransferLicenseResponse is the Msg/TransferLicense response type.
-  licenses.v1.MsgUpdateLicense:
-    type: object
-    properties:
-      updater:
-        type: string
-      license_type_id:
-        type: string
-      id:
-        type: string
-        format: uint64
-      status:
-        type: string
-    description: MsgUpdateLicense is the Msg/UpdateLicense request type.
-  licenses.v1.MsgUpdateLicenseResponse:
-    type: object
-    description: MsgUpdateLicenseResponse is the Msg/UpdateLicense response type.
-  licenses.v1.MsgUpdateLicenseType:
+  license.v1.MsgUpdateLicenseType:
     type: object
     properties:
       owner:
@@ -3680,27 +4049,387 @@ definitions:
         type: string
       transferrable:
         type: boolean
-      max_supply:
-        type: string
-    description: MsgUpdateLicenseType is the Msg/UpdateLicenseType request type.
-  licenses.v1.MsgUpdateLicenseTypeResponse:
+    description: |-
+      MsgUpdateLicenseType is the Msg/UpdateLicenseType request type. Only the
+      transferrable flag can be updated; max_supply is fixed at creation.
+  license.v1.MsgUpdateLicenseTypeResponse:
     type: object
     description: MsgUpdateLicenseTypeResponse is the Msg/UpdateLicenseType response type.
-  licenses.v1.MsgUpdateParams:
+  permission.v1.Grant:
+    type: object
+    properties:
+      module:
+        type: string
+      grantee:
+        type: string
+      permission:
+        type: string
+      scope:
+        type: string
+    description: >-
+      Grant is a single (module, grantee, permission, scope) entry — the flat
+      form
+
+      stored in state and served by queries and genesis. The permission
+      vocabulary
+
+      is registered in-process by the consuming module; scope is an opaque
+
+      resource identifier owned by that module (e.g. a license type id) and may
+      be
+
+      empty for namespaces that do not scope their permissions.
+  permission.v1.Namespace:
+    type: object
+    properties:
+      module:
+        type: string
+        description: module is the consuming module's name (e.g. "license").
+      owner:
+        type: string
+        description: owner is the address that controls grants within this namespace.
+    description: >-
+      Namespace is the per-module grant domain. Each consuming module owns
+      exactly
+
+      one namespace, keyed by its module name; the namespace owner is the
+      address
+
+      allowed to grant and revoke permissions within it.
+  permission.v1.QueryGrantsByGranteeResponse:
+    type: object
+    properties:
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            module:
+              type: string
+            grantee:
+              type: string
+            permission:
+              type: string
+            scope:
+              type: string
+          description: >-
+            Grant is a single (module, grantee, permission, scope) entry — the
+            flat form
+
+            stored in state and served by queries and genesis. The permission
+            vocabulary
+
+            is registered in-process by the consuming module; scope is an opaque
+
+            resource identifier owned by that module (e.g. a license type id)
+            and may be
+
+            empty for namespaces that do not scope their permissions.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryGrantsByGranteeResponse is the response type for the
+      Query/GrantsByGrantee RPC method.
+  permission.v1.QueryGrantsByScopeResponse:
+    type: object
+    properties:
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            module:
+              type: string
+            grantee:
+              type: string
+            permission:
+              type: string
+            scope:
+              type: string
+          description: >-
+            Grant is a single (module, grantee, permission, scope) entry — the
+            flat form
+
+            stored in state and served by queries and genesis. The permission
+            vocabulary
+
+            is registered in-process by the consuming module; scope is an opaque
+
+            resource identifier owned by that module (e.g. a license type id)
+            and may be
+
+            empty for namespaces that do not scope their permissions.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryGrantsByScopeResponse is the response type for the
+      Query/GrantsByScope RPC method.
+  permission.v1.QueryGrantsResponse:
+    type: object
+    properties:
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            module:
+              type: string
+            grantee:
+              type: string
+            permission:
+              type: string
+            scope:
+              type: string
+          description: >-
+            Grant is a single (module, grantee, permission, scope) entry — the
+            flat form
+
+            stored in state and served by queries and genesis. The permission
+            vocabulary
+
+            is registered in-process by the consuming module; scope is an opaque
+
+            resource identifier owned by that module (e.g. a license type id)
+            and may be
+
+            empty for namespaces that do not scope their permissions.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: QueryGrantsResponse is the response type for the Query/Grants RPC method.
+  permission.v1.QueryHasPermissionResponse:
+    type: object
+    properties:
+      has_permission:
+        type: boolean
+    description: >-
+      QueryHasPermissionResponse is the response type for the
+      Query/HasPermission RPC method.
+  permission.v1.QueryModuleResponse:
+    type: object
+    properties:
+      namespace:
+        type: object
+        properties:
+          module:
+            type: string
+            description: module is the consuming module's name (e.g. "license").
+          owner:
+            type: string
+            description: owner is the address that controls grants within this namespace.
+        description: >-
+          Namespace is the per-module grant domain. Each consuming module owns
+          exactly
+
+          one namespace, keyed by its module name; the namespace owner is the
+          address
+
+          allowed to grant and revoke permissions within it.
+      permissions:
+        type: array
+        items:
+          type: string
+        description: >-
+          permissions is the valid permission vocabulary the module registered
+          in
+
+          this binary, in ascending order.
+    description: QueryModuleResponse is the response type for the Query/Module RPC method.
+  permission.v1.QueryModulesResponse:
+    type: object
+    properties:
+      namespaces:
+        type: array
+        items:
+          type: object
+          properties:
+            module:
+              type: string
+              description: module is the consuming module's name (e.g. "license").
+            owner:
+              type: string
+              description: owner is the address that controls grants within this namespace.
+          description: >-
+            Namespace is the per-module grant domain. Each consuming module owns
+            exactly
+
+            one namespace, keyed by its module name; the namespace owner is the
+            address
+
+            allowed to grant and revoke permissions within it.
+    description: >-
+      QueryModulesResponse is the response type for the Query/Modules RPC
+      method.
+  permission.v1.MsgGrantPermissions:
+    type: object
+    properties:
+      owner:
+        type: string
+      module:
+        type: string
+      grantee:
+        type: string
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            permission:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+          description: >-
+            PermissionScopes is one grant entry within a MsgGrantPermissions: a
+            single
+
+            permission applied to a set of scopes.
+    description: MsgGrantPermissions is the Msg/GrantPermissions request type.
+  permission.v1.MsgGrantPermissionsResponse:
+    type: object
+    description: MsgGrantPermissionsResponse is the Msg/GrantPermissions response type.
+  permission.v1.MsgRevokePermissions:
+    type: object
+    properties:
+      owner:
+        type: string
+      module:
+        type: string
+      grantee:
+        type: string
+      permissions:
+        type: array
+        items:
+          type: object
+          properties:
+            permission:
+              type: string
+            scope:
+              type: string
+          description: >-
+            PermissionScope identifies a single (permission, scope) pair to
+            revoke.
+    description: MsgRevokePermissions is the Msg/RevokePermissions request type.
+  permission.v1.MsgRevokePermissionsResponse:
+    type: object
+    description: MsgRevokePermissionsResponse is the Msg/RevokePermissions response type.
+  permission.v1.MsgTransferOwnership:
+    type: object
+    properties:
+      owner:
+        type: string
+      module:
+        type: string
+      new_owner:
+        type: string
+    description: MsgTransferOwnership is the Msg/TransferOwnership request type.
+  permission.v1.MsgTransferOwnershipResponse:
+    type: object
+    description: MsgTransferOwnershipResponse is the Msg/TransferOwnership response type.
+  permission.v1.MsgUpdateNamespaceOwner:
     type: object
     properties:
       authority:
         type: string
-      params:
-        type: object
-        properties:
-          owner:
-            type: string
-            description: >-
-              owner is the address that controls license type creation and admin
-              key management.
-        description: Params defines the parameters for the licenses module.
-    description: MsgUpdateParams is the Msg/UpdateParams request type.
-  licenses.v1.MsgUpdateParamsResponse:
+      module:
+        type: string
+      owner:
+        type: string
+    description: MsgUpdateNamespaceOwner is the Msg/UpdateNamespaceOwner request type.
+  permission.v1.MsgUpdateNamespaceOwnerResponse:
     type: object
-    description: MsgUpdateParamsResponse is the Msg/UpdateParams response type.
+    description: >-
+      MsgUpdateNamespaceOwnerResponse is the Msg/UpdateNamespaceOwner response
+      type.
+  permission.v1.PermissionScope:
+    type: object
+    properties:
+      permission:
+        type: string
+      scope:
+        type: string
+    description: PermissionScope identifies a single (permission, scope) pair to revoke.
+  permission.v1.PermissionScopes:
+    type: object
+    properties:
+      permission:
+        type: string
+      scopes:
+        type: array
+        items:
+          type: string
+    description: |-
+      PermissionScopes is one grant entry within a MsgGrantPermissions: a single
+      permission applied to a set of scopes.

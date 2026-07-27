@@ -39,20 +39,16 @@
       }
     },
     {
-      "url": "./tmp-swagger-gen/licenses/v1/query.swagger.json",
-      "operationIds": {
-        "rename": {
-          "Params": "LicensesParams"
-        }
-      }
+      "url": "./tmp-swagger-gen/license/v1/query.swagger.json"
     },
     {
-      "url": "./tmp-swagger-gen/licenses/v1/tx.swagger.json",
-      "operationIds": {
-        "rename": {
-          "UpdateParams": "LicensesUpdateParams"
-        }
-      }
+      "url": "./tmp-swagger-gen/license/v1/tx.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/permission/v1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/permission/v1/tx.swagger.json"
     }
   ]
 }
