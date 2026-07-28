@@ -49,6 +49,38 @@
     },
     {
       "url": "./tmp-swagger-gen/permission/v1/tx.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/network/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "NetworkParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/network/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "NetworkUpdateParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/attestation/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "AttestationParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/attestation/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "AttestationUpdateParams"
+        }
+      }
     }
   ]
 }

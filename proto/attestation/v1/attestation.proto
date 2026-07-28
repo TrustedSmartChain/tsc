@@ -1,0 +1,56 @@
+syntax = "proto3";
+package attestation.v1;
+
+import "amino/amino.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/v3/x/attestation/types";
+
+// Params defines the set of attestation module parameters.
+message Params {
+  option (amino.name) = "tsc/x/attestation/params";
+  option (gogoproto.equal) = true;
+
+  // rwa_daily_limit is the maximum number of MsgAttestRwa per node per UTC
+  // day.
+  uint64 rwa_daily_limit = 1;
+  // rwu_daily_limit is the maximum number of MsgAttestRwu per node per UTC
+  // day.
+  uint64 rwu_daily_limit = 2;
+}
+
+// ActivityCounter is a rolling daily counter. The count resets when the UTC
+// day of the block time differs from the UTC day of latest_time. It mirrors
+// network.v1.ActivityCounter; the message is duplicated to keep the modules
+// decoupled (no cross-repo buf import).
+message ActivityCounter {
+  // latest_time is the block time of the most recent counted action.
+  google.protobuf.Timestamp latest_time = 1 [
+    (gogoproto.stdtime) = true,
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // latest_height is the block height of the most recent counted action.
+  int64 latest_height = 2;
+  // daily_count is the number of counted actions in the current UTC day.
+  uint64 daily_count = 3;
+}
+
+// ContractAttestation is one attested contract-supply observation. The chain
+// does not store attestations; they are carried in txs and emitted as
+// events.
+message ContractAttestation {
+  // contract_address is the attested RWA/RWU contract address.
+  string contract_address = 1;
+  // current_supply is the observed supply of the contract.
+  string current_supply = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // block_height is the height the observation was made at.
+  uint64 block_height = 3;
+}

@@ -17,6 +17,9 @@ import (
 	anteinterfaces "github.com/cosmos/evm/ante/interfaces"
 
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+
+	networkante "github.com/webstack-sdk/webstack/x/network/ante"
+	networkkeeper "github.com/webstack-sdk/webstack/x/network/keeper"
 )
 
 // HandlerOptions defines the list of module keepers required to run the Cosmos EVM
@@ -36,6 +39,16 @@ type HandlerOptions struct {
 	// use dynamic fee checker or the cosmos-sdk default one for native transactions
 	DynamicFeeChecker bool
 	PendingTxListener evmante.PendingTxListener
+
+	// NetworkKeeper serves the gasless caps params and the network module's
+	// admission checks.
+	NetworkKeeper networkkeeper.Keeper
+	// GaslessAllowlist is the set of msg type URLs admitted with zero fees
+	// (network + attestation msgs).
+	GaslessAllowlist map[string]bool
+	// AdmissionRouter routes every allowlisted URL to the keeper that vets
+	// it; admission fails closed on unrouted msgs.
+	AdmissionRouter networkante.AdmissionRouter
 }
 
 // Validate checks if the keepers are defined
@@ -57,6 +70,14 @@ func (options HandlerOptions) Validate() error {
 	}
 	if options.EvmKeeper == nil {
 		return errorsmod.Wrap(errortypes.ErrLogic, "evm keeper is required for AnteHandler")
+	}
+	if len(options.GaslessAllowlist) == 0 {
+		return errorsmod.Wrap(errortypes.ErrLogic, "gasless allowlist is required for AnteHandler")
+	}
+	for url := range options.GaslessAllowlist {
+		if _, ok := options.AdmissionRouter[url]; !ok {
+			return errorsmod.Wrapf(errortypes.ErrLogic, "allowlisted gasless msg %s has no admission route", url)
+		}
 	}
 
 	return nil

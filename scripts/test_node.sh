@@ -27,6 +27,8 @@ export P2P=${P2P:-"26656"}
 export GRPC=${GRPC:-"9090"}
 export GRPC_WEB=${GRPC_WEB:-"9091"}
 export ROSETTA=${ROSETTA:-"8080"}
+export JSONRPC=${JSONRPC:-"8545"}
+export JSONRPC_WS=${JSONRPC_WS:-"8546"}
 export BLOCK_TIME=${BLOCK_TIME:-"5s"}
 
 # if which binary does not exist, install it
@@ -121,8 +123,20 @@ from_scratch () {
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_fee"]=[]'
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_gas_consume"]=100000'
 
-  # licenses
-  update_test_genesis '.app_state["licenses"]["params"]["owner"]="tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"'
+  # license / permission / network / attestation — mirror what the v3
+  # upgrade handler seeds on real networks (the module defaults fail closed:
+  # with an empty license_types no node could ever activate).
+  # Namespace owner for both the license and network namespaces is KEY3.
+  update_test_genesis '.app_state["permission"]["namespaces"]=[{"module":"license","owner":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"},{"module":"network","owner":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"}]'
+  # The counted node license types, pre-created so grants can be seeded.
+  update_test_genesis '.app_state["license"]["license_types"]=[{"id":"tsc.node.trust","transferrable":false,"max_supply":"0","issued_count":"0","active_count":"0","revoked_count":"0"},{"id":"tsc.node.nano","transferrable":false,"max_supply":"0","issued_count":"0","active_count":"0","revoked_count":"0"}]'
+  # KEY3 may issue and revoke node licenses.
+  update_test_genesis '.app_state["permission"]["grants"]=[{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"issue","scope":"tsc.node.trust"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"revoke","scope":"tsc.node.trust"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"issue","scope":"tsc.node.nano"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"revoke","scope":"tsc.node.nano"}]'
+  # Network params: counted license types, allowed node types, and the
+  # deauthorize fee (0.01 TSC), matching app/upgrades_v3.go.
+  update_test_genesis `printf '.app_state["network"]["params"]["license_types"]=["tsc.node.trust","tsc.node.nano"]'`
+  update_test_genesis `printf '.app_state["network"]["params"]["allowed_node_types"]=["tsc.node.trust","tsc.node.nano"]'`
+  update_test_genesis `printf '.app_state["network"]["params"]["deauthorize_fee"]=[{"denom":"%s","amount":"10000000000000000"}]' $DENOM`
 
 
   BASE_GENESIS_ALLOCATIONS="1000000000000000000000$DENOM"
@@ -179,4 +193,4 @@ sed -i -e 's/address = ":8080"/address = "0.0.0.0:'$ROSETTA'"/g' $HOME_DIR/confi
 # Faster blocks
 sed -i -e 's/timeout_commit = "5s"/timeout_commit = "'$BLOCK_TIME'"/g' $HOME_DIR/config/config.toml
 
-$BINARY start --pruning=nothing  --minimum-gas-prices=0$DENOM --rpc.laddr="tcp://0.0.0.0:$RPC" --home $HOME_DIR --json-rpc.api=eth,txpool,personal,net,debug,web3 --chain-id="$CHAIN_ID"
+$BINARY start --pruning=nothing  --minimum-gas-prices=0$DENOM --rpc.laddr="tcp://0.0.0.0:$RPC" --home $HOME_DIR --json-rpc.api=eth,txpool,personal,net,debug,web3 --json-rpc.address="127.0.0.1:$JSONRPC" --json-rpc.ws-address="127.0.0.1:$JSONRPC_WS" --chain-id="$CHAIN_ID"

@@ -5,7 +5,7 @@ set -eo pipefail
 mkdir -p ./tmp-swagger-gen
 
 # external modules vendored in from the webstack SDK
-WEBSTACK_MODULES="license permission"
+WEBSTACK_MODULES="license permission network"
 
 cd proto
 
