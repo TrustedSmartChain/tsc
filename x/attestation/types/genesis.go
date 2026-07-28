@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	networktypes "github.com/webstack-sdk/webstack/x/network/types"
 )
 
 // DefaultGenesis returns the default genesis state.
@@ -31,8 +31,8 @@ func (gs GenesisState) Validate() error {
 func validateCounters(name string, counters []AttestationCounter) error {
 	seen := make(map[string]struct{}, len(counters))
 	for _, c := range counters {
-		if _, err := sdk.AccAddressFromBech32(c.NodeAddress); err != nil {
-			return fmt.Errorf("%s: invalid node address %q: %w", name, c.NodeAddress, err)
+		if err := networktypes.ValidateCanonicalAddress("node", c.NodeAddress); err != nil {
+			return fmt.Errorf("%s: %w", name, err)
 		}
 		if _, dup := seen[c.NodeAddress]; dup {
 			return fmt.Errorf("%s: duplicate counter for %s", name, c.NodeAddress)

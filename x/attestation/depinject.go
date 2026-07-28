@@ -12,6 +12,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 
+	licensekeeper "github.com/webstack-sdk/webstack/x/license/keeper"
 	networkkeeper "github.com/webstack-sdk/webstack/x/network/keeper"
 
 	modulev1 "github.com/TrustedSmartChain/tsc/v3/api/attestation/module/v1"
@@ -40,6 +41,7 @@ type ModuleInputs struct {
 	StoreService store.KVStoreService
 
 	NetworkKeeper networkkeeper.Keeper
+	LicenseKeeper licensekeeper.Keeper
 }
 
 type ModuleOutputs struct {
@@ -52,7 +54,7 @@ type ModuleOutputs struct {
 func ProvideModule(in ModuleInputs) ModuleOutputs {
 	govAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	k := keeper.NewKeeper(in.Cdc, in.StoreService, log.NewLogger(os.Stderr), govAddr, in.NetworkKeeper)
+	k := keeper.NewKeeper(in.Cdc, in.StoreService, log.NewLogger(os.Stderr), govAddr, in.NetworkKeeper, in.LicenseKeeper)
 	m := NewAppModule(in.Cdc, k)
 
 	return ModuleOutputs{Module: m, Keeper: k, Out: depinject.Out{}}

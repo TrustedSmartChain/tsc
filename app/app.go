@@ -648,13 +648,16 @@ func NewChainApp(
 	network.RegisterNamespace(app.PermissionKeeper, app.NetworkKeeper)
 
 	// Create the attestation Keeper. It consumes the network keeper through
-	// a narrow interface (node standing, activity touch, license gate).
+	// a narrow interface (node standing, activity touch, license gate) and
+	// the license keeper to bind a node's declared type to a license of that
+	// same type.
 	app.AttestationKeeper = attestationkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[attestationtypes.StoreKey]),
 		logger,
 		authAddr,
 		app.NetworkKeeper,
+		app.LicenseKeeper,
 	)
 
 	// Cosmos EVM keepers

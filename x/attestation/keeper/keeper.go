@@ -34,6 +34,7 @@ type Keeper struct {
 	authority string
 
 	networkKeeper types.NetworkKeeper
+	licenseKeeper types.LicenseKeeper
 }
 
 // NewKeeper creates a new Keeper instance
@@ -43,6 +44,7 @@ func NewKeeper(
 	logger log.Logger,
 	authority string,
 	networkKeeper types.NetworkKeeper,
+	licenseKeeper types.LicenseKeeper,
 ) Keeper {
 	logger = logger.With(log.ModuleKey, "x/"+types.ModuleName)
 
@@ -63,6 +65,7 @@ func NewKeeper(
 		authority: authority,
 
 		networkKeeper: networkKeeper,
+		licenseKeeper: licenseKeeper,
 	}
 
 	schema, err := sb.Build()

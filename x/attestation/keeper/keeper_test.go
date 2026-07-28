@@ -64,6 +64,42 @@ func (f *fakeNetworkKeeper) EnsureOperatorLicensed(_ context.Context, operator s
 	return nil
 }
 
+// fakeLicenseKeeper implements types.LicenseKeeper for keeper tests. It
+// records which license types each holder holds, so a test can model an
+// operator that holds a nano license while declaring a trust node.
+type fakeLicenseKeeper struct {
+	// held maps holder -> license type -> count.
+	held map[string]map[string]uint64
+}
+
+func newFakeLicenseKeeper() *fakeLicenseKeeper {
+	return &fakeLicenseKeeper{held: make(map[string]map[string]uint64)}
+}
+
+func (f *fakeLicenseKeeper) issue(holder, licenseType string, count uint64) {
+	if f.held[holder] == nil {
+		f.held[holder] = make(map[string]uint64)
+	}
+	f.held[holder][licenseType] += count
+}
+
+func (f *fakeLicenseKeeper) revoke(holder, licenseType string) {
+	if f.held[holder] != nil {
+		delete(f.held[holder], licenseType)
+	}
+}
+
+func (f *fakeLicenseKeeper) CountActiveLicenses(_ context.Context, holder string, licenseTypes []string, stopAt uint64) (uint64, error) {
+	var count uint64
+	for _, t := range licenseTypes {
+		count += f.held[holder][t]
+		if stopAt != 0 && count >= stopAt {
+			return count, nil
+		}
+	}
+	return count, nil
+}
+
 // addNode registers a node with the fake network keeper and returns its
 // address.
 func (f *fakeNetworkKeeper) addNode(nodeType string, status networktypes.NodeStatus) networktypes.Node {
@@ -85,6 +121,7 @@ type testFixture struct {
 	queryServer types.QueryServer
 
 	network    *fakeNetworkKeeper
+	license    *fakeLicenseKeeper
 	govModAddr string
 }
 
@@ -98,11 +135,12 @@ func SetupTest(t *testing.T) *testFixture {
 
 	f.govModAddr = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	f.network = newFakeNetworkKeeper()
+	f.license = newFakeLicenseKeeper()
 
 	keys := storetypes.NewKVStoreKeys(types.ModuleName)
 	f.ctx = sdk.NewContext(integration.CreateMultiStore(keys, logger), cmtproto.Header{Height: 1, Time: fixtureBlockTime}, false, logger)
 
-	f.k = keeper.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(keys[types.ModuleName]), logger, f.govModAddr, f.network)
+	f.k = keeper.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(keys[types.ModuleName]), logger, f.govModAddr, f.network, f.license)
 	f.msgServer = keeper.NewMsgServerImpl(f.k)
 	f.queryServer = keeper.NewQuerier(f.k)
 
@@ -111,6 +149,16 @@ func SetupTest(t *testing.T) *testFixture {
 	_ = module.NewAppModule(encCfg.Codec, f.k)
 
 	return f
+}
+
+// addNode registers an active-or-not node AND issues its operator one
+// license of the node's declared type, which is the licensed, non-escalated
+// case. Tests that model an operator declaring a type it is not licensed for
+// call f.network.addNode directly and manage f.license themselves.
+func (f *testFixture) addNode(nodeType string, status networktypes.NodeStatus) networktypes.Node {
+	node := f.network.addNode(nodeType, status)
+	f.license.issue(node.Operator, nodeType, 1)
+	return node
 }
 
 // WithBlockTime returns the fixture context advanced to the given block

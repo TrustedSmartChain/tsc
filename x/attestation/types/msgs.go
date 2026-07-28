@@ -2,6 +2,8 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	networktypes "github.com/webstack-sdk/webstack/x/network/types"
 )
 
 var (
@@ -29,8 +31,11 @@ func (msg *MsgAttestRwu) ValidateBasic() error {
 }
 
 func validateAttestMsg(nodeAddress string, attestations []ContractAttestation) error {
-	if _, err := sdk.AccAddressFromBech32(nodeAddress); err != nil {
-		return ErrInvalidSigner.Wrapf("invalid node address: %s", err)
+	// Canonical form, not merely decodable: the node address is a store key
+	// for this module's daily counters, and a non-canonical bech32 alias
+	// would be a second identity for the same account.
+	if err := networktypes.ValidateCanonicalAddress("node", nodeAddress); err != nil {
+		return err
 	}
 	if len(attestations) == 0 {
 		return ErrInvalidAttestation.Wrap("attestations must not be empty")
