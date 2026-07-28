@@ -28,8 +28,8 @@ func attestations(n int) []types.ContractAttestation {
 func TestAttestRwaTrustOnly(t *testing.T) {
 	f := SetupTest(t)
 
-	trust := f.network.addNode(types.NodeTypeTrust, networktypes.NodeActive)
-	nano := f.network.addNode(types.NodeTypeNano, networktypes.NodeActive)
+	trust := f.addNode(types.NodeTypeTrust, networktypes.NodeActive)
+	nano := f.addNode(types.NodeTypeNano, networktypes.NodeActive)
 
 	// Nano nodes may not RWA-attest.
 	_, err := f.msgServer.AttestRwa(f.ctx, &types.MsgAttestRwa{
@@ -60,7 +60,7 @@ func TestAttestRwuAnyNodeType(t *testing.T) {
 	f := SetupTest(t)
 
 	for _, nodeType := range []string{types.NodeTypeTrust, types.NodeTypeNano} {
-		node := f.network.addNode(nodeType, networktypes.NodeActive)
+		node := f.addNode(nodeType, networktypes.NodeActive)
 		_, err := f.msgServer.AttestRwu(f.ctx, &types.MsgAttestRwu{
 			NodeAddress:  node.Address,
 			Attestations: attestations(1),
@@ -79,7 +79,7 @@ func TestAttestNodeStanding(t *testing.T) {
 	})
 	require.ErrorIs(t, err, types.ErrNodeNotFound)
 
-	deactivated := f.network.addNode(types.NodeTypeTrust, networktypes.NodeDeactivated)
+	deactivated := f.addNode(types.NodeTypeTrust, networktypes.NodeDeactivated)
 	_, err = f.msgServer.AttestRwa(f.ctx, &types.MsgAttestRwa{
 		NodeAddress:  deactivated.Address,
 		Attestations: attestations(1),
@@ -91,7 +91,7 @@ func TestAttestNodeStanding(t *testing.T) {
 // ante increments the counters, the handler only re-reads them.
 func TestAttestQuotaReread(t *testing.T) {
 	f := SetupTest(t)
-	node := f.network.addNode(types.NodeTypeTrust, networktypes.NodeActive)
+	node := f.addNode(types.NodeTypeTrust, networktypes.NodeActive)
 
 	params, err := f.k.Params.Get(f.ctx)
 	require.NoError(t, err)

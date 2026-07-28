@@ -59,9 +59,10 @@ func (ms msgServer) AttestRwu(ctx context.Context, msg *types.MsgAttestRwu) (*ty
 	return &types.MsgAttestRwuResponse{}, nil
 }
 
-// checkNode verifies the signing node exists and is active, and that its
-// daily counter has not already gone beyond the limit. The counter is
-// re-read only — the ante admission is what increments it.
+// checkNode verifies the signing node exists, is active, is backed by a
+// license of the type it declares, and that its daily counter has not already
+// gone beyond the limit. The counter is re-read only — the ante admission is
+// what increments it.
 func (ms msgServer) checkNode(ctx context.Context, nodeAddr string, counters collections.Map[string, types.ActivityCounter], limit uint64) (networktypes.Node, error) {
 	node, active, err := ms.k.networkKeeper.IsActiveNode(ctx, nodeAddr)
 	if err != nil {
@@ -72,6 +73,10 @@ func (ms msgServer) checkNode(ctx context.Context, nodeAddr string, counters col
 	}
 	if !active {
 		return networktypes.Node{}, errorsmod.Wrapf(types.ErrNodeNotActive, "node %s", nodeAddr)
+	}
+
+	if err := ms.k.ensureNodeTypeLicensed(ctx, node); err != nil {
+		return networktypes.Node{}, err
 	}
 
 	counter, err := counters.Get(ctx, nodeAddr)

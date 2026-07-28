@@ -13,7 +13,7 @@ import (
 
 func TestGenesisRoundTrip(t *testing.T) {
 	f := SetupTest(t)
-	node := f.network.addNode(types.NodeTypeTrust, networktypes.NodeActive)
+	node := f.addNode(types.NodeTypeTrust, networktypes.NodeActive)
 
 	// Burn some quota so the export carries counters.
 	require.NoError(t, f.k.CheckAndConsumeGaslessQuota(f.ctx, &types.MsgAttestRwa{

@@ -23,3 +23,17 @@ type NetworkKeeper interface {
 	// counted license; used by the gasless admission's daily license gate.
 	EnsureOperatorLicensed(ctx context.Context, operator string) error
 }
+
+// LicenseKeeper is the x/license keeper surface the attestation module
+// consumes, satisfied by webstack's licensekeeper.Keeper. It is used to bind
+// a node's declared type to a license of that same type: x/network stores
+// Node.Type as the opaque string its operator supplied and counts licenses
+// in aggregate, so without this check an operator holding only a cheaper
+// license tier could activate a node declaring a privileged type and claim
+// that tier's rights.
+type LicenseKeeper interface {
+	// CountActiveLicenses returns the number of active licenses holder holds
+	// across the given license types, stopping the walk once the count
+	// reaches stopAt (zero counts everything).
+	CountActiveLicenses(ctx context.Context, holder string, licenseTypes []string, stopAt uint64) (uint64, error)
+}
