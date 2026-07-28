@@ -31,6 +31,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/TrustedSmartChain/tsc/v3/app/hooks"
 )
 
 // SetupOptions defines arguments that are passed into `Simapp` constructor.
@@ -44,9 +47,13 @@ func init() {
 	// we're setting the minimum gas price to 0 to simplify the tests
 	feemarkettypes.DefaultMinGasPrice = math.LegacyZeroDec()
 
-	// Set the global SDK config for the tests
+	// Set the global SDK config for the tests. The bech32 prefixes are this
+	// chain's, not cosmos/evm's example ones — module defaults carry tsc1
+	// addresses that must parse under the global config.
 	cfg := sdk.GetConfig()
-	config.SetBech32Prefixes(cfg)
+	cfg.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
+	cfg.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)
+	cfg.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
 	config.SetBip44CoinType(cfg)
 }
 
@@ -103,8 +110,32 @@ func SetupWithGenesisValSet(t *testing.T, chainID string, evmChainID uint64, val
 	app.AppCodec().MustUnmarshalJSON(genesisState[banktypes.ModuleName], &bankGenesis)
 	require.NoError(t, err)
 	bankGenesis.DenomMetadata = network.GenerateBankGenesisMetadata(evmChainID)
+	// The generated metadata covers cosmos/evm's example chain ids, not this
+	// chain's denom; the evm module's InitGenesis loads its coin info from
+	// the bank metadata of the evm denom (aTSC) and fails without it.
+	bankGenesis.DenomMetadata = append(bankGenesis.DenomMetadata, banktypes.Metadata{
+		Description: "The native token of TSC",
+		Base:        BaseDenom,
+		Display:     DisplayDenom,
+		Name:        DisplayDenom,
+		Symbol:      DisplayDenom,
+		DenomUnits: []*banktypes.DenomUnit{
+			{Denom: BaseDenom, Exponent: 0},
+			{Denom: DisplayDenom, Exponent: 18},
+		},
+	})
 	genesisState[banktypes.ModuleName] = app.AppCodec().MustMarshalJSON(&bankGenesis)
 	require.NoError(t, err)
+
+	// GenesisStateWithValSet seeds validators with a zero min_self_delegation,
+	// which InitChainer's ValidateStakingGenesis rejects. Raise the field to
+	// the chain floor.
+	var stakingGenesis stakingtypes.GenesisState
+	app.AppCodec().MustUnmarshalJSON(genesisState[stakingtypes.ModuleName], &stakingGenesis)
+	for i := range stakingGenesis.Validators {
+		stakingGenesis.Validators[i].MinSelfDelegation = hooks.MinSelfDelegation
+	}
+	genesisState[stakingtypes.ModuleName] = app.AppCodec().MustMarshalJSON(&stakingGenesis)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
 	require.NoError(t, err)

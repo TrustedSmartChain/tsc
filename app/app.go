@@ -147,10 +147,18 @@ import (
 	licensekeeper "github.com/webstack-sdk/webstack/x/license/keeper"
 	licenseprecompile "github.com/webstack-sdk/webstack/x/license/precompile"
 	licensetypes "github.com/webstack-sdk/webstack/x/license/types"
+	network "github.com/webstack-sdk/webstack/x/network"
+	networkante "github.com/webstack-sdk/webstack/x/network/ante"
+	networkkeeper "github.com/webstack-sdk/webstack/x/network/keeper"
+	networktypes "github.com/webstack-sdk/webstack/x/network/types"
 	permission "github.com/webstack-sdk/webstack/x/permission"
 	permissionkeeper "github.com/webstack-sdk/webstack/x/permission/keeper"
 	permissiontypes "github.com/webstack-sdk/webstack/x/permission/types"
 	"google.golang.org/protobuf/reflect/protoregistry"
+
+	attestationmodule "github.com/TrustedSmartChain/tsc/v3/x/attestation"
+	attestationkeeper "github.com/TrustedSmartChain/tsc/v3/x/attestation/keeper"
+	attestationtypes "github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
 
 	// CosmWasm imports
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -270,10 +278,12 @@ type ChainApp struct {
 	EVMMempool      *evmmempool.ExperimentalEVMMempool
 
 	// Custom keepers
-	DistroKeeper     distrokeeper.Keeper
-	LockupKeeper     lockupkeeper.Keeper
-	LicenseKeeper    licensekeeper.Keeper
-	PermissionKeeper permissionkeeper.Keeper
+	DistroKeeper      distrokeeper.Keeper
+	LockupKeeper      lockupkeeper.Keeper
+	LicenseKeeper     licensekeeper.Keeper
+	PermissionKeeper  permissionkeeper.Keeper
+	NetworkKeeper     networkkeeper.Keeper
+	AttestationKeeper attestationkeeper.Keeper
 
 	// Wasm keeper
 	WasmKeeper wasmkeeper.Keeper
@@ -366,6 +376,8 @@ func NewChainApp(
 		lockuptypes.StoreKey,
 		licensetypes.StoreKey,
 		permissiontypes.StoreKey,
+		networktypes.StoreKey,
+		attestationtypes.StoreKey,
 		// CosmWasm keys
 		wasmtypes.StoreKey,
 	)
@@ -608,15 +620,42 @@ func NewChainApp(
 	)
 
 	// Create the license Keeper. Ownership and grants for the license module
-	// live in the permission keeper's "license" namespace.
+	// live in the permission keeper's "license" namespace. Issuance creates
+	// holder accounts, so license holders can sign their first (gasless) tx.
 	app.LicenseKeeper = licensekeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[licensetypes.StoreKey]),
 		logger,
 		authAddr,
 		app.PermissionKeeper,
+		app.AccountKeeper,
 	)
 	license.RegisterNamespace(app.PermissionKeeper, app.LicenseKeeper)
+
+	// Create the network Keeper. It consumes the license keeper (activation
+	// limits count active node licenses) and the permission keeper's
+	// "network" namespace.
+	app.NetworkKeeper = networkkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[networktypes.StoreKey]),
+		logger,
+		authAddr,
+		app.LicenseKeeper,
+		app.PermissionKeeper,
+		app.AccountKeeper,
+		app.BankKeeper,
+	)
+	network.RegisterNamespace(app.PermissionKeeper, app.NetworkKeeper)
+
+	// Create the attestation Keeper. It consumes the network keeper through
+	// a narrow interface (node standing, activity touch, license gate).
+	app.AttestationKeeper = attestationkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[attestationtypes.StoreKey]),
+		logger,
+		authAddr,
+		app.NetworkKeeper,
+	)
 
 	// Cosmos EVM keepers
 	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(
@@ -859,6 +898,8 @@ func NewChainApp(
 		lockup.NewAppModule(appCodec, app.LockupKeeper),
 		license.NewAppModule(appCodec, app.LicenseKeeper),
 		permission.NewAppModule(appCodec, app.PermissionKeeper),
+		network.NewAppModule(appCodec, app.NetworkKeeper),
+		attestationmodule.NewAppModule(appCodec, app.AttestationKeeper),
 		// CosmWasm module
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
@@ -916,6 +957,8 @@ func NewChainApp(
 		lockuptypes.ModuleName,
 		licensetypes.ModuleName,
 		permissiontypes.ModuleName,
+		networktypes.ModuleName,
+		attestationtypes.ModuleName,
 	)
 
 	// NOTE: the feemarket module should go last in order of end blockers that are actually doing something,
@@ -943,6 +986,8 @@ func NewChainApp(
 		lockuptypes.ModuleName,
 		licensetypes.ModuleName,
 		permissiontypes.ModuleName,
+		networktypes.ModuleName,
+		attestationtypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -985,9 +1030,13 @@ func NewChainApp(
 		lockuptypes.ModuleName,
 		// The permission module initializes after license so grant scopes that
 		// reference license state (e.g. license type ids) can be validated
-		// against it on import.
+		// against it on import. The network module comes after both (it
+		// consumes the license keeper and the permission namespace), and
+		// attestation after network.
 		licensetypes.ModuleName,
 		permissiontypes.ModuleName,
+		networktypes.ModuleName,
+		attestationtypes.ModuleName,
 	}
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)
@@ -1075,6 +1124,14 @@ func NewChainApp(
 }
 
 func (app *ChainApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted uint64) {
+	// Gasless msgs ride the cosmos ante path with a zero fee, subject to
+	// hard resource caps and per-module admission checks: the network
+	// module's msgs route to the network keeper, the attestation msgs to
+	// the attestation keeper.
+	gaslessAllowlist := networkante.NewAllowlist(networktypes.GaslessMessages(), attestationtypes.GaslessMessages())
+	admissionRouter := networkante.NewAdmissionRouter(app.NetworkKeeper, networktypes.GaslessMessages()).
+		Merge(networkante.NewAdmissionRouter(app.AttestationKeeper, attestationtypes.GaslessMessages()))
+
 	options := chainante.HandlerOptions{
 		Cdc:                    app.appCodec,
 		AccountKeeper:          app.AccountKeeper,
@@ -1089,6 +1146,10 @@ func (app *ChainApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted uint6
 		MaxTxGasWanted:         maxGasWanted,
 		DynamicFeeChecker:      true,
 		PendingTxListener:      app.onPendingTx,
+
+		NetworkKeeper:    app.NetworkKeeper,
+		GaslessAllowlist: gaslessAllowlist,
+		AdmissionRouter:  admissionRouter,
 	}
 	if err := options.Validate(); err != nil {
 		panic(err)

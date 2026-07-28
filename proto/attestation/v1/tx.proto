@@ -1,0 +1,77 @@
+syntax = "proto3";
+package attestation.v1;
+
+import "attestation/v1/attestation.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/TrustedSmartChain/tsc/v3/x/attestation/types";
+
+// Msg defines the Msg service. AttestRwa and AttestRwu are gasless: they are
+// admitted with a zero fee subject to the ante-handler admission checks and
+// per-node daily quotas.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // AttestRwa records RWA contract-supply attestations from an active trust
+  // node. Gasless; nano nodes may not RWA-attest.
+  rpc AttestRwa(MsgAttestRwa) returns (MsgAttestRwaResponse) {
+    option (google.api.http).post = "/tsc/attestation/v1/tx/attest_rwa";
+  }
+
+  // AttestRwu records RWU contract-supply attestations from any active
+  // node. Gasless.
+  rpc AttestRwu(MsgAttestRwu) returns (MsgAttestRwuResponse) {
+    option (google.api.http).post = "/tsc/attestation/v1/tx/attest_rwu";
+  }
+
+  // UpdateParams defines a governance operation for updating the parameters.
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {
+    option (google.api.http).post = "/tsc/attestation/v1/tx/update_params";
+  }
+}
+
+// MsgAttestRwa is the Msg/AttestRwa request type.
+message MsgAttestRwa {
+  option (cosmos.msg.v1.signer) = "node_address";
+
+  // node_address is the signing node; it must be an active trust node.
+  string node_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // attestations are the attested contract-supply observations (max 100).
+  repeated ContractAttestation attestations = 2 [(gogoproto.nullable) = false];
+}
+
+// MsgAttestRwaResponse is the Msg/AttestRwa response type.
+message MsgAttestRwaResponse {}
+
+// MsgAttestRwu is the Msg/AttestRwu request type.
+message MsgAttestRwu {
+  option (cosmos.msg.v1.signer) = "node_address";
+
+  // node_address is the signing node; it must be an active node.
+  string node_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // attestations are the attested contract-supply observations (max 100).
+  repeated ContractAttestation attestations = 2 [(gogoproto.nullable) = false];
+}
+
+// MsgAttestRwuResponse is the Msg/AttestRwu response type.
+message MsgAttestRwuResponse {}
+
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address of the governance account.
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // params defines the parameters to update.
+  //
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
