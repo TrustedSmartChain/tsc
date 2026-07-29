@@ -97,8 +97,23 @@ else
 	go build -mod=readonly $(BUILD_FLAGS) -o build/tscd ./cmd/tscd
 endif
 
-build-linux: 
-	GOOS=linux GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/tscd-linux ./cmd/tscd
+# Builds the release linux binary through the Dockerfile. A host cross-compile
+# cannot work here: GOOS=linux disables cgo, and both libsecp256k1 (cosmos/evm)
+# and libwasmvm are cgo-only.
+#
+# Pinned to amd64 to match the release artifact regardless of host; on an arm64
+# host that build runs emulated and is slow. Override for a native local build:
+#   make build-linux TARGET_PLATFORM=linux/arm64
+build-linux: TARGET_PLATFORM ?= linux/amd64
+build-linux:
+	@test -n "$(DOCKER)" || { echo "docker not found, required to build the static linux binary"; exit 1; }
+	$(DOCKER) build --platform $(TARGET_PLATFORM) --build-arg VERSION="$(VERSION)" -t tscd-build .
+	@mkdir -p build
+	cid=$$($(DOCKER) create --platform $(TARGET_PLATFORM) tscd-build); \
+	  $(DOCKER) cp "$$cid":/usr/bin/tscd build/tscd-linux; \
+	  $(DOCKER) rm "$$cid"
+	@file build/tscd-linux | grep -q "statically linked"
+	@echo "✅ build/tscd-linux (static)"
 
 build-windows-client: go.sum
 	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/tscd.exe ./cmd/tscd
@@ -227,7 +242,7 @@ proto-check-breaking:
 .PHONY: all install install-debug \
 	go-mod-cache draw-deps clean build format \
 	test test-all test-build test-cover test-unit test-race \
-	test-sim-import-export build-windows-client \
+	test-sim-import-export build-linux build-windows-client \
 	test-system
 
 ## --- Testnet Utilities ---

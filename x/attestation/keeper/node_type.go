@@ -19,26 +19,34 @@ import (
 // limit counts licenses in aggregate across every counted type, so activation
 // alone never establishes that the operator holds a license of the declared
 // type. Without this check, an operator holding only a cheaper tier (e.g.
-// tsc.node.nano) could activate a node declaring tsc.node.trust and then
-// exercise trust-tier rights — the RWA attestation privilege enforced in
-// AttestRwa would be gated on a string the operator chose for itself.
+// node.nano) could activate a node declaring trust and then exercise trust-tier
+// rights — the RWA attestation privilege enforced in AttestRwa would be gated on
+// a string the operator chose for itself.
 //
 // Checking here rather than at activation also means the binding is
 // re-evaluated on every attestation, so revoking an operator's trust licenses
 // immediately stops its trust-declared nodes from attesting, instead of
 // leaving them permanently labelled from the moment of activation.
 //
-// This couples node type ids to license type ids, which holds on this chain:
-// the v3 upgrade seeds network params license_types and allowed_node_types to
-// the same two identifiers (see app/upgrades_v3.go).
+// Which license types back a given node type is declared by
+// types.LicenseTypesForNodeType, not by string identity between the two
+// vocabularies. A node type this module has no mapping for is rejected rather
+// than admitted: allowed_node_types is an x/network param, so a type can be made
+// activatable before anything here says what licenses it.
 func (k Keeper) ensureNodeTypeLicensed(ctx context.Context, node networktypes.Node) error {
-	count, err := k.licenseKeeper.CountActiveLicenses(ctx, node.Operator, []string{node.Type}, 1)
+	licenseTypes, ok := types.LicenseTypesForNodeType(node.Type)
+	if !ok {
+		return errorsmod.Wrapf(types.ErrNodeTypeUnlicensed,
+			"node %s declares unknown type %q", node.Address, node.Type)
+	}
+
+	count, err := k.licenseKeeper.CountActiveLicenses(ctx, node.Operator, licenseTypes, 1)
 	if err != nil {
 		return err
 	}
 	if count == 0 {
 		return errorsmod.Wrapf(types.ErrNodeTypeUnlicensed,
-			"operator %s holds no active %q license backing node %s", node.Operator, node.Type, node.Address)
+			"operator %s holds no active %v license backing %q node %s", node.Operator, licenseTypes, node.Type, node.Address)
 	}
 	return nil
 }
