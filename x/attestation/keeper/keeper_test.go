@@ -151,13 +151,21 @@ func SetupTest(t *testing.T) *testFixture {
 	return f
 }
 
-// addNode registers an active-or-not node AND issues its operator one
-// license of the node's declared type, which is the licensed, non-escalated
-// case. Tests that model an operator declaring a type it is not licensed for
-// call f.network.addNode directly and manage f.license themselves.
+// addNode registers an active-or-not node AND issues its operator one license
+// of every type that backs the node's declared type, which is the licensed,
+// non-escalated case. Note the license is keyed by license type id, not by node
+// type — the two vocabularies differ, and the mapping between them is what
+// ensureNodeTypeLicensed consults.
+//
+// A node type with no mapping gets no license, so tests can pass an unknown type
+// to model exactly that. Tests that model an operator declaring a type it is not
+// licensed for call f.network.addNode directly and manage f.license themselves.
 func (f *testFixture) addNode(nodeType string, status networktypes.NodeStatus) networktypes.Node {
 	node := f.network.addNode(nodeType, status)
-	f.license.issue(node.Operator, nodeType, 1)
+	licenseTypes, _ := types.LicenseTypesForNodeType(nodeType)
+	for _, id := range licenseTypes {
+		f.license.issue(node.Operator, id, 1)
+	}
 	return node
 }
 

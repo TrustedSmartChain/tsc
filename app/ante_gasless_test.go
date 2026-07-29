@@ -39,6 +39,7 @@ import (
 	evmante "github.com/cosmos/evm/ante"
 	antetypes "github.com/cosmos/evm/ante/types"
 
+	licensekeeper "github.com/webstack-sdk/webstack/x/license/keeper"
 	licensetypes "github.com/webstack-sdk/webstack/x/license/types"
 	networkante "github.com/webstack-sdk/webstack/x/network/ante"
 	networktypes "github.com/webstack-sdk/webstack/x/network/types"
@@ -78,13 +79,14 @@ func (env *gaslessEnv) newSigner() (cryptotypes.PrivKey, sdk.AccAddress) {
 func (env *gaslessEnv) seedLicense(holder, typeID string) {
 	env.t.Helper()
 	lk := env.app.LicenseKeeper
-	require.NoError(env.t, lk.LicenseTypes.Set(env.ctx, typeID, licensetypes.LicenseType{
-		Id:           typeID,
-		MaxSupply:    math.ZeroInt(),
-		IssuedCount:  math.OneInt(),
-		ActiveCount:  math.OneInt(),
-		RevokedCount: math.ZeroInt(),
-	}))
+	// The v3 upgrade already registered this type, so bump the existing record's
+	// counters instead of replacing it — overwriting would discard the seeded
+	// supply cap and quietly make the type uncapped for the rest of the run.
+	lt, err := lk.LicenseTypes.Get(env.ctx, typeID)
+	require.NoError(env.t, err, "license type %s was not registered by the v3 upgrade", typeID)
+	lt.IssuedCount = lt.IssuedCount.Add(math.OneInt())
+	lt.ActiveCount = lt.ActiveCount.Add(math.OneInt())
+	require.NoError(env.t, lk.LicenseTypes.Set(env.ctx, typeID, lt))
 	require.NoError(env.t, lk.LicenseCounts.Set(env.ctx, typeID, 1))
 	require.NoError(env.t, lk.Licenses.Set(env.ctx, collections.Join(typeID, uint64(1)), licensetypes.License{
 		Id: 1, Type: typeID, Holder: holder, StartDate: "2025-01-01", Status: licensetypes.StatusActive,
@@ -166,7 +168,7 @@ func setupGaslessEnv(t *testing.T) *gaslessEnv {
 	env.nodePriv, env.node = env.newSigner()
 	env.node2Priv, env.node2 = env.newSigner()
 
-	env.seedLicense(env.operator.String(), attestationtypes.NodeTypeTrust)
+	env.seedLicense(env.operator.String(), attestationtypes.LicenseTypeNodeTrust)
 
 	nk := chainApp.NetworkKeeper
 	require.NoError(t, nk.ActivationKeys.Set(env.ctx, env.key.String(), networktypes.ActivationKey{
@@ -302,8 +304,11 @@ func TestGaslessAnte(t *testing.T) {
 	t.Run("v3 upgrade handler seeded params", func(t *testing.T) {
 		networkParams, err := env.app.NetworkKeeper.GetParams(env.ctx)
 		require.NoError(t, err)
-		require.Equal(t, []string{attestationtypes.NodeTypeTrust, attestationtypes.NodeTypeNano}, networkParams.LicenseTypes)
+		// license_types are SKU ids, allowed_node_types are what a node may
+		// declare. They are deliberately different vocabularies.
+		require.Equal(t, []string{attestationtypes.LicenseTypeNodeTrust, attestationtypes.LicenseTypeNodeNano}, networkParams.LicenseTypes)
 		require.Equal(t, []string{attestationtypes.NodeTypeTrust, attestationtypes.NodeTypeNano}, networkParams.AllowedNodeTypes)
+		require.NotEqual(t, networkParams.LicenseTypes, networkParams.AllowedNodeTypes)
 		require.Equal(t, sdk.NewCoins(sdk.NewCoin(BaseDenom, math.NewIntWithDecimal(1, 16))), networkParams.DeauthorizeFee)
 
 		attestationParams, err := env.app.AttestationKeeper.Params.Get(env.ctx)
@@ -313,6 +318,95 @@ func TestGaslessAnte(t *testing.T) {
 		owner, err := env.app.PermissionKeeper.IsOwner(env.ctx, networktypes.ModuleName, NetworkNamespaceOwner)
 		require.NoError(t, err)
 		require.True(t, owner)
+	})
+
+	// The handler must leave the chain able to actually issue node licenses.
+	// Seeding network params alone did not: x/license starts with an empty type
+	// registry and refuses unregistered types, and it routes issue/revoke through
+	// the permission grant table with no owner short-circuit — so without both
+	// seeded, no license could be issued, no node could activate, and both new
+	// modules would sit inert behind a successful upgrade.
+	t.Run("v3 upgrade handler seeded node licensing", func(t *testing.T) {
+		networkParams, err := env.app.NetworkKeeper.GetParams(env.ctx)
+		require.NoError(t, err)
+
+		var registered []string
+		supply := map[string]math.Int{}
+		require.NoError(t, env.app.LicenseKeeper.LicenseTypes.Walk(env.ctx, nil, func(id string, lt licensetypes.LicenseType) (bool, error) {
+			registered = append(registered, id)
+			supply[id] = lt.MaxSupply
+			require.False(t, lt.Transferrable, "node license %s should not be transferrable", id)
+			return false, nil
+		}))
+
+		// Supply caps. Zero would mean uncapped in x/license, so a dropped or
+		// mistyped entry must not read as "no cap intended".
+		require.Equal(t, math.NewInt(240_000), supply[attestationtypes.LicenseTypeNodeTrust])
+		require.Equal(t, math.NewInt(200_000), supply[attestationtypes.LicenseTypeNodeNano])
+		for _, id := range attestationtypes.NodeLicenseTypes() {
+			declaredCap, declared := v3NodeLicenseSupply[id]
+			require.True(t, declared, "no supply cap declared for %s", id)
+			require.True(t, declaredCap.IsPositive(), "supply cap for %s must be positive, got %s", id, declaredCap)
+			require.Equal(t, declaredCap, supply[id], "seeded cap for %s does not match the declared table", id)
+		}
+
+		// Every license type the counting param names must exist in the registry,
+		// and every node type must be backed by one of them. This is the invariant
+		// that spanned app/ and x/attestation/ as an unchecked convention before.
+		require.ElementsMatch(t, attestationtypes.NodeLicenseTypes(), registered)
+		require.ElementsMatch(t, networkParams.LicenseTypes, registered)
+		for _, nodeType := range networkParams.AllowedNodeTypes {
+			licenseTypes, ok := attestationtypes.LicenseTypesForNodeType(nodeType)
+			require.True(t, ok, "allowed node type %q has no license mapping", nodeType)
+			for _, id := range licenseTypes {
+				require.Contains(t, registered, id)
+			}
+		}
+
+		for _, id := range attestationtypes.NodeLicenseTypes() {
+			for _, permission := range []string{licensetypes.PermissionIssue, licensetypes.PermissionRevoke} {
+				has, err := env.app.PermissionKeeper.Grants.Has(env.ctx,
+					collections.Join4(licensetypes.ModuleName, LicenseNamespaceOwner, permission, id))
+				require.NoError(t, err)
+				require.True(t, has, "owner lacks %s grant for %s", permission, id)
+			}
+		}
+
+		// End to end through the real msg server: the seeded owner issues a
+		// license of a seeded type. This is the assertion the earlier params-only
+		// test could not make, and the one that fails if either seed is dropped.
+		_, holder := env.newSigner()
+		_, err = licensekeeper.NewMsgServerImpl(env.app.LicenseKeeper).IssueLicenses(env.ctx, &licensetypes.MsgIssueLicenses{
+			Issuer: LicenseNamespaceOwner,
+			Entries: []licensetypes.IssueLicenseEntry{{
+				LicenseTypeId: attestationtypes.LicenseTypeNodeNano,
+				Holder:        holder.String(),
+				StartDate:     "2025-01-01",
+				Count:         1,
+			}},
+		})
+		require.NoError(t, err)
+
+		count, err := env.app.LicenseKeeper.CountActiveLicenses(env.ctx, holder.String(), networkParams.LicenseTypes, 0)
+		require.NoError(t, err)
+		require.Equal(t, uint64(1), count, "issued license is not counted toward activation")
+
+		// The cap is live, not merely recorded. x/license checks supply before
+		// writing anything, so an over-cap batch is rejected without issuing.
+		_, err = licensekeeper.NewMsgServerImpl(env.app.LicenseKeeper).IssueLicenses(env.ctx, &licensetypes.MsgIssueLicenses{
+			Issuer: LicenseNamespaceOwner,
+			Entries: []licensetypes.IssueLicenseEntry{{
+				LicenseTypeId: attestationtypes.LicenseTypeNodeNano,
+				Holder:        holder.String(),
+				StartDate:     "2025-01-01",
+				Count:         200_001,
+			}},
+		})
+		require.ErrorIs(t, err, licensetypes.ErrMaxSupplyReached)
+
+		stillOne, err := env.app.LicenseKeeper.CountActiveLicenses(env.ctx, holder.String(), networkParams.LicenseTypes, 0)
+		require.NoError(t, err)
+		require.Equal(t, count, stillOne, "rejected over-cap batch issued licenses anyway")
 	})
 
 	// A zero-fee tx of allowlisted msgs passes the full ante chain despite

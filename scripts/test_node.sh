@@ -129,13 +129,18 @@ from_scratch () {
   # Namespace owner for both the license and network namespaces is KEY3.
   update_test_genesis '.app_state["permission"]["namespaces"]=[{"module":"license","owner":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"},{"module":"network","owner":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"}]'
   # The counted node license types, pre-created so grants can be seeded.
-  update_test_genesis '.app_state["license"]["license_types"]=[{"id":"tsc.node.trust","transferrable":false,"max_supply":"0","issued_count":"0","active_count":"0","revoked_count":"0"},{"id":"tsc.node.nano","transferrable":false,"max_supply":"0","issued_count":"0","active_count":"0","revoked_count":"0"}]'
-  # KEY3 may issue and revoke node licenses.
-  update_test_genesis '.app_state["permission"]["grants"]=[{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"issue","scope":"tsc.node.trust"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"revoke","scope":"tsc.node.trust"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"issue","scope":"tsc.node.nano"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"revoke","scope":"tsc.node.nano"}]'
-  # Network params: counted license types, allowed node types, and the
-  # deauthorize fee (0.01 TSC), matching app/upgrades_v3.go.
-  update_test_genesis `printf '.app_state["network"]["params"]["license_types"]=["tsc.node.trust","tsc.node.nano"]'`
-  update_test_genesis `printf '.app_state["network"]["params"]["allowed_node_types"]=["tsc.node.trust","tsc.node.nano"]'`
+  # These ids are license SKUs and are deliberately NOT the node type strings
+  # below; x/attestation maps one to the other.
+  # max_supply caps lifetime issuance (issued_count), which revocation does not
+  # decrement — matching v3NodeLicenseSupply in app/upgrades_v3.go.
+  update_test_genesis '.app_state["license"]["license_types"]=[{"id":"node.trust","transferrable":false,"max_supply":"240000","issued_count":"0","active_count":"0","revoked_count":"0"},{"id":"node.nano","transferrable":false,"max_supply":"200000","issued_count":"0","active_count":"0","revoked_count":"0"}]'
+  # KEY3 may issue and revoke node licenses. Required, not merely convenient:
+  # x/license checks issue/revoke against the grant table with no owner bypass.
+  update_test_genesis '.app_state["permission"]["grants"]=[{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"issue","scope":"node.trust"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"revoke","scope":"node.trust"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"issue","scope":"node.nano"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"revoke","scope":"node.nano"}]'
+  # Network params: counted license SKU ids, the node types an activation may
+  # declare, and the deauthorize fee (0.01 TSC), matching app/upgrades_v3.go.
+  update_test_genesis `printf '.app_state["network"]["params"]["license_types"]=["node.trust","node.nano"]'`
+  update_test_genesis `printf '.app_state["network"]["params"]["allowed_node_types"]=["trust","nano"]'`
   update_test_genesis `printf '.app_state["network"]["params"]["deauthorize_fee"]=[{"denom":"%s","amount":"10000000000000000"}]' $DENOM`
 
 
