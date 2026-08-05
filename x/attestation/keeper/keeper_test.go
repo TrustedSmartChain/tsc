@@ -30,17 +30,53 @@ import (
 // roll days advance from here via WithBlockTime.
 var fixtureBlockTime = time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC)
 
+// nodeTypeNano is a second node type for tests that need one the RWA rule does
+// not privilege. It is a test literal rather than a module constant: node types
+// are chain configuration registered in x/network, and this module no longer
+// declares any beyond the one the RWA gate still names.
+const nodeTypeNano = "nano"
+
 // fakeNetworkKeeper implements types.NetworkKeeper for keeper tests.
+//
+// It models the two license gates separately because x/network does: the
+// any-type gate gets a per-operator flag, the per-node-type gate a per
+// (operator, node type) one. A node type absent from registered is not
+// registered at all, which is a different rejection from an operator holding
+// none of its licenses.
 type fakeNetworkKeeper struct {
 	nodes      map[string]networktypes.Node
-	unlicensed map[string]bool // operators without licenses
-	touched    []string        // TouchNodeActivity calls, in order
+	unlicensed map[string]bool // operators without licenses of any type
+	registered map[string]bool // node types registered in the network registry
+	// licensed maps operator -> node type -> holds a license of the type bound
+	// to that node type.
+	licensed map[string]map[string]bool
+	touched  []string // TouchNodeActivity calls, in order
 }
 
 func newFakeNetworkKeeper() *fakeNetworkKeeper {
 	return &fakeNetworkKeeper{
 		nodes:      make(map[string]networktypes.Node),
 		unlicensed: make(map[string]bool),
+		registered: make(map[string]bool),
+		licensed:   make(map[string]map[string]bool),
+	}
+}
+
+// license marks operator as holding a license of the type backing nodeType,
+// and registers nodeType if it was not already.
+func (f *fakeNetworkKeeper) license(operator, nodeType string) {
+	f.registered[nodeType] = true
+	if f.licensed[operator] == nil {
+		f.licensed[operator] = make(map[string]bool)
+	}
+	f.licensed[operator][nodeType] = true
+}
+
+// revoke drops operator's license for nodeType, leaving the node type
+// registered — the shape a revocation takes on a live chain.
+func (f *fakeNetworkKeeper) revoke(operator, nodeType string) {
+	if f.licensed[operator] != nil {
+		delete(f.licensed[operator], nodeType)
 	}
 }
 
@@ -64,40 +100,16 @@ func (f *fakeNetworkKeeper) EnsureOperatorLicensed(_ context.Context, operator s
 	return nil
 }
 
-// fakeLicenseKeeper implements types.LicenseKeeper for keeper tests. It
-// records which license types each holder holds, so a test can model an
-// operator that holds a nano license while declaring a trust node.
-type fakeLicenseKeeper struct {
-	// held maps holder -> license type -> count.
-	held map[string]map[string]uint64
-}
-
-func newFakeLicenseKeeper() *fakeLicenseKeeper {
-	return &fakeLicenseKeeper{held: make(map[string]map[string]uint64)}
-}
-
-func (f *fakeLicenseKeeper) issue(holder, licenseType string, count uint64) {
-	if f.held[holder] == nil {
-		f.held[holder] = make(map[string]uint64)
+// EnsureOperatorLicensedForNodeType mirrors x/network: an unregistered node
+// type and an operator holding none of its licenses are distinct failures.
+func (f *fakeNetworkKeeper) EnsureOperatorLicensedForNodeType(_ context.Context, operator, nodeType string) error {
+	if !f.registered[nodeType] {
+		return networktypes.ErrInvalidNodeType.Wrapf("node type %q is not registered", nodeType)
 	}
-	f.held[holder][licenseType] += count
-}
-
-func (f *fakeLicenseKeeper) revoke(holder, licenseType string) {
-	if f.held[holder] != nil {
-		delete(f.held[holder], licenseType)
+	if !f.licensed[operator][nodeType] {
+		return networktypes.ErrNoActiveLicenses.Wrapf("operator %s holds no active licenses backing %q", operator, nodeType)
 	}
-}
-
-func (f *fakeLicenseKeeper) CountActiveLicenses(_ context.Context, holder string, licenseTypes []string, stopAt uint64) (uint64, error) {
-	var count uint64
-	for _, t := range licenseTypes {
-		count += f.held[holder][t]
-		if stopAt != 0 && count >= stopAt {
-			return count, nil
-		}
-	}
-	return count, nil
+	return nil
 }
 
 // addNode registers a node with the fake network keeper and returns its
@@ -121,7 +133,6 @@ type testFixture struct {
 	queryServer types.QueryServer
 
 	network    *fakeNetworkKeeper
-	license    *fakeLicenseKeeper
 	govModAddr string
 }
 
@@ -135,12 +146,11 @@ func SetupTest(t *testing.T) *testFixture {
 
 	f.govModAddr = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	f.network = newFakeNetworkKeeper()
-	f.license = newFakeLicenseKeeper()
 
 	keys := storetypes.NewKVStoreKeys(types.ModuleName)
 	f.ctx = sdk.NewContext(integration.CreateMultiStore(keys, logger), cmtproto.Header{Height: 1, Time: fixtureBlockTime}, false, logger)
 
-	f.k = keeper.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(keys[types.ModuleName]), logger, f.govModAddr, f.network, f.license)
+	f.k = keeper.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(keys[types.ModuleName]), logger, f.govModAddr, f.network)
 	f.msgServer = keeper.NewMsgServerImpl(f.k)
 	f.queryServer = keeper.NewQuerier(f.k)
 
@@ -151,21 +161,15 @@ func SetupTest(t *testing.T) *testFixture {
 	return f
 }
 
-// addNode registers an active-or-not node AND issues its operator one license
-// of every type that backs the node's declared type, which is the licensed,
-// non-escalated case. Note the license is keyed by license type id, not by node
-// type — the two vocabularies differ, and the mapping between them is what
-// ensureNodeTypeLicensed consults.
+// addNode registers an active-or-not node AND licenses its operator for the
+// node's declared type, which is the licensed, non-escalated case.
 //
-// A node type with no mapping gets no license, so tests can pass an unknown type
-// to model exactly that. Tests that model an operator declaring a type it is not
-// licensed for call f.network.addNode directly and manage f.license themselves.
+// Tests that model an unregistered node type, or an operator declaring a type
+// it is not licensed for, call f.network.addNode directly and leave
+// f.network.license unset for it.
 func (f *testFixture) addNode(nodeType string, status networktypes.NodeStatus) networktypes.Node {
 	node := f.network.addNode(nodeType, status)
-	licenseTypes, _ := types.LicenseTypesForNodeType(nodeType)
-	for _, id := range licenseTypes {
-		f.license.issue(node.Operator, id, 1)
-	}
+	f.network.license(node.Operator, nodeType)
 	return node
 }
 

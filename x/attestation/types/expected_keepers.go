@@ -19,21 +19,26 @@ type NetworkKeeper interface {
 	// block time.
 	TouchNodeActivity(ctx context.Context, nodeAddr string) error
 
-	// EnsureOperatorLicensed rejects operators without at least one active
-	// counted license; used by the gasless admission's daily license gate.
+	// EnsureOperatorLicensed rejects operators holding no active license of any
+	// license type bound to a registered node type. Used by the gasless
+	// admission's daily license gate, which runs per node rather than per node
+	// type and so has nothing narrower to check.
 	EnsureOperatorLicensed(ctx context.Context, operator string) error
-}
 
-// LicenseKeeper is the x/license keeper surface the attestation module
-// consumes, satisfied by webstack's licensekeeper.Keeper. It is used to bind
-// a node's declared type to a license of that same type: x/network stores
-// Node.Type as the opaque string its operator supplied and counts licenses
-// in aggregate, so without this check an operator holding only a cheaper
-// license tier could activate a node declaring a privileged type and claim
-// that tier's rights.
-type LicenseKeeper interface {
-	// CountActiveLicenses returns the number of active licenses holder holds
-	// across the given license types, stopping the walk once the count
-	// reaches stopAt (zero counts everything).
-	CountActiveLicenses(ctx context.Context, holder string, licenseTypes []string, stopAt uint64) (uint64, error)
+	// EnsureOperatorLicensedForNodeType rejects operators holding no active
+	// license of the type bound to nodeType, and unregistered node types
+	// outright. It is what binds a node's declared type to a license of that
+	// type: x/network stores Node.Type as supplied at activation, so without
+	// re-checking here a node whose operator has since been revoked would keep
+	// exercising its tier's rights.
+	//
+	// Checking per attestation rather than at activation is the point — the
+	// binding is re-evaluated continuously, so a revocation stops the operator's
+	// nodes immediately instead of leaving them permanently labelled.
+	//
+	// Distinct failures arrive through one return: networktypes.ErrInvalidNodeType
+	// for an unregistered type, networktypes.ErrNoActiveLicenses for a registered
+	// one the operator holds nothing for. This module propagates rather than
+	// discriminating, so it needs no import for the errors.Is targets.
+	EnsureOperatorLicensedForNodeType(ctx context.Context, operator, nodeType string) error
 }

@@ -29,7 +29,7 @@ func TestAttestRwaTrustOnly(t *testing.T) {
 	f := SetupTest(t)
 
 	trust := f.addNode(types.NodeTypeTrust, networktypes.NodeActive)
-	nano := f.addNode(types.NodeTypeNano, networktypes.NodeActive)
+	nano := f.addNode(nodeTypeNano, networktypes.NodeActive)
 
 	// Nano nodes may not RWA-attest.
 	_, err := f.msgServer.AttestRwa(f.ctx, &types.MsgAttestRwa{
@@ -59,7 +59,7 @@ func TestAttestRwaTrustOnly(t *testing.T) {
 func TestAttestRwuAnyNodeType(t *testing.T) {
 	f := SetupTest(t)
 
-	for _, nodeType := range []string{types.NodeTypeTrust, types.NodeTypeNano} {
+	for _, nodeType := range []string{types.NodeTypeTrust, nodeTypeNano} {
 		node := f.addNode(nodeType, networktypes.NodeActive)
 		_, err := f.msgServer.AttestRwu(f.ctx, &types.MsgAttestRwu{
 			NodeAddress:  node.Address,
