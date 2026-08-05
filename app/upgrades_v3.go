@@ -2,9 +2,7 @@ package app
 
 import (
 	"context"
-	"fmt"
 
-	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
@@ -21,47 +19,44 @@ import (
 const (
 	UpgradeNameV3 = "v3"
 	// LicenseNamespaceOwner controls grants in the permission module's
-	// "license" namespace: it may create license types, and grant or revoke the
-	// issue and revoke permissions to other addresses, scoped per license type.
+	// "license" namespace: it may grant any license permission to any address,
+	// itself included.
 	//
-	// Note that owning the namespace does not by itself confer issue or revoke —
-	// x/license routes both through the grant table with no owner short-circuit,
-	// so the owner needs explicit self-grants, seeded below.
+	// Owning the namespace does not by itself confer any of those permissions —
+	// x/license routes type.create, issue and revoke through the grant table
+	// with no owner short-circuit — and the upgrade seeds no grants at all.
+	// Every permission is issued by tx after the upgrade lands, so the catalog
+	// operator is chosen live rather than fixed here.
+	//
+	// Ownership itself is seeded, and has to be: MsgGrantPermissions is signed
+	// by the namespace owner, and the only way to install an owner without one
+	// is MsgUpdateNamespaceOwner, which is gov-gated. Seeding ownership is what
+	// makes the tx-driven path reachable without a proposal.
 	LicenseNamespaceOwner = "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"
 	// NetworkNamespaceOwner controls grants in the permission module's
-	// "network" namespace (currently just wallet.create, the admin fallback
-	// for creating operator accounts).
+	// "network" namespace (wallet.create, the admin fallback for creating
+	// operator accounts, and nodetype.create).
+	//
+	// This is deliberately the same address as LicenseNamespaceOwner, and the
+	// two must stay equal while one account is expected to build the catalog.
+	// x/network only lets a node type bind to a license type its signer
+	// created, so whoever registers node types must also be the account that
+	// created the license types. Splitting these would leave the upgrade
+	// succeeding and the first MsgCreateNodeType failing the creator match.
 	NetworkNamespaceOwner = LicenseNamespaceOwner
 )
 
-// v3NodeLicenseSupply is the supply cap seeded for each node license type.
-//
-// These bound *lifetime issuance*, not concurrent holdings: x/license compares
-// the cap against issued_count, and revoking a license never decrements that —
-// it moves the license from active_count to revoked_count. Reissuing after a
-// revocation therefore consumes another slot, and the caps can be reached with
-// zero licenses currently active.
-//
-// Every id in attestationtypes.NodeLicenseTypes must appear here; seeding fails
-// closed rather than defaulting a missing entry to uncapped.
-var v3NodeLicenseSupply = map[string]math.Int{
-	attestationtypes.LicenseTypeNodeTrust: math.NewInt(240_000),
-	attestationtypes.LicenseTypeNodeNano:  math.NewInt(200_000),
-}
-
 // v3NetworkParams returns the network module parameters seeded at the v3
-// upgrade. This seeding is load-bearing: the webstack defaults fail closed
-// (license_types is empty, so no node could ever activate).
+// upgrade.
+//
+// license_types and allowed_node_types are deliberately left at their empty
+// defaults. The upgrade ships the machinery, not the catalog: which license SKU
+// ids count toward an operator's activation limit, and which node types a node
+// may declare for itself, are configured after the upgrade alongside the license
+// types themselves. Both lists fail closed while empty — no node can activate —
+// so nothing is silently permitted in the meantime.
 func v3NetworkParams() networktypes.Params {
 	params := networktypes.DefaultParams()
-	// Two distinct vocabularies, both sourced from x/attestation so neither can
-	// drift from the mapping it enforces: license_types are the x/license SKU ids
-	// counted toward an operator's activation limit, allowed_node_types are the
-	// strings a node may declare for itself. Which SKU backs which node type is
-	// attestationtypes.LicenseTypesForNodeType's business — the two lists are not
-	// required to be equal, and are not.
-	params.LicenseTypes = attestationtypes.NodeLicenseTypes()
-	params.AllowedNodeTypes = attestationtypes.NodeTypes
 	// Deauthorizing an activation key costs 0.01 TSC on top of regular gas,
 	// charged by the msg handler as a bank transfer to the fee collector.
 	// The fee exists to bound disabled-key churn, not to be punitive: total
@@ -111,7 +106,7 @@ func (app *ChainApp) registerV3UpgradeHandler() {
 			// RunMigrations initialized both modules from their fail-closed
 			// defaults; seed the real TSC values on top.
 			networkParams := v3NetworkParams()
-			sdkCtx.Logger().Info("Seeding network params", "license_types", networkParams.LicenseTypes, "deauthorize_fee", networkParams.DeauthorizeFee.String())
+			sdkCtx.Logger().Info("Seeding network params", "deauthorize_fee", networkParams.DeauthorizeFee.String())
 			if err := app.NetworkKeeper.Params.Set(ctx, networkParams); err != nil {
 				return nil, err
 			}
@@ -122,70 +117,15 @@ func (app *ChainApp) registerV3UpgradeHandler() {
 				return nil, err
 			}
 
-			if err := app.seedV3NodeLicensing(ctx); err != nil {
-				return nil, err
-			}
-
+			// No grants are seeded. Every license and network permission —
+			// type.create, nodetype.create, issue, revoke — is granted by tx
+			// after the upgrade, by the namespace owners set above. The chain
+			// therefore lands with no catalog and no way to build one until
+			// those txs are sent, which is the intended posture: nothing is
+			// activatable or attestable in the meantime.
 			return versionMap, nil
 		},
 	)
-}
-
-// seedV3NodeLicensing registers the node license types and grants the license
-// namespace owner the ability to issue and revoke them.
-//
-// Without this the upgrade lands inert. x/license's DefaultGenesis carries no
-// license types, and MsgIssueLicense refuses any type that is not registered, so
-// no license could be issued; with no license issued x/network's
-// EnsureOperatorLicensed rejects every activation, and with no active node
-// x/attestation has nothing to accept. The grants are equally load-bearing:
-// x/license checks issue and revoke against the permission grant table with no
-// owner short-circuit, so seeding the namespace owner alone would leave nobody
-// able to issue.
-//
-// License types are registered before the grants that scope to them, matching
-// the order MsgGrant would require — it validates a grant's scope against the
-// license type registry.
-func (app *ChainApp) seedV3NodeLicensing(ctx context.Context) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	licenseTypes := attestationtypes.NodeLicenseTypes()
-
-	for _, id := range licenseTypes {
-		// A missing cap is an error rather than an implicit zero: zero means
-		// uncapped in x/license, so defaulting would silently seed unlimited
-		// supply for a type someone added to the mapping without deciding one.
-		maxSupply, ok := v3NodeLicenseSupply[id]
-		if !ok {
-			return fmt.Errorf("no max supply declared for node license type %q", id)
-		}
-
-		// Non-transferrable: a node license stays with the operator it was issued
-		// to, so the activation limit it feeds cannot be traded away.
-		sdkCtx.Logger().Info("Registering node license type", "id", id, "max_supply", maxSupply.String())
-		if err := app.LicenseKeeper.LicenseTypes.Set(ctx, id, licensetypes.LicenseType{
-			Id:            id,
-			Transferrable: false,
-			MaxSupply:     maxSupply,
-			IssuedCount:   math.ZeroInt(),
-			ActiveCount:   math.ZeroInt(),
-			RevokedCount:  math.ZeroInt(),
-		}); err != nil {
-			return err
-		}
-	}
-
-	for _, id := range licenseTypes {
-		for _, permission := range []string{licensetypes.PermissionIssue, licensetypes.PermissionRevoke} {
-			sdkCtx.Logger().Info("Granting license permission", "grantee", LicenseNamespaceOwner, "permission", permission, "scope", id)
-			if err := app.PermissionKeeper.Grants.Set(ctx, collections.Join4(
-				licensetypes.ModuleName, LicenseNamespaceOwner, permission, id,
-			)); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 func v3StoreUpgrades() storetypes.StoreUpgrades {

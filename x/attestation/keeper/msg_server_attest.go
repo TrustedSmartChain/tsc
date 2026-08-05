@@ -75,7 +75,11 @@ func (ms msgServer) checkNode(ctx context.Context, nodeAddr string, counters col
 		return networktypes.Node{}, errorsmod.Wrapf(types.ErrNodeNotActive, "node %s", nodeAddr)
 	}
 
-	if err := ms.k.ensureNodeTypeLicensed(ctx, node); err != nil {
+	// Re-checked per attestation rather than trusted from activation, so a
+	// revoked operator's nodes stop attesting immediately. x/network resolves
+	// the node type's bound license type itself; this module no longer keeps a
+	// mapping of its own.
+	if err := ms.k.networkKeeper.EnsureOperatorLicensedForNodeType(ctx, node.Operator, node.Type); err != nil {
 		return networktypes.Node{}, err
 	}
 

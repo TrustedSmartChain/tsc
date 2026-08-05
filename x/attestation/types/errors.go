@@ -10,5 +10,9 @@ var (
 	ErrInvalidAttestation = errors.Register(ModuleName, 1104, "invalid attestation")
 	ErrQuotaExceeded      = errors.Register(ModuleName, 1105, "daily attestation quota exceeded")
 	ErrNotGaslessMsg      = errors.Register(ModuleName, 1106, "not a gasless msg of the attestation module")
-	ErrNodeTypeUnlicensed = errors.Register(ModuleName, 1107, "node's operator holds no active license of the node's declared type")
+
+	// 1107 was ErrNodeTypeUnlicensed, raised by this module's own node
+	// type -> license type mapping. x/network owns that binding now and
+	// reports it as ErrInvalidNodeType / ErrNoActiveLicenses, which this
+	// module propagates. The code is retired rather than reused.
 )

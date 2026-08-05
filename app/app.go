@@ -176,8 +176,8 @@ const (
 	NodeDir      = ".tsc"
 	Bech32Prefix = "tsc"
 
-	ChainID    = "tsc_7878787-1"
-	EVMChainID = uint64(7878787)
+	ChainID    = "tsc_8878788-1"
+	EVMChainID = uint64(8878788)
 )
 
 func init() {
@@ -657,7 +657,6 @@ func NewChainApp(
 		logger,
 		authAddr,
 		app.NetworkKeeper,
-		app.LicenseKeeper,
 	)
 
 	// Cosmos EVM keepers
