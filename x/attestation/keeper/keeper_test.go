@@ -19,7 +19,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	networktypes "github.com/webstack-sdk/webstack/x/network/types"
+	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 
 	module "github.com/TrustedSmartChain/tsc/v3/x/attestation"
 	"github.com/TrustedSmartChain/tsc/v3/x/attestation/keeper"

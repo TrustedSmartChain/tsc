@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
-	networktypes "github.com/webstack-sdk/webstack/x/network/types"
+	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 )
 
 // AttestRwa records RWA contract-supply attestations. Which node types may do

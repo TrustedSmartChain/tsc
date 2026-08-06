@@ -4,14 +4,14 @@ set -eo pipefail
 
 mkdir -p ./tmp-swagger-gen
 
-# external modules vendored in from the webstack SDK
-WEBSTACK_MODULES="license permission network"
+# external modules vendored in from the nodelabs SDK
+SDK_MODULES="license permission network"
 
 cd proto
 
 # generate swagger files for custom modules (distro, lockup)
 prune_paths=""
-for mod in $WEBSTACK_MODULES; do
+for mod in $SDK_MODULES; do
   prune_paths="$prune_paths -not -path ./$mod/*"
 done
 proto_dirs=$(find . -name '*.proto' $prune_paths -print0 | xargs -0 -n1 dirname | sort | uniq)
@@ -23,13 +23,13 @@ done
 
 cd ..
 
-# generate swagger for the external webstack modules
+# generate swagger for the external nodelabs SDK modules
 # copy protos into the local proto dir so buf can access them within its context
-WEBSTACK_PROTO_DIR=$(go list -m -f '{{.Dir}}' github.com/webstack-sdk/webstack)/proto
-for mod in $WEBSTACK_MODULES; do
-  if [[ -d "$WEBSTACK_PROTO_DIR/$mod" ]]; then
+SDK_PROTO_DIR=$(go list -m -f '{{.Dir}}' github.com/nodelabs-sdk/nodelabs)/proto
+for mod in $SDK_MODULES; do
+  if [[ -d "$SDK_PROTO_DIR/$mod" ]]; then
     rm -rf "proto/$mod"
-    cp -r "$WEBSTACK_PROTO_DIR/$mod" "proto/$mod"
+    cp -r "$SDK_PROTO_DIR/$mod" "proto/$mod"
     chmod -R u+w "proto/$mod"
     cd proto
     buf generate --template buf.gen.swagger.yaml --path "$mod/v1/query.proto"

@@ -3,13 +3,13 @@ package types
 import (
 	"context"
 
-	networktypes "github.com/webstack-sdk/webstack/x/network/types"
+	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 )
 
 // NetworkKeeper is the x/network keeper surface the attestation module
-// consumes, satisfied by webstack's networkkeeper.Keeper. TouchNodeActivity
-// carries the recent-activity index invariant (exactly one entry per node,
-// moved between day buckets) enforced by webstack-side keeper tests.
+// consumes, satisfied by the nodelabs SDK's networkkeeper.Keeper.
+// TouchNodeActivity carries the recent-activity index invariant (exactly one
+// entry per node, moved between day buckets) enforced by SDK-side keeper tests.
 type NetworkKeeper interface {
 	// IsActiveNode returns the node record and whether it exists with active
 	// status.

@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	networktypes "github.com/webstack-sdk/webstack/x/network/types"
+	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 )
 
 // SameDay reports whether a and b fall in the same UTC day bucket. It

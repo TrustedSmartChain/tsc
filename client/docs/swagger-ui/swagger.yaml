@@ -763,9 +763,13 @@ paths:
                       format: byte
       tags:
         - Msg
-  /webstack/license/license/{type_id}/{id}:
+  /nodelabs/license/license/{id}:
     get:
-      summary: License queries a license by type id and license id.
+      summary: >-
+        License queries a license by id. Ids are unique chain-wide, so no
+        license
+
+        type is needed to resolve one.
       operationId: License
       responses:
         '200':
@@ -780,8 +784,11 @@ paths:
                     type: string
                     format: uint64
                     description: >-
-                      id is the auto-incremented identifier, unique within the
-                      license type.
+                      id is the auto-incremented identifier, unique chain-wide
+                      across all
+
+                      license types. A bare id is a complete handle to a
+                      license.
                   type:
                     type: string
                     description: type is the LicenseType.id this license was issued from.
@@ -840,18 +847,15 @@ paths:
                       type: string
                       format: byte
       parameters:
-        - name: type_id
-          in: path
-          required: true
-          type: string
         - name: id
+          description: id is the chain-wide unique license id.
           in: path
           required: true
           type: string
           format: uint64
       tags:
         - Query
-  /webstack/license/license_type/{id}:
+  /nodelabs/license/license_type/{id}:
     get:
       summary: LicenseType queries a license type by id.
       operationId: LicenseType
@@ -866,7 +870,7 @@ paths:
                 properties:
                   id:
                     type: string
-                    description: id is the owner-supplied identifier, e.g. "webstack.node".
+                    description: id is the owner-supplied identifier, e.g. "nodelabs.node".
                   transferrable:
                     type: boolean
                     description: >-
@@ -875,8 +879,13 @@ paths:
                   max_supply:
                     type: string
                     description: >-
-                      max_supply is the maximum number of licenses that can be
-                      issued. 0 = unlimited.
+                      max_supply is the maximum number of licenses outstanding
+                      at once, checked
+
+                      against active_count. Revoking frees a slot, so lifetime
+                      issued_count may
+
+                      exceed it. 0 = unlimited.
                   issued_count:
                     type: string
                     description: >-
@@ -923,7 +932,7 @@ paths:
           type: string
       tags:
         - Query
-  /webstack/license/license_types:
+  /nodelabs/license/license_types:
     get:
       summary: LicenseTypes queries all license types.
       operationId: LicenseTypes
@@ -942,7 +951,7 @@ paths:
                       type: string
                       description: >-
                         id is the owner-supplied identifier, e.g.
-                        "webstack.node".
+                        "nodelabs.node".
                     transferrable:
                       type: boolean
                       description: >-
@@ -951,8 +960,13 @@ paths:
                     max_supply:
                       type: string
                       description: >-
-                        max_supply is the maximum number of licenses that can be
-                        issued. 0 = unlimited.
+                        max_supply is the maximum number of licenses outstanding
+                        at once, checked
+
+                        against active_count. Revoking frees a slot, so lifetime
+                        issued_count may
+
+                        exceed it. 0 = unlimited.
                     issued_count:
                       type: string
                       description: >-
@@ -1076,7 +1090,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/license/licenses:
+  /nodelabs/license/licenses:
     get:
       summary: >-
         Licenses queries all licenses across all license types, active and
@@ -1097,8 +1111,11 @@ paths:
                       type: string
                       format: uint64
                       description: >-
-                        id is the auto-incremented identifier, unique within the
-                        license type.
+                        id is the auto-incremented identifier, unique chain-wide
+                        across all
+
+                        license types. A bare id is a complete handle to a
+                        license.
                     type:
                       type: string
                       description: type is the LicenseType.id this license was issued from.
@@ -1240,7 +1257,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/license/licenses_by_holder/{holder}:
+  /nodelabs/license/licenses_by_holder/{holder}:
     get:
       summary: >-
         LicensesByHolder queries the active licenses held by a given address.
@@ -1265,8 +1282,11 @@ paths:
                       type: string
                       format: uint64
                       description: >-
-                        id is the auto-incremented identifier, unique within the
-                        license type.
+                        id is the auto-incremented identifier, unique chain-wide
+                        across all
+
+                        license types. A bare id is a complete handle to a
+                        license.
                     type:
                       type: string
                       description: type is the LicenseType.id this license was issued from.
@@ -1412,7 +1432,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/license/licenses_by_holder/{holder}/{type_id}:
+  /nodelabs/license/licenses_by_holder/{holder}/{type_id}:
     get:
       summary: |-
         LicensesByHolderAndType queries the active licenses held by a given
@@ -1434,8 +1454,11 @@ paths:
                       type: string
                       format: uint64
                       description: >-
-                        id is the auto-incremented identifier, unique within the
-                        license type.
+                        id is the auto-incremented identifier, unique chain-wide
+                        across all
+
+                        license types. A bare id is a complete handle to a
+                        license.
                     type:
                       type: string
                       description: type is the LicenseType.id this license was issued from.
@@ -1585,7 +1608,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/license/licenses_by_type/{type_id}:
+  /nodelabs/license/licenses_by_type/{type_id}:
     get:
       summary: LicensesByType queries all licenses for a given license type.
       operationId: LicensesByType
@@ -1604,8 +1627,11 @@ paths:
                       type: string
                       format: uint64
                       description: >-
-                        id is the auto-incremented identifier, unique within the
-                        license type.
+                        id is the auto-incremented identifier, unique chain-wide
+                        across all
+
+                        license types. A bare id is a complete handle to a
+                        license.
                     type:
                       type: string
                       description: type is the LicenseType.id this license was issued from.
@@ -1751,11 +1777,12 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/license/tx/create_license_type:
+  /nodelabs/license/tx/create_license_type:
     post:
-      summary: >-
-        CreateLicenseType creates a new license type. Signer must be the license
-        namespace owner.
+      summary: |-
+        CreateLicenseType creates a new license type. Signer must hold the
+        module-wide "type.create" grant; owning the license namespace is not
+        sufficient on its own.
       operationId: CreateLicenseType
       responses:
         '200':
@@ -1794,8 +1821,19 @@ paths:
           schema:
             type: object
             properties:
-              owner:
+              creator:
                 type: string
+                description: >-
+                  creator is the signer and must hold the module-wide
+                  "type.create"
+
+                  permission. It is not the license namespace owner: ownership
+                  grants the
+
+                  right, it does not carry it. The address is not recorded on
+                  the license
+
+                  type.
               id:
                 type: string
               transferrable:
@@ -1805,7 +1843,7 @@ paths:
             description: MsgCreateLicenseType is the Msg/CreateLicenseType request type.
       tags:
         - Msg
-  /webstack/license/tx/issue_licenses:
+  /nodelabs/license/tx/issue_licenses:
     post:
       summary: >-
         IssueLicenses issues one or more licenses. Signer must have the "issue"
@@ -1822,9 +1860,13 @@ paths:
                 items:
                   type: string
                   format: uint64
-            description: |-
+            description: >-
               MsgIssueLicensesResponse is the Msg/IssueLicenses response type.
-              Ids are the issued license ids, flattened in entry order.
+
+              Ids are the issued license ids, flattened in entry order. Ids are
+              unique
+
+              chain-wide, so each one identifies its license without its type.
         default:
           description: An unexpected error response.
           schema:
@@ -1878,7 +1920,7 @@ paths:
             description: MsgIssueLicenses is the Msg/IssueLicenses request type.
       tags:
         - Msg
-  /webstack/license/tx/revoke_licenses:
+  /nodelabs/license/tx/revoke_licenses:
     post:
       summary: >-
         RevokeLicenses revokes licenses for a holder, revoking the most recently
@@ -1897,7 +1939,13 @@ paths:
                 items:
                   type: string
                   format: uint64
-            description: MsgRevokeLicensesResponse is the Msg/RevokeLicenses response type.
+            description: >-
+              MsgRevokeLicensesResponse is the Msg/RevokeLicenses response type.
+
+              Ids are unique chain-wide, so each one identifies its license
+              without its
+
+              type.
         default:
           description: An unexpected error response.
           schema:
@@ -1939,62 +1987,7 @@ paths:
             description: MsgRevokeLicenses is the Msg/RevokeLicenses request type.
       tags:
         - Msg
-  /webstack/license/tx/transfer_license:
-    post:
-      summary: >-
-        TransferLicense transfers a license to a new holder. Signer must be the
-        current holder and the type must be transferrable.
-      operationId: TransferLicense
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            description: >-
-              MsgTransferLicenseResponse is the Msg/TransferLicense response
-              type.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              holder:
-                type: string
-              license_type_id:
-                type: string
-              id:
-                type: string
-                format: uint64
-              recipient:
-                type: string
-            description: MsgTransferLicense is the Msg/TransferLicense request type.
-      tags:
-        - Msg
-  /webstack/license/tx/update_license_type:
+  /nodelabs/license/tx/update_license_type:
     post:
       summary: >-
         UpdateLicenseType updates an existing license type. Signer must be the
@@ -2051,7 +2044,7 @@ paths:
               creation.
       tags:
         - Msg
-  /webstack/permission/grants/{module}:
+  /nodelabs/permission/grants/{module}:
     get:
       summary: Grants queries every grant within a namespace.
       operationId: Grants
@@ -2201,7 +2194,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/permission/grants/{module}/{grantee}:
+  /nodelabs/permission/grants/{module}/{grantee}:
     get:
       summary: >-
         GrantsByGrantee queries the grants held by an address within a
@@ -2357,7 +2350,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/permission/grants_by_scope/{module}/{scope}:
+  /nodelabs/permission/grants_by_scope/{module}/{scope}:
     get:
       summary: >-
         GrantsByScope queries the grants within a namespace that apply to a
@@ -2520,7 +2513,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /webstack/permission/has_permission/{module}/{grantee}/{permission}:
+  /nodelabs/permission/has_permission/{module}/{grantee}/{permission}:
     get:
       summary: >-
         HasPermission reports whether a grantee holds a (permission, scope)
@@ -2580,7 +2573,7 @@ paths:
           type: string
       tags:
         - Query
-  /webstack/permission/module/{module}:
+  /nodelabs/permission/module/{module}:
     get:
       summary: >-
         Module queries a registered module's namespace owner and the permission
@@ -2656,7 +2649,7 @@ paths:
           type: string
       tags:
         - Query
-  /webstack/permission/modules:
+  /nodelabs/permission/modules:
     get:
       summary: >-
         Modules queries every registered module namespace. The owner is empty
@@ -2718,7 +2711,7 @@ paths:
                       format: byte
       tags:
         - Query
-  /webstack/permission/tx/grant_permissions:
+  /nodelabs/permission/tx/grant_permissions:
     post:
       summary: |-
         GrantPermissions merges permission grants for a grantee within a
@@ -2787,7 +2780,7 @@ paths:
             description: MsgGrantPermissions is the Msg/GrantPermissions request type.
       tags:
         - Msg
-  /webstack/permission/tx/revoke_permissions:
+  /nodelabs/permission/tx/revoke_permissions:
     post:
       summary: |-
         RevokePermissions removes the given (permission, scope) pairs from a
@@ -2852,7 +2845,7 @@ paths:
             description: MsgRevokePermissions is the Msg/RevokePermissions request type.
       tags:
         - Msg
-  /webstack/permission/tx/transfer_ownership:
+  /nodelabs/permission/tx/transfer_ownership:
     post:
       summary: |-
         TransferOwnership hands a namespace to a new owner. Signer must be the
@@ -2904,7 +2897,7 @@ paths:
             description: MsgTransferOwnership is the Msg/TransferOwnership request type.
       tags:
         - Msg
-  /webstack/permission/tx/update_namespace_owner:
+  /nodelabs/permission/tx/update_namespace_owner:
     post:
       summary: >-
         UpdateNamespaceOwner sets or rotates the owner of a registered module's
@@ -2963,6 +2956,1929 @@ paths:
             description: >-
               MsgUpdateNamespaceOwner is the Msg/UpdateNamespaceOwner request
               type.
+      tags:
+        - Msg
+  /nodelabs/network/activation_key/{address}:
+    get:
+      summary: ActivationKey queries an activation key by address.
+      operationId: ActivationKey
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              activation_key:
+                description: activation_key is the activation key record.
+                type: object
+                properties:
+                  address:
+                    type: string
+                    description: address is the activation key's account address.
+                  operator:
+                    type: string
+                    description: operator is the wallet that authorized this key.
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: >-
+                      created_at is the block time the key was authorized, used
+                      for the
+
+                      recent-creation window check.
+                  status:
+                    description: status is the key lifecycle state.
+                    type: string
+                    enum:
+                      - ACTIVATION_KEY_STATUS_UNSPECIFIED
+                      - ACTIVATION_KEY_STATUS_ACTIVE
+                      - ACTIVATION_KEY_STATUS_DISABLED
+                    default: ACTIVATION_KEY_STATUS_UNSPECIFIED
+            description: >-
+              QueryActivationKeyResponse is the response type for the
+              Query/ActivationKey RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: address
+          description: address is the activation key address.
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /nodelabs/network/activation_keys/{operator}:
+    get:
+      summary: ActivationKeys queries the activation keys authorized by an operator.
+      operationId: ActivationKeys
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              activation_keys:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      description: address is the activation key's account address.
+                    operator:
+                      type: string
+                      description: operator is the wallet that authorized this key.
+                    created_at:
+                      type: string
+                      format: date-time
+                      description: >-
+                        created_at is the block time the key was authorized,
+                        used for the
+
+                        recent-creation window check.
+                    status:
+                      description: status is the key lifecycle state.
+                      type: string
+                      enum:
+                        - ACTIVATION_KEY_STATUS_UNSPECIFIED
+                        - ACTIVATION_KEY_STATUS_ACTIVE
+                        - ACTIVATION_KEY_STATUS_DISABLED
+                      default: ACTIVATION_KEY_STATUS_UNSPECIFIED
+                  description: >-
+                    ActivationKey is an activation key record. The address is
+                    permanently bound
+
+                    to the first operator that authorizes it, even after
+                    deauthorization.
+                description: >-
+                  activation_keys are the operator's key records, active and
+                  disabled.
+              pagination:
+                description: pagination is the page response.
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+            description: >-
+              QueryActivationKeysResponse is the response type for the
+              Query/ActivationKeys RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: operator
+          description: operator is the operator wallet address.
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /nodelabs/network/node/{address}:
+    get:
+      summary: Node queries a node by address.
+      operationId: Node
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              node:
+                description: node is the node record.
+                type: object
+                properties:
+                  address:
+                    type: string
+                    description: address is the node's account address.
+                  operator:
+                    type: string
+                    description: operator is the wallet that owns this node's licenses.
+                  activated_by:
+                    type: string
+                    description: >-
+                      activated_by is the activation key address that activated
+                      this node.
+                  type:
+                    type: string
+                    description: >-
+                      type is the node type identifier (e.g. a chain-specific
+                      node class). It
+
+                      must name a registered NodeType at activation;
+                      type-conditional business
+
+                      rules live in consuming modules.
+                  status:
+                    description: status is the node lifecycle state.
+                    type: string
+                    enum:
+                      - NODE_STATUS_UNSPECIFIED
+                      - NODE_STATUS_ACTIVE
+                      - NODE_STATUS_DEACTIVATED
+                    default: NODE_STATUS_UNSPECIFIED
+                  last_active_time:
+                    type: string
+                    format: date-time
+                    description: >-
+                      last_active_time is the block time of the node's most
+                      recent counted
+
+                      activity (activation, status update, or attestation). It
+                      determines the
+
+                      node's bucket in the recent-activity index; deactivation
+                      does not touch
+
+                      it.
+            description: >-
+              QueryNodeResponse is the response type for the Query/Node RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: address
+          description: address is the node account address.
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /nodelabs/network/node_counts/{operator}:
+    get:
+      summary: |-
+        NodeCounts queries an operator's node tallies and current limits, so a
+        hosting provider can pre-check whether an activation would be admitted.
+      operationId: NodeCounts
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              counts:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    node_type:
+                      type: string
+                      description: node_type is the node type these numbers describe.
+                    license_type_id:
+                      type: string
+                      description: license_type_id is the license type backing node_type.
+                    total:
+                      type: string
+                      format: uint64
+                      description: >-
+                        total is the number of nodes of this type ever activated
+                        by the operator.
+                    active:
+                      type: string
+                      format: uint64
+                      description: >-
+                        active is the number of the operator's currently active
+                        nodes of this type.
+                    recent_active:
+                      type: string
+                      format: uint64
+                      description: >-
+                        recent_active is the number of this type's nodes with
+                        counted activity
+
+                        today or yesterday (UTC).
+                    license_count:
+                      type: string
+                      format: uint64
+                      description: >-
+                        license_count is the operator's active licenses of
+                        license_type_id.
+                    activation_limit:
+                      type: string
+                      format: uint64
+                      description: >-
+                        activation_limit is activation_limit_multiplier x
+                        license_count.
+                    spam_limit:
+                      type: string
+                      format: uint64
+                      description: spam_limit is spam_limit_multiplier x license_count.
+                  description: >-
+                    NodeTypeCounts is an operator's tallies and limits for a
+                    single node type.
+
+                    Limits are computed from the operator's active licenses of
+                    the license type
+
+                    bound to this node type, so they change when those licenses
+                    are issued or
+
+                    revoked — and licenses of any other type do not affect them.
+                description: counts holds one entry per node type, in node type id order.
+            description: >-
+              QueryNodeCountsResponse is the response type for the
+              Query/NodeCounts RPC
+
+              method. Entitlement is per node type, so the answer is a breakdown
+              rather
+
+              than a single tally.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: operator
+          description: operator is the operator wallet address.
+          in: path
+          required: true
+          type: string
+        - name: node_type
+          description: >-
+            node_type optionally restricts the result to one node type. Leave it
+            empty
+
+            to get one entry per registered node type.
+          in: query
+          required: false
+          type: string
+      tags:
+        - Query
+  /nodelabs/network/node_type/{id}:
+    get:
+      summary: NodeType queries a registered node type by id.
+      operationId: NodeType
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              node_type:
+                description: node_type is the registered node type.
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: >-
+                      id is the registrant-supplied identifier, e.g.
+                      "nodelabs.trust".
+                  license_type_id:
+                    type: string
+                    description: >-
+                      license_type_id is the license type backing this node
+                      type.
+            description: >-
+              QueryNodeTypeResponse is the response type for the Query/NodeType
+              RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: id
+          description: id is the node type identifier.
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /nodelabs/network/node_types:
+    get:
+      summary: |-
+        NodeTypes queries registered node types, optionally only those bound to
+        one license type.
+      operationId: NodeTypes
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              node_types:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: >-
+                        id is the registrant-supplied identifier, e.g.
+                        "nodelabs.trust".
+                    license_type_id:
+                      type: string
+                      description: >-
+                        license_type_id is the license type backing this node
+                        type.
+                  description: >-
+                    NodeType is a registered node type. Registration binds the
+                    node type to an
+
+                    existing license type and is gated on the module-wide
+                    "nodetype.create"
+
+                    grant. The binding is fixed at creation and records are
+                    never removed, so a
+
+                    node's type stays resolvable for the life of the chain.
+                description: node_types are the registered node types in id order.
+              pagination:
+                description: pagination is the page response.
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+            description: >-
+              QueryNodeTypesResponse is the response type for the
+              Query/NodeTypes RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+        - name: license_type_id
+          description: >-
+            license_type_id optionally restricts the result to the node types
+            bound to
+
+            one license type. Leave it empty to return every registered node
+            type. A
+
+            node type always names a license type, so the empty string cannot
+            collide
+
+            with a real binding.
+          in: query
+          required: false
+          type: string
+      tags:
+        - Query
+  /nodelabs/network/nodes:
+    get:
+      summary: Nodes queries all nodes.
+      operationId: Nodes
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              nodes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      description: address is the node's account address.
+                    operator:
+                      type: string
+                      description: operator is the wallet that owns this node's licenses.
+                    activated_by:
+                      type: string
+                      description: >-
+                        activated_by is the activation key address that
+                        activated this node.
+                    type:
+                      type: string
+                      description: >-
+                        type is the node type identifier (e.g. a chain-specific
+                        node class). It
+
+                        must name a registered NodeType at activation;
+                        type-conditional business
+
+                        rules live in consuming modules.
+                    status:
+                      description: status is the node lifecycle state.
+                      type: string
+                      enum:
+                        - NODE_STATUS_UNSPECIFIED
+                        - NODE_STATUS_ACTIVE
+                        - NODE_STATUS_DEACTIVATED
+                      default: NODE_STATUS_UNSPECIFIED
+                    last_active_time:
+                      type: string
+                      format: date-time
+                      description: >-
+                        last_active_time is the block time of the node's most
+                        recent counted
+
+                        activity (activation, status update, or attestation). It
+                        determines the
+
+                        node's bucket in the recent-activity index; deactivation
+                        does not touch
+
+                        it.
+                  description: Node is an activated node record.
+                description: nodes are the node records in address order.
+              pagination:
+                description: pagination is the page response.
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+            description: >-
+              QueryNodesResponse is the response type for the Query/Nodes RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+        - name: status
+          description: >-
+            status optionally filters by node lifecycle status. Leave it unset
+
+            (NODE_STATUS_UNSPECIFIED, never a valid stored status) to return
+            nodes of
+
+            every status, which is what this query has always done. Node records
+            are
+
+            retained after deactivation, so an unfiltered listing includes every
+            node
+
+            ever activated.
+
+             - NODE_STATUS_UNSPECIFIED: NODE_STATUS_UNSPECIFIED is the zero value and never valid in state.
+             - NODE_STATUS_ACTIVE: NODE_STATUS_ACTIVE marks a node that is activated and in service.
+             - NODE_STATUS_DEACTIVATED: NODE_STATUS_DEACTIVATED marks a node that has been deactivated.
+            Deactivation is irreversible; the record is retained so the address
+            can
+
+            never be re-activated.
+          in: query
+          required: false
+          type: string
+          enum:
+            - NODE_STATUS_UNSPECIFIED
+            - NODE_STATUS_ACTIVE
+            - NODE_STATUS_DEACTIVATED
+          default: NODE_STATUS_UNSPECIFIED
+      tags:
+        - Query
+  /nodelabs/network/nodes_by_operator/{operator}:
+    get:
+      summary: NodesByOperator queries all nodes activated under an operator.
+      operationId: NodesByOperator
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              nodes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      description: address is the node's account address.
+                    operator:
+                      type: string
+                      description: operator is the wallet that owns this node's licenses.
+                    activated_by:
+                      type: string
+                      description: >-
+                        activated_by is the activation key address that
+                        activated this node.
+                    type:
+                      type: string
+                      description: >-
+                        type is the node type identifier (e.g. a chain-specific
+                        node class). It
+
+                        must name a registered NodeType at activation;
+                        type-conditional business
+
+                        rules live in consuming modules.
+                    status:
+                      description: status is the node lifecycle state.
+                      type: string
+                      enum:
+                        - NODE_STATUS_UNSPECIFIED
+                        - NODE_STATUS_ACTIVE
+                        - NODE_STATUS_DEACTIVATED
+                      default: NODE_STATUS_UNSPECIFIED
+                    last_active_time:
+                      type: string
+                      format: date-time
+                      description: >-
+                        last_active_time is the block time of the node's most
+                        recent counted
+
+                        activity (activation, status update, or attestation). It
+                        determines the
+
+                        node's bucket in the recent-activity index; deactivation
+                        does not touch
+
+                        it.
+                  description: Node is an activated node record.
+                description: nodes are the operator's node records in address order.
+              pagination:
+                description: pagination is the page response.
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+            description: >-
+              QueryNodesByOperatorResponse is the response type for the
+              Query/NodesByOperator RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: operator
+          description: operator is the operator wallet address.
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+        - name: status
+          description: >-
+            status optionally filters by node lifecycle status; unset returns
+            nodes
+
+            of every status. See QueryNodesRequest.status.
+
+             - NODE_STATUS_UNSPECIFIED: NODE_STATUS_UNSPECIFIED is the zero value and never valid in state.
+             - NODE_STATUS_ACTIVE: NODE_STATUS_ACTIVE marks a node that is activated and in service.
+             - NODE_STATUS_DEACTIVATED: NODE_STATUS_DEACTIVATED marks a node that has been deactivated.
+            Deactivation is irreversible; the record is retained so the address
+            can
+
+            never be re-activated.
+          in: query
+          required: false
+          type: string
+          enum:
+            - NODE_STATUS_UNSPECIFIED
+            - NODE_STATUS_ACTIVE
+            - NODE_STATUS_DEACTIVATED
+          default: NODE_STATUS_UNSPECIFIED
+      tags:
+        - Query
+  /nodelabs/network/params:
+    get:
+      summary: Params queries the module parameters.
+      operationId: NetworkParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params are the current module parameters.
+                type: object
+                properties:
+                  activation_limit_multiplier:
+                    type: string
+                    format: uint64
+                    description: >-
+                      activation_limit_multiplier scales a node type's active
+                      license count into
+
+                      that node type's activation limit.
+                  spam_limit_multiplier:
+                    type: string
+                    format: uint64
+                    description: >-
+                      spam_limit_multiplier scales a node type's active license
+                      count into the
+
+                      recent-activity ceiling that hard-stops activation bursts.
+                  max_activation_keys:
+                    type: string
+                    format: uint64
+                    description: >-
+                      max_activation_keys is the maximum number of active
+                      activation keys per
+
+                      operator.
+                  recent_key_limit:
+                    type: string
+                    format: uint64
+                    description: >-
+                      recent_key_limit is the maximum number of activation keys
+                      an operator may
+
+                      create within recent_key_window.
+                  recent_key_window:
+                    type: string
+                    description: >-
+                      recent_key_window is the sliding window for
+                      recent_key_limit.
+                  status_daily_limit:
+                    type: string
+                    format: uint64
+                    description: >-
+                      status_daily_limit is the maximum number of
+                      MsgUpdateNodeStatus per node
+
+                      per UTC day.
+                  deauthorize_fee:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
+                    description: >-
+                      deauthorize_fee is charged by the
+                      MsgDeauthorizeActivationKey handler as
+
+                      a bank transfer to the fee collector, on top of regular
+                      gas. Empty
+
+                      disables the charge; chains that want it seed a
+                      denominated value.
+                  max_gasless_gas:
+                    type: string
+                    format: uint64
+                    description: >-
+                      max_gasless_gas caps the declared gas wanted of a gasless
+                      transaction.
+                  max_gasless_msgs:
+                    type: string
+                    format: uint64
+                    description: >-
+                      max_gasless_msgs caps the number of messages in a gasless
+                      transaction.
+                  max_gasless_tx_bytes:
+                    type: string
+                    format: uint64
+                    description: >-
+                      max_gasless_tx_bytes caps the encoded size of a gasless
+                      transaction.
+            description: >-
+              QueryParamsResponse is the response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /nodelabs/network/tx/activate_node:
+    post:
+      summary: |-
+        ActivateNode activates a node under an operator, signed by an authorized
+        activation key. Gasless.
+      operationId: ActivateNode
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgActivateNodeResponse is the Msg/ActivateNode response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              activation_address:
+                type: string
+                description: >-
+                  activation_address is the signing activation key. It must be
+                  active and
+
+                  bound to operator.
+              operator:
+                type: string
+                description: operator is the wallet whose licenses back this activation.
+              node_address:
+                type: string
+                description: >-
+                  node_address is the node account address to activate. The node
+                  does not
+
+                  sign, so delayed activation works by construction.
+              node_type:
+                type: string
+                description: >-
+                  node_type is the node type recorded on the node. It must name
+                  a
+
+                  registered NodeType.
+            description: MsgActivateNode is the Msg/ActivateNode request type.
+      tags:
+        - Msg
+  /nodelabs/network/tx/authorize_activation_key:
+    post:
+      summary: |-
+        AuthorizeActivationKey authorizes a new activation key for the signing
+        operator wallet. Gasless.
+      operationId: AuthorizeActivationKey
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgAuthorizeActivationKeyResponse is the
+              Msg/AuthorizeActivationKey response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              operator:
+                type: string
+                description: operator is the signing operator wallet.
+              activation_address:
+                type: string
+                description: >-
+                  activation_address is the activation key address to authorize.
+                  It must
+
+                  never have been authorized before, by any operator, and is
+                  permanently
+
+                  bound to this operator once authorized.
+            description: >-
+              MsgAuthorizeActivationKey is the Msg/AuthorizeActivationKey
+              request type.
+      tags:
+        - Msg
+  /nodelabs/network/tx/create_node_type:
+    post:
+      summary: >-
+        CreateNodeType registers a node type bound to a license type. Signer
+        must
+
+        hold the "nodetype.create" grant in the network permission namespace,
+        and
+
+        the named license type must exist. Regular gas tx.
+      operationId: CreateNodeType
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgCreateNodeTypeResponse is the Msg/CreateNodeType response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              creator:
+                type: string
+                description: >-
+                  creator is the signer. It must hold the module-wide
+                  "nodetype.create"
+
+                  grant.
+              id:
+                type: string
+                description: >-
+                  id is the node type identifier to register. Node type ids are
+                  single-use:
+
+                  records are never removed and cannot be re-registered.
+              license_type_id:
+                type: string
+                description: >-
+                  license_type_id is the license type this node type is bound
+                  to. The
+
+                  binding is fixed at creation.
+            description: >-
+              MsgCreateNodeType is the Msg/CreateNodeType request type.
+              Registration is
+
+              gated on the module-wide "nodetype.create" grant, which authorizes
+              defining
+
+              node types against any existing license type. The signing address
+              is not
+
+              recorded on the node type: the grant is the whole authorization,
+              so keeping
+
+              the address would preserve no authority.
+      tags:
+        - Msg
+  /nodelabs/network/tx/create_operator_account:
+    post:
+      summary: >-
+        CreateOperatorAccount creates an on-chain account for an operator
+        wallet.
+
+        Signer must hold the "wallet.create" grant in the network permission
+
+        namespace. Fallback for wallets that predate account creation on license
+
+        issuance or hold no licenses yet.
+      operationId: CreateOperatorAccount
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgCreateOperatorAccountResponse is the Msg/CreateOperatorAccount
+              response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              admin:
+                type: string
+                description: admin is the signer; it must hold the "wallet.create" grant.
+              wallet:
+                type: string
+                description: >-
+                  wallet is the operator wallet address to create an account
+                  for.
+            description: >-
+              MsgCreateOperatorAccount is the Msg/CreateOperatorAccount request
+              type.
+      tags:
+        - Msg
+  /nodelabs/network/tx/deactivate_node:
+    post:
+      summary: |-
+        DeactivateNode deactivates a node. Signed by the operator, the node's
+        original (still-active) activation key, or the node itself. Gasless.
+      operationId: DeactivateNode
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgDeactivateNodeResponse is the Msg/DeactivateNode response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              signer:
+                type: string
+                description: >-
+                  signer is the operator, the node's original still-active
+                  activation key,
+
+                  or the node itself.
+              node_address:
+                type: string
+                description: >-
+                  node_address is the node to deactivate. Deactivation is
+                  irreversible.
+            description: MsgDeactivateNode is the Msg/DeactivateNode request type.
+      tags:
+        - Msg
+  /nodelabs/network/tx/deauthorize_activation_key:
+    post:
+      summary: |-
+        DeauthorizeActivationKey disables an activation key. Regular gas tx; the
+        handler additionally charges the deauthorize_fee param to the operator.
+      operationId: DeauthorizeActivationKey
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgDeauthorizeActivationKeyResponse is the
+              Msg/DeauthorizeActivationKey response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              operator:
+                type: string
+                description: operator is the signing operator wallet that owns the key.
+              activation_address:
+                type: string
+                description: activation_address is the activation key address to disable.
+            description: >-
+              MsgDeauthorizeActivationKey is the Msg/DeauthorizeActivationKey
+              request type.
+      tags:
+        - Msg
+  /nodelabs/network/tx/update_node_status:
+    post:
+      summary: |-
+        UpdateNodeStatus records a node's periodic status heartbeat. Gasless,
+        limited to status_daily_limit per node per UTC day. The payload is
+        emitted as an event and not stored in state.
+      operationId: UpdateNodeStatus
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgUpdateNodeStatusResponse is the Msg/UpdateNodeStatus response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              node_address:
+                type: string
+                description: node_address is the signing node; it must be active.
+              payload:
+                description: payload is the self-reported status, emitted as an event.
+                type: object
+                properties:
+                  device:
+                    type: string
+                    description: device describes the device/hardware.
+                  os:
+                    type: string
+                    description: os describes the operating system and version.
+                  hostname:
+                    type: string
+                    description: hostname is the node's self-reported hostname.
+                  node_info:
+                    type: string
+                    description: node_info describes the node software and version.
+                  workloads:
+                    type: array
+                    items:
+                      type: string
+                    description: workloads lists the workloads the node is running.
+                  memory:
+                    type: string
+                    description: memory describes memory capacity/usage.
+                  cpu:
+                    type: string
+                    description: cpu describes CPU capacity/usage.
+                  storage:
+                    type: string
+                    description: storage describes storage capacity/usage.
+            description: MsgUpdateNodeStatus is the Msg/UpdateNodeStatus request type.
+      tags:
+        - Msg
+  /nodelabs/network/tx/update_params:
+    post:
+      summary: |-
+        UpdateParams updates the module parameters. Signer must be the module
+        authority.
+      operationId: NetworkUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgUpdateParamsResponse is the Msg/UpdateParams response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+                description: >-
+                  authority is the address that controls the module (defaults to
+                  x/gov).
+              params:
+                description: >-
+                  params defines the module parameters to update. All parameters
+                  must be
+
+                  supplied.
+                type: object
+                properties:
+                  activation_limit_multiplier:
+                    type: string
+                    format: uint64
+                    description: >-
+                      activation_limit_multiplier scales a node type's active
+                      license count into
+
+                      that node type's activation limit.
+                  spam_limit_multiplier:
+                    type: string
+                    format: uint64
+                    description: >-
+                      spam_limit_multiplier scales a node type's active license
+                      count into the
+
+                      recent-activity ceiling that hard-stops activation bursts.
+                  max_activation_keys:
+                    type: string
+                    format: uint64
+                    description: >-
+                      max_activation_keys is the maximum number of active
+                      activation keys per
+
+                      operator.
+                  recent_key_limit:
+                    type: string
+                    format: uint64
+                    description: >-
+                      recent_key_limit is the maximum number of activation keys
+                      an operator may
+
+                      create within recent_key_window.
+                  recent_key_window:
+                    type: string
+                    description: >-
+                      recent_key_window is the sliding window for
+                      recent_key_limit.
+                  status_daily_limit:
+                    type: string
+                    format: uint64
+                    description: >-
+                      status_daily_limit is the maximum number of
+                      MsgUpdateNodeStatus per node
+
+                      per UTC day.
+                  deauthorize_fee:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
+                    description: >-
+                      deauthorize_fee is charged by the
+                      MsgDeauthorizeActivationKey handler as
+
+                      a bank transfer to the fee collector, on top of regular
+                      gas. Empty
+
+                      disables the charge; chains that want it seed a
+                      denominated value.
+                  max_gasless_gas:
+                    type: string
+                    format: uint64
+                    description: >-
+                      max_gasless_gas caps the declared gas wanted of a gasless
+                      transaction.
+                  max_gasless_msgs:
+                    type: string
+                    format: uint64
+                    description: >-
+                      max_gasless_msgs caps the number of messages in a gasless
+                      transaction.
+                  max_gasless_tx_bytes:
+                    type: string
+                    format: uint64
+                    description: >-
+                      max_gasless_tx_bytes caps the encoded size of a gasless
+                      transaction.
+            description: MsgUpdateParams is the Msg/UpdateParams request type.
+      tags:
+        - Msg
+  /tsc/attestation/v1/params:
+    get:
+      summary: Params queries all parameters of the module.
+      operationId: AttestationParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params defines the parameters of the module.
+                type: object
+                properties:
+                  rwa_daily_limit:
+                    type: string
+                    format: uint64
+                    description: >-
+                      rwa_daily_limit is the maximum number of MsgAttestRwa per
+                      node per UTC
+
+                      day.
+                  rwu_daily_limit:
+                    type: string
+                    format: uint64
+                    description: >-
+                      rwu_daily_limit is the maximum number of MsgAttestRwu per
+                      node per UTC
+
+                      day.
+            description: >-
+              QueryParamsResponse is the response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /tsc/attestation/v1/tx/attest_rwa:
+    post:
+      summary: |-
+        AttestRwa records RWA contract-supply attestations. Gasless; the signing
+        node's type must be one MsgAttestRwa admits.
+      operationId: AttestRwa
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgAttestRwaResponse is the Msg/AttestRwa response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/attestation/v1/tx/attest_rwu:
+    post:
+      summary: |-
+        AttestRwu records RWU contract-supply attestations. Gasless; the signing
+        node's type must be one MsgAttestRwu admits.
+      operationId: AttestRwu
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgAttestRwuResponse is the Msg/AttestRwu response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Msg
+  /tsc/attestation/v1/tx/update_params:
+    post:
+      summary: UpdateParams defines a governance operation for updating the parameters.
+      operationId: AttestationUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgUpdateParamsResponse defines the response structure for
+              executing a
+
+              MsgUpdateParams message.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
       tags:
         - Msg
 definitions:
@@ -3433,7 +5349,9 @@ definitions:
       id:
         type: string
         format: uint64
-        description: id is the auto-incremented identifier, unique within the license type.
+        description: |-
+          id is the auto-incremented identifier, unique chain-wide across all
+          license types. A bare id is a complete handle to a license.
       type:
         type: string
         description: type is the LicenseType.id this license was issued from.
@@ -3480,7 +5398,7 @@ definitions:
     properties:
       id:
         type: string
-        description: id is the owner-supplied identifier, e.g. "webstack.node".
+        description: id is the owner-supplied identifier, e.g. "nodelabs.node".
       transferrable:
         type: boolean
         description: >-
@@ -3489,8 +5407,13 @@ definitions:
       max_supply:
         type: string
         description: >-
-          max_supply is the maximum number of licenses that can be issued. 0 =
-          unlimited.
+          max_supply is the maximum number of licenses outstanding at once,
+          checked
+
+          against active_count. Revoking frees a slot, so lifetime issued_count
+          may
+
+          exceed it. 0 = unlimited.
       issued_count:
         type: string
         description: >-
@@ -3513,8 +5436,10 @@ definitions:
             type: string
             format: uint64
             description: >-
-              id is the auto-incremented identifier, unique within the license
-              type.
+              id is the auto-incremented identifier, unique chain-wide across
+              all
+
+              license types. A bare id is a complete handle to a license.
           type:
             type: string
             description: type is the LicenseType.id this license was issued from.
@@ -3556,7 +5481,7 @@ definitions:
         properties:
           id:
             type: string
-            description: id is the owner-supplied identifier, e.g. "webstack.node".
+            description: id is the owner-supplied identifier, e.g. "nodelabs.node".
           transferrable:
             type: boolean
             description: >-
@@ -3565,8 +5490,13 @@ definitions:
           max_supply:
             type: string
             description: >-
-              max_supply is the maximum number of licenses that can be issued. 0
-              = unlimited.
+              max_supply is the maximum number of licenses outstanding at once,
+              checked
+
+              against active_count. Revoking frees a slot, so lifetime
+              issued_count may
+
+              exceed it. 0 = unlimited.
           issued_count:
             type: string
             description: >-
@@ -3592,7 +5522,7 @@ definitions:
           properties:
             id:
               type: string
-              description: id is the owner-supplied identifier, e.g. "webstack.node".
+              description: id is the owner-supplied identifier, e.g. "nodelabs.node".
             transferrable:
               type: boolean
               description: >-
@@ -3601,8 +5531,13 @@ definitions:
             max_supply:
               type: string
               description: >-
-                max_supply is the maximum number of licenses that can be issued.
-                0 = unlimited.
+                max_supply is the maximum number of licenses outstanding at
+                once, checked
+
+                against active_count. Revoking frees a slot, so lifetime
+                issued_count may
+
+                exceed it. 0 = unlimited.
             issued_count:
               type: string
               description: >-
@@ -3656,8 +5591,10 @@ definitions:
               type: string
               format: uint64
               description: >-
-                id is the auto-incremented identifier, unique within the license
-                type.
+                id is the auto-incremented identifier, unique chain-wide across
+                all
+
+                license types. A bare id is a complete handle to a license.
             type:
               type: string
               description: type is the LicenseType.id this license was issued from.
@@ -3729,8 +5666,10 @@ definitions:
               type: string
               format: uint64
               description: >-
-                id is the auto-incremented identifier, unique within the license
-                type.
+                id is the auto-incremented identifier, unique chain-wide across
+                all
+
+                license types. A bare id is a complete handle to a license.
             type:
               type: string
               description: type is the LicenseType.id this license was issued from.
@@ -3802,8 +5741,10 @@ definitions:
               type: string
               format: uint64
               description: >-
-                id is the auto-incremented identifier, unique within the license
-                type.
+                id is the auto-incremented identifier, unique chain-wide across
+                all
+
+                license types. A bare id is a complete handle to a license.
             type:
               type: string
               description: type is the LicenseType.id this license was issued from.
@@ -3875,8 +5816,10 @@ definitions:
               type: string
               format: uint64
               description: >-
-                id is the auto-incremented identifier, unique within the license
-                type.
+                id is the auto-incremented identifier, unique chain-wide across
+                all
+
+                license types. A bare id is a complete handle to a license.
             type:
               type: string
               description: type is the LicenseType.id this license was issued from.
@@ -3954,8 +5897,18 @@ definitions:
   license.v1.MsgCreateLicenseType:
     type: object
     properties:
-      owner:
+      creator:
         type: string
+        description: >-
+          creator is the signer and must hold the module-wide "type.create"
+
+          permission. It is not the license namespace owner: ownership grants
+          the
+
+          right, it does not carry it. The address is not recorded on the
+          license
+
+          type.
       id:
         type: string
       transferrable:
@@ -4001,7 +5954,8 @@ definitions:
           format: uint64
     description: |-
       MsgIssueLicensesResponse is the Msg/IssueLicenses response type.
-      Ids are the issued license ids, flattened in entry order.
+      Ids are the issued license ids, flattened in entry order. Ids are unique
+      chain-wide, so each one identifies its license without its type.
   license.v1.MsgRevokeLicenses:
     type: object
     properties:
@@ -4023,23 +5977,10 @@ definitions:
         items:
           type: string
           format: uint64
-    description: MsgRevokeLicensesResponse is the Msg/RevokeLicenses response type.
-  license.v1.MsgTransferLicense:
-    type: object
-    properties:
-      holder:
-        type: string
-      license_type_id:
-        type: string
-      id:
-        type: string
-        format: uint64
-      recipient:
-        type: string
-    description: MsgTransferLicense is the Msg/TransferLicense request type.
-  license.v1.MsgTransferLicenseResponse:
-    type: object
-    description: MsgTransferLicenseResponse is the Msg/TransferLicense response type.
+    description: |-
+      MsgRevokeLicensesResponse is the Msg/RevokeLicenses response type.
+      Ids are unique chain-wide, so each one identifies its license without its
+      type.
   license.v1.MsgUpdateLicenseType:
     type: object
     properties:
@@ -4433,3 +6374,1137 @@ definitions:
     description: |-
       PermissionScopes is one grant entry within a MsgGrantPermissions: a single
       permission applied to a set of scopes.
+  network.v1.ActivationKey:
+    type: object
+    properties:
+      address:
+        type: string
+        description: address is the activation key's account address.
+      operator:
+        type: string
+        description: operator is the wallet that authorized this key.
+      created_at:
+        type: string
+        format: date-time
+        description: |-
+          created_at is the block time the key was authorized, used for the
+          recent-creation window check.
+      status:
+        description: status is the key lifecycle state.
+        type: string
+        enum:
+          - ACTIVATION_KEY_STATUS_UNSPECIFIED
+          - ACTIVATION_KEY_STATUS_ACTIVE
+          - ACTIVATION_KEY_STATUS_DISABLED
+        default: ACTIVATION_KEY_STATUS_UNSPECIFIED
+    description: >-
+      ActivationKey is an activation key record. The address is permanently
+      bound
+
+      to the first operator that authorizes it, even after deauthorization.
+  network.v1.ActivationKeyStatus:
+    type: string
+    enum:
+      - ACTIVATION_KEY_STATUS_UNSPECIFIED
+      - ACTIVATION_KEY_STATUS_ACTIVE
+      - ACTIVATION_KEY_STATUS_DISABLED
+    default: ACTIVATION_KEY_STATUS_UNSPECIFIED
+    description: |-
+      ActivationKeyStatus enumerates the lifecycle states of an activation key.
+
+       - ACTIVATION_KEY_STATUS_UNSPECIFIED: ACTIVATION_KEY_STATUS_UNSPECIFIED is the zero value and never valid in state.
+       - ACTIVATION_KEY_STATUS_ACTIVE: ACTIVATION_KEY_STATUS_ACTIVE marks a key that may activate nodes.
+       - ACTIVATION_KEY_STATUS_DISABLED: ACTIVATION_KEY_STATUS_DISABLED marks a deauthorized key. The record is
+      retained: the address is permanently bound to its operator and can never
+      be re-authorized, and it still counts toward the recent-creation window.
+  network.v1.Node:
+    type: object
+    properties:
+      address:
+        type: string
+        description: address is the node's account address.
+      operator:
+        type: string
+        description: operator is the wallet that owns this node's licenses.
+      activated_by:
+        type: string
+        description: activated_by is the activation key address that activated this node.
+      type:
+        type: string
+        description: >-
+          type is the node type identifier (e.g. a chain-specific node class).
+          It
+
+          must name a registered NodeType at activation; type-conditional
+          business
+
+          rules live in consuming modules.
+      status:
+        description: status is the node lifecycle state.
+        type: string
+        enum:
+          - NODE_STATUS_UNSPECIFIED
+          - NODE_STATUS_ACTIVE
+          - NODE_STATUS_DEACTIVATED
+        default: NODE_STATUS_UNSPECIFIED
+      last_active_time:
+        type: string
+        format: date-time
+        description: >-
+          last_active_time is the block time of the node's most recent counted
+
+          activity (activation, status update, or attestation). It determines
+          the
+
+          node's bucket in the recent-activity index; deactivation does not
+          touch
+
+          it.
+    description: Node is an activated node record.
+  network.v1.NodeStatus:
+    type: string
+    enum:
+      - NODE_STATUS_UNSPECIFIED
+      - NODE_STATUS_ACTIVE
+      - NODE_STATUS_DEACTIVATED
+    default: NODE_STATUS_UNSPECIFIED
+    description: |-
+      NodeStatus enumerates the lifecycle states of a node.
+
+       - NODE_STATUS_UNSPECIFIED: NODE_STATUS_UNSPECIFIED is the zero value and never valid in state.
+       - NODE_STATUS_ACTIVE: NODE_STATUS_ACTIVE marks a node that is activated and in service.
+       - NODE_STATUS_DEACTIVATED: NODE_STATUS_DEACTIVATED marks a node that has been deactivated.
+      Deactivation is irreversible; the record is retained so the address can
+      never be re-activated.
+  network.v1.NodeType:
+    type: object
+    properties:
+      id:
+        type: string
+        description: id is the registrant-supplied identifier, e.g. "nodelabs.trust".
+      license_type_id:
+        type: string
+        description: license_type_id is the license type backing this node type.
+    description: >-
+      NodeType is a registered node type. Registration binds the node type to an
+
+      existing license type and is gated on the module-wide "nodetype.create"
+
+      grant. The binding is fixed at creation and records are never removed, so
+      a
+
+      node's type stays resolvable for the life of the chain.
+  network.v1.NodeTypeCounts:
+    type: object
+    properties:
+      node_type:
+        type: string
+        description: node_type is the node type these numbers describe.
+      license_type_id:
+        type: string
+        description: license_type_id is the license type backing node_type.
+      total:
+        type: string
+        format: uint64
+        description: >-
+          total is the number of nodes of this type ever activated by the
+          operator.
+      active:
+        type: string
+        format: uint64
+        description: >-
+          active is the number of the operator's currently active nodes of this
+          type.
+      recent_active:
+        type: string
+        format: uint64
+        description: |-
+          recent_active is the number of this type's nodes with counted activity
+          today or yesterday (UTC).
+      license_count:
+        type: string
+        format: uint64
+        description: license_count is the operator's active licenses of license_type_id.
+      activation_limit:
+        type: string
+        format: uint64
+        description: activation_limit is activation_limit_multiplier x license_count.
+      spam_limit:
+        type: string
+        format: uint64
+        description: spam_limit is spam_limit_multiplier x license_count.
+    description: >-
+      NodeTypeCounts is an operator's tallies and limits for a single node type.
+
+      Limits are computed from the operator's active licenses of the license
+      type
+
+      bound to this node type, so they change when those licenses are issued or
+
+      revoked — and licenses of any other type do not affect them.
+  network.v1.Params:
+    type: object
+    properties:
+      activation_limit_multiplier:
+        type: string
+        format: uint64
+        description: >-
+          activation_limit_multiplier scales a node type's active license count
+          into
+
+          that node type's activation limit.
+      spam_limit_multiplier:
+        type: string
+        format: uint64
+        description: >-
+          spam_limit_multiplier scales a node type's active license count into
+          the
+
+          recent-activity ceiling that hard-stops activation bursts.
+      max_activation_keys:
+        type: string
+        format: uint64
+        description: >-
+          max_activation_keys is the maximum number of active activation keys
+          per
+
+          operator.
+      recent_key_limit:
+        type: string
+        format: uint64
+        description: >-
+          recent_key_limit is the maximum number of activation keys an operator
+          may
+
+          create within recent_key_window.
+      recent_key_window:
+        type: string
+        description: recent_key_window is the sliding window for recent_key_limit.
+      status_daily_limit:
+        type: string
+        format: uint64
+        description: >-
+          status_daily_limit is the maximum number of MsgUpdateNodeStatus per
+          node
+
+          per UTC day.
+      deauthorize_fee:
+        type: array
+        items:
+          type: object
+          properties:
+            denom:
+              type: string
+            amount:
+              type: string
+          description: |-
+            Coin defines a token with a denomination and an amount.
+
+            NOTE: The amount field is an Int which implements the custom method
+            signatures required by gogoproto.
+        description: >-
+          deauthorize_fee is charged by the MsgDeauthorizeActivationKey handler
+          as
+
+          a bank transfer to the fee collector, on top of regular gas. Empty
+
+          disables the charge; chains that want it seed a denominated value.
+      max_gasless_gas:
+        type: string
+        format: uint64
+        description: max_gasless_gas caps the declared gas wanted of a gasless transaction.
+      max_gasless_msgs:
+        type: string
+        format: uint64
+        description: max_gasless_msgs caps the number of messages in a gasless transaction.
+      max_gasless_tx_bytes:
+        type: string
+        format: uint64
+        description: max_gasless_tx_bytes caps the encoded size of a gasless transaction.
+    description: |-
+      Params defines the parameters for the network module. Defaults are
+      deliberately neutral (fail-closed where counting is involved); chains seed
+      their real values in an upgrade handler or genesis.
+  network.v1.QueryActivationKeyResponse:
+    type: object
+    properties:
+      activation_key:
+        description: activation_key is the activation key record.
+        type: object
+        properties:
+          address:
+            type: string
+            description: address is the activation key's account address.
+          operator:
+            type: string
+            description: operator is the wallet that authorized this key.
+          created_at:
+            type: string
+            format: date-time
+            description: |-
+              created_at is the block time the key was authorized, used for the
+              recent-creation window check.
+          status:
+            description: status is the key lifecycle state.
+            type: string
+            enum:
+              - ACTIVATION_KEY_STATUS_UNSPECIFIED
+              - ACTIVATION_KEY_STATUS_ACTIVE
+              - ACTIVATION_KEY_STATUS_DISABLED
+            default: ACTIVATION_KEY_STATUS_UNSPECIFIED
+    description: >-
+      QueryActivationKeyResponse is the response type for the
+      Query/ActivationKey RPC method.
+  network.v1.QueryActivationKeysResponse:
+    type: object
+    properties:
+      activation_keys:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+              description: address is the activation key's account address.
+            operator:
+              type: string
+              description: operator is the wallet that authorized this key.
+            created_at:
+              type: string
+              format: date-time
+              description: >-
+                created_at is the block time the key was authorized, used for
+                the
+
+                recent-creation window check.
+            status:
+              description: status is the key lifecycle state.
+              type: string
+              enum:
+                - ACTIVATION_KEY_STATUS_UNSPECIFIED
+                - ACTIVATION_KEY_STATUS_ACTIVE
+                - ACTIVATION_KEY_STATUS_DISABLED
+              default: ACTIVATION_KEY_STATUS_UNSPECIFIED
+          description: >-
+            ActivationKey is an activation key record. The address is
+            permanently bound
+
+            to the first operator that authorizes it, even after
+            deauthorization.
+        description: activation_keys are the operator's key records, active and disabled.
+      pagination:
+        description: pagination is the page response.
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+    description: >-
+      QueryActivationKeysResponse is the response type for the
+      Query/ActivationKeys RPC method.
+  network.v1.QueryNodeCountsResponse:
+    type: object
+    properties:
+      counts:
+        type: array
+        items:
+          type: object
+          properties:
+            node_type:
+              type: string
+              description: node_type is the node type these numbers describe.
+            license_type_id:
+              type: string
+              description: license_type_id is the license type backing node_type.
+            total:
+              type: string
+              format: uint64
+              description: >-
+                total is the number of nodes of this type ever activated by the
+                operator.
+            active:
+              type: string
+              format: uint64
+              description: >-
+                active is the number of the operator's currently active nodes of
+                this type.
+            recent_active:
+              type: string
+              format: uint64
+              description: >-
+                recent_active is the number of this type's nodes with counted
+                activity
+
+                today or yesterday (UTC).
+            license_count:
+              type: string
+              format: uint64
+              description: >-
+                license_count is the operator's active licenses of
+                license_type_id.
+            activation_limit:
+              type: string
+              format: uint64
+              description: activation_limit is activation_limit_multiplier x license_count.
+            spam_limit:
+              type: string
+              format: uint64
+              description: spam_limit is spam_limit_multiplier x license_count.
+          description: >-
+            NodeTypeCounts is an operator's tallies and limits for a single node
+            type.
+
+            Limits are computed from the operator's active licenses of the
+            license type
+
+            bound to this node type, so they change when those licenses are
+            issued or
+
+            revoked — and licenses of any other type do not affect them.
+        description: counts holds one entry per node type, in node type id order.
+    description: |-
+      QueryNodeCountsResponse is the response type for the Query/NodeCounts RPC
+      method. Entitlement is per node type, so the answer is a breakdown rather
+      than a single tally.
+  network.v1.QueryNodeResponse:
+    type: object
+    properties:
+      node:
+        description: node is the node record.
+        type: object
+        properties:
+          address:
+            type: string
+            description: address is the node's account address.
+          operator:
+            type: string
+            description: operator is the wallet that owns this node's licenses.
+          activated_by:
+            type: string
+            description: >-
+              activated_by is the activation key address that activated this
+              node.
+          type:
+            type: string
+            description: >-
+              type is the node type identifier (e.g. a chain-specific node
+              class). It
+
+              must name a registered NodeType at activation; type-conditional
+              business
+
+              rules live in consuming modules.
+          status:
+            description: status is the node lifecycle state.
+            type: string
+            enum:
+              - NODE_STATUS_UNSPECIFIED
+              - NODE_STATUS_ACTIVE
+              - NODE_STATUS_DEACTIVATED
+            default: NODE_STATUS_UNSPECIFIED
+          last_active_time:
+            type: string
+            format: date-time
+            description: >-
+              last_active_time is the block time of the node's most recent
+              counted
+
+              activity (activation, status update, or attestation). It
+              determines the
+
+              node's bucket in the recent-activity index; deactivation does not
+              touch
+
+              it.
+    description: QueryNodeResponse is the response type for the Query/Node RPC method.
+  network.v1.QueryNodeTypeResponse:
+    type: object
+    properties:
+      node_type:
+        description: node_type is the registered node type.
+        type: object
+        properties:
+          id:
+            type: string
+            description: id is the registrant-supplied identifier, e.g. "nodelabs.trust".
+          license_type_id:
+            type: string
+            description: license_type_id is the license type backing this node type.
+    description: >-
+      QueryNodeTypeResponse is the response type for the Query/NodeType RPC
+      method.
+  network.v1.QueryNodeTypesResponse:
+    type: object
+    properties:
+      node_types:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              description: id is the registrant-supplied identifier, e.g. "nodelabs.trust".
+            license_type_id:
+              type: string
+              description: license_type_id is the license type backing this node type.
+          description: >-
+            NodeType is a registered node type. Registration binds the node type
+            to an
+
+            existing license type and is gated on the module-wide
+            "nodetype.create"
+
+            grant. The binding is fixed at creation and records are never
+            removed, so a
+
+            node's type stays resolvable for the life of the chain.
+        description: node_types are the registered node types in id order.
+      pagination:
+        description: pagination is the page response.
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+    description: >-
+      QueryNodeTypesResponse is the response type for the Query/NodeTypes RPC
+      method.
+  network.v1.QueryNodesByOperatorResponse:
+    type: object
+    properties:
+      nodes:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+              description: address is the node's account address.
+            operator:
+              type: string
+              description: operator is the wallet that owns this node's licenses.
+            activated_by:
+              type: string
+              description: >-
+                activated_by is the activation key address that activated this
+                node.
+            type:
+              type: string
+              description: >-
+                type is the node type identifier (e.g. a chain-specific node
+                class). It
+
+                must name a registered NodeType at activation; type-conditional
+                business
+
+                rules live in consuming modules.
+            status:
+              description: status is the node lifecycle state.
+              type: string
+              enum:
+                - NODE_STATUS_UNSPECIFIED
+                - NODE_STATUS_ACTIVE
+                - NODE_STATUS_DEACTIVATED
+              default: NODE_STATUS_UNSPECIFIED
+            last_active_time:
+              type: string
+              format: date-time
+              description: >-
+                last_active_time is the block time of the node's most recent
+                counted
+
+                activity (activation, status update, or attestation). It
+                determines the
+
+                node's bucket in the recent-activity index; deactivation does
+                not touch
+
+                it.
+          description: Node is an activated node record.
+        description: nodes are the operator's node records in address order.
+      pagination:
+        description: pagination is the page response.
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+    description: >-
+      QueryNodesByOperatorResponse is the response type for the
+      Query/NodesByOperator RPC method.
+  network.v1.QueryNodesResponse:
+    type: object
+    properties:
+      nodes:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+              description: address is the node's account address.
+            operator:
+              type: string
+              description: operator is the wallet that owns this node's licenses.
+            activated_by:
+              type: string
+              description: >-
+                activated_by is the activation key address that activated this
+                node.
+            type:
+              type: string
+              description: >-
+                type is the node type identifier (e.g. a chain-specific node
+                class). It
+
+                must name a registered NodeType at activation; type-conditional
+                business
+
+                rules live in consuming modules.
+            status:
+              description: status is the node lifecycle state.
+              type: string
+              enum:
+                - NODE_STATUS_UNSPECIFIED
+                - NODE_STATUS_ACTIVE
+                - NODE_STATUS_DEACTIVATED
+              default: NODE_STATUS_UNSPECIFIED
+            last_active_time:
+              type: string
+              format: date-time
+              description: >-
+                last_active_time is the block time of the node's most recent
+                counted
+
+                activity (activation, status update, or attestation). It
+                determines the
+
+                node's bucket in the recent-activity index; deactivation does
+                not touch
+
+                it.
+          description: Node is an activated node record.
+        description: nodes are the node records in address order.
+      pagination:
+        description: pagination is the page response.
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+    description: QueryNodesResponse is the response type for the Query/Nodes RPC method.
+  network.v1.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        description: params are the current module parameters.
+        type: object
+        properties:
+          activation_limit_multiplier:
+            type: string
+            format: uint64
+            description: >-
+              activation_limit_multiplier scales a node type's active license
+              count into
+
+              that node type's activation limit.
+          spam_limit_multiplier:
+            type: string
+            format: uint64
+            description: >-
+              spam_limit_multiplier scales a node type's active license count
+              into the
+
+              recent-activity ceiling that hard-stops activation bursts.
+          max_activation_keys:
+            type: string
+            format: uint64
+            description: >-
+              max_activation_keys is the maximum number of active activation
+              keys per
+
+              operator.
+          recent_key_limit:
+            type: string
+            format: uint64
+            description: >-
+              recent_key_limit is the maximum number of activation keys an
+              operator may
+
+              create within recent_key_window.
+          recent_key_window:
+            type: string
+            description: recent_key_window is the sliding window for recent_key_limit.
+          status_daily_limit:
+            type: string
+            format: uint64
+            description: >-
+              status_daily_limit is the maximum number of MsgUpdateNodeStatus
+              per node
+
+              per UTC day.
+          deauthorize_fee:
+            type: array
+            items:
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+            description: >-
+              deauthorize_fee is charged by the MsgDeauthorizeActivationKey
+              handler as
+
+              a bank transfer to the fee collector, on top of regular gas. Empty
+
+              disables the charge; chains that want it seed a denominated value.
+          max_gasless_gas:
+            type: string
+            format: uint64
+            description: >-
+              max_gasless_gas caps the declared gas wanted of a gasless
+              transaction.
+          max_gasless_msgs:
+            type: string
+            format: uint64
+            description: >-
+              max_gasless_msgs caps the number of messages in a gasless
+              transaction.
+          max_gasless_tx_bytes:
+            type: string
+            format: uint64
+            description: >-
+              max_gasless_tx_bytes caps the encoded size of a gasless
+              transaction.
+    description: QueryParamsResponse is the response type for the Query/Params RPC method.
+  network.v1.MsgActivateNode:
+    type: object
+    properties:
+      activation_address:
+        type: string
+        description: >-
+          activation_address is the signing activation key. It must be active
+          and
+
+          bound to operator.
+      operator:
+        type: string
+        description: operator is the wallet whose licenses back this activation.
+      node_address:
+        type: string
+        description: >-
+          node_address is the node account address to activate. The node does
+          not
+
+          sign, so delayed activation works by construction.
+      node_type:
+        type: string
+        description: |-
+          node_type is the node type recorded on the node. It must name a
+          registered NodeType.
+    description: MsgActivateNode is the Msg/ActivateNode request type.
+  network.v1.MsgActivateNodeResponse:
+    type: object
+    description: MsgActivateNodeResponse is the Msg/ActivateNode response type.
+  network.v1.MsgAuthorizeActivationKey:
+    type: object
+    properties:
+      operator:
+        type: string
+        description: operator is the signing operator wallet.
+      activation_address:
+        type: string
+        description: |-
+          activation_address is the activation key address to authorize. It must
+          never have been authorized before, by any operator, and is permanently
+          bound to this operator once authorized.
+    description: MsgAuthorizeActivationKey is the Msg/AuthorizeActivationKey request type.
+  network.v1.MsgAuthorizeActivationKeyResponse:
+    type: object
+    description: >-
+      MsgAuthorizeActivationKeyResponse is the Msg/AuthorizeActivationKey
+      response type.
+  network.v1.MsgCreateNodeType:
+    type: object
+    properties:
+      creator:
+        type: string
+        description: |-
+          creator is the signer. It must hold the module-wide "nodetype.create"
+          grant.
+      id:
+        type: string
+        description: >-
+          id is the node type identifier to register. Node type ids are
+          single-use:
+
+          records are never removed and cannot be re-registered.
+      license_type_id:
+        type: string
+        description: |-
+          license_type_id is the license type this node type is bound to. The
+          binding is fixed at creation.
+    description: >-
+      MsgCreateNodeType is the Msg/CreateNodeType request type. Registration is
+
+      gated on the module-wide "nodetype.create" grant, which authorizes
+      defining
+
+      node types against any existing license type. The signing address is not
+
+      recorded on the node type: the grant is the whole authorization, so
+      keeping
+
+      the address would preserve no authority.
+  network.v1.MsgCreateNodeTypeResponse:
+    type: object
+    description: MsgCreateNodeTypeResponse is the Msg/CreateNodeType response type.
+  network.v1.MsgCreateOperatorAccount:
+    type: object
+    properties:
+      admin:
+        type: string
+        description: admin is the signer; it must hold the "wallet.create" grant.
+      wallet:
+        type: string
+        description: wallet is the operator wallet address to create an account for.
+    description: MsgCreateOperatorAccount is the Msg/CreateOperatorAccount request type.
+  network.v1.MsgCreateOperatorAccountResponse:
+    type: object
+    description: >-
+      MsgCreateOperatorAccountResponse is the Msg/CreateOperatorAccount response
+      type.
+  network.v1.MsgDeactivateNode:
+    type: object
+    properties:
+      signer:
+        type: string
+        description: >-
+          signer is the operator, the node's original still-active activation
+          key,
+
+          or the node itself.
+      node_address:
+        type: string
+        description: node_address is the node to deactivate. Deactivation is irreversible.
+    description: MsgDeactivateNode is the Msg/DeactivateNode request type.
+  network.v1.MsgDeactivateNodeResponse:
+    type: object
+    description: MsgDeactivateNodeResponse is the Msg/DeactivateNode response type.
+  network.v1.MsgDeauthorizeActivationKey:
+    type: object
+    properties:
+      operator:
+        type: string
+        description: operator is the signing operator wallet that owns the key.
+      activation_address:
+        type: string
+        description: activation_address is the activation key address to disable.
+    description: >-
+      MsgDeauthorizeActivationKey is the Msg/DeauthorizeActivationKey request
+      type.
+  network.v1.MsgDeauthorizeActivationKeyResponse:
+    type: object
+    description: >-
+      MsgDeauthorizeActivationKeyResponse is the Msg/DeauthorizeActivationKey
+      response type.
+  network.v1.MsgUpdateNodeStatus:
+    type: object
+    properties:
+      node_address:
+        type: string
+        description: node_address is the signing node; it must be active.
+      payload:
+        description: payload is the self-reported status, emitted as an event.
+        type: object
+        properties:
+          device:
+            type: string
+            description: device describes the device/hardware.
+          os:
+            type: string
+            description: os describes the operating system and version.
+          hostname:
+            type: string
+            description: hostname is the node's self-reported hostname.
+          node_info:
+            type: string
+            description: node_info describes the node software and version.
+          workloads:
+            type: array
+            items:
+              type: string
+            description: workloads lists the workloads the node is running.
+          memory:
+            type: string
+            description: memory describes memory capacity/usage.
+          cpu:
+            type: string
+            description: cpu describes CPU capacity/usage.
+          storage:
+            type: string
+            description: storage describes storage capacity/usage.
+    description: MsgUpdateNodeStatus is the Msg/UpdateNodeStatus request type.
+  network.v1.MsgUpdateNodeStatusResponse:
+    type: object
+    description: MsgUpdateNodeStatusResponse is the Msg/UpdateNodeStatus response type.
+  network.v1.MsgUpdateParams:
+    type: object
+    properties:
+      authority:
+        type: string
+        description: authority is the address that controls the module (defaults to x/gov).
+      params:
+        description: |-
+          params defines the module parameters to update. All parameters must be
+          supplied.
+        type: object
+        properties:
+          activation_limit_multiplier:
+            type: string
+            format: uint64
+            description: >-
+              activation_limit_multiplier scales a node type's active license
+              count into
+
+              that node type's activation limit.
+          spam_limit_multiplier:
+            type: string
+            format: uint64
+            description: >-
+              spam_limit_multiplier scales a node type's active license count
+              into the
+
+              recent-activity ceiling that hard-stops activation bursts.
+          max_activation_keys:
+            type: string
+            format: uint64
+            description: >-
+              max_activation_keys is the maximum number of active activation
+              keys per
+
+              operator.
+          recent_key_limit:
+            type: string
+            format: uint64
+            description: >-
+              recent_key_limit is the maximum number of activation keys an
+              operator may
+
+              create within recent_key_window.
+          recent_key_window:
+            type: string
+            description: recent_key_window is the sliding window for recent_key_limit.
+          status_daily_limit:
+            type: string
+            format: uint64
+            description: >-
+              status_daily_limit is the maximum number of MsgUpdateNodeStatus
+              per node
+
+              per UTC day.
+          deauthorize_fee:
+            type: array
+            items:
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+            description: >-
+              deauthorize_fee is charged by the MsgDeauthorizeActivationKey
+              handler as
+
+              a bank transfer to the fee collector, on top of regular gas. Empty
+
+              disables the charge; chains that want it seed a denominated value.
+          max_gasless_gas:
+            type: string
+            format: uint64
+            description: >-
+              max_gasless_gas caps the declared gas wanted of a gasless
+              transaction.
+          max_gasless_msgs:
+            type: string
+            format: uint64
+            description: >-
+              max_gasless_msgs caps the number of messages in a gasless
+              transaction.
+          max_gasless_tx_bytes:
+            type: string
+            format: uint64
+            description: >-
+              max_gasless_tx_bytes caps the encoded size of a gasless
+              transaction.
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
+  network.v1.MsgUpdateParamsResponse:
+    type: object
+    description: MsgUpdateParamsResponse is the Msg/UpdateParams response type.
+  network.v1.NodeStatusPayload:
+    type: object
+    properties:
+      device:
+        type: string
+        description: device describes the device/hardware.
+      os:
+        type: string
+        description: os describes the operating system and version.
+      hostname:
+        type: string
+        description: hostname is the node's self-reported hostname.
+      node_info:
+        type: string
+        description: node_info describes the node software and version.
+      workloads:
+        type: array
+        items:
+          type: string
+        description: workloads lists the workloads the node is running.
+      memory:
+        type: string
+        description: memory describes memory capacity/usage.
+      cpu:
+        type: string
+        description: cpu describes CPU capacity/usage.
+      storage:
+        type: string
+        description: storage describes storage capacity/usage.
+    description: |-
+      NodeStatusPayload carries a node's self-reported status fields. The chain
+      treats every field as opaque: what a node populates is node-software
+      policy, and the payload is emitted as a node_status event rather than
+      stored in state.
+  attestation.v1.Params:
+    type: object
+    properties:
+      rwa_daily_limit:
+        type: string
+        format: uint64
+        description: |-
+          rwa_daily_limit is the maximum number of MsgAttestRwa per node per UTC
+          day.
+      rwu_daily_limit:
+        type: string
+        format: uint64
+        description: |-
+          rwu_daily_limit is the maximum number of MsgAttestRwu per node per UTC
+          day.
+    description: Params defines the set of attestation module parameters.
+  attestation.v1.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        description: params defines the parameters of the module.
+        type: object
+        properties:
+          rwa_daily_limit:
+            type: string
+            format: uint64
+            description: >-
+              rwa_daily_limit is the maximum number of MsgAttestRwa per node per
+              UTC
+
+              day.
+          rwu_daily_limit:
+            type: string
+            format: uint64
+            description: >-
+              rwu_daily_limit is the maximum number of MsgAttestRwu per node per
+              UTC
+
+              day.
+    description: QueryParamsResponse is the response type for the Query/Params RPC method.
+  attestation.v1.ContractAttestation:
+    type: object
+    properties:
+      contract_address:
+        type: string
+        description: contract_address is the attested RWA/RWU contract address.
+      current_supply:
+        type: string
+        description: current_supply is the observed supply of the contract.
+      block_height:
+        type: string
+        format: uint64
+        description: block_height is the height the observation was made at.
+    description: |-
+      ContractAttestation is one attested contract-supply observation. The chain
+      does not store attestations; they are carried in txs and emitted as
+      events.
+  attestation.v1.MsgAttestRwaResponse:
+    type: object
+    description: MsgAttestRwaResponse is the Msg/AttestRwa response type.
+  attestation.v1.MsgAttestRwuResponse:
+    type: object
+    description: MsgAttestRwuResponse is the Msg/AttestRwu response type.
+  attestation.v1.MsgUpdateParamsResponse:
+    type: object
+    description: |-
+      MsgUpdateParamsResponse defines the response structure for executing a
+      MsgUpdateParams message.

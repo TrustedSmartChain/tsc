@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	sdkvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 
-	networkante "github.com/webstack-sdk/webstack/x/network/ante"
+	networkante "github.com/nodelabs-sdk/nodelabs/x/network/ante"
 )
 
 // newCosmosAnteHandler creates the default ante handler for Cosmos
