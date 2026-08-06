@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	networktypes "github.com/webstack-sdk/webstack/x/network/types"
+	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 )
 
 var (

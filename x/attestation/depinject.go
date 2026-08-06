@@ -12,7 +12,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 
-	networkkeeper "github.com/webstack-sdk/webstack/x/network/keeper"
+	networkkeeper "github.com/nodelabs-sdk/nodelabs/x/network/keeper"
 
 	modulev1 "github.com/TrustedSmartChain/tsc/v3/api/attestation/module/v1"
 	"github.com/TrustedSmartChain/tsc/v3/x/attestation/keeper"

@@ -16,7 +16,7 @@ import (
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
 	"github.com/cosmos/evm/x/vm"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
-	licensetypes "github.com/webstack-sdk/webstack/x/license/types"
+	licensetypes "github.com/nodelabs-sdk/nodelabs/x/license/types"
 )
 
 // GenesisState of the blockchain is represented here as a map of raw json

@@ -8,7 +8,7 @@ import (
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/stretchr/testify/require"
 
-	networktypes "github.com/webstack-sdk/webstack/x/network/types"
+	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 
 	"github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
 )

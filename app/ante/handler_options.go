@@ -18,8 +18,8 @@ import (
 
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 
-	networkante "github.com/webstack-sdk/webstack/x/network/ante"
-	networkkeeper "github.com/webstack-sdk/webstack/x/network/keeper"
+	networkante "github.com/nodelabs-sdk/nodelabs/x/network/ante"
+	networkkeeper "github.com/nodelabs-sdk/nodelabs/x/network/keeper"
 )
 
 // HandlerOptions defines the list of module keepers required to run the Cosmos EVM

@@ -9,9 +9,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/ethereum/go-ethereum/common"
-	licensetypes "github.com/webstack-sdk/webstack/x/license/types"
-	networktypes "github.com/webstack-sdk/webstack/x/network/types"
-	permissiontypes "github.com/webstack-sdk/webstack/x/permission/types"
+	licensetypes "github.com/nodelabs-sdk/nodelabs/x/license/types"
+	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
+	permissiontypes "github.com/nodelabs-sdk/nodelabs/x/permission/types"
 
 	attestationtypes "github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
 )
