@@ -28,15 +28,16 @@ func attestations(n int) []types.ContractAttestation {
 func TestAttestRwaTrustOnly(t *testing.T) {
 	f := SetupTest(t)
 
-	trust := f.addNode(types.NodeTypeTrust, networktypes.NodeActive)
+	trust := f.addNode(nodeTypeTrust, networktypes.NodeActive)
 	nano := f.addNode(nodeTypeNano, networktypes.NodeActive)
 
-	// Nano nodes may not RWA-attest.
+	// MsgAttestRwa names only trust. Being licensed for a tier is not the same
+	// as the tier being allowed to make this claim.
 	_, err := f.msgServer.AttestRwa(f.ctx, &types.MsgAttestRwa{
 		NodeAddress:  nano.Address,
 		Attestations: attestations(1),
 	})
-	require.ErrorIs(t, err, types.ErrRwaTrustOnly)
+	require.ErrorIs(t, err, types.ErrNodeTypeNotAllowed)
 
 	// Trust nodes may; activity is touched and one event per attestation is
 	// emitted.
@@ -56,10 +57,13 @@ func TestAttestRwaTrustOnly(t *testing.T) {
 	require.Equal(t, 3, events)
 }
 
-func TestAttestRwuAnyNodeType(t *testing.T) {
+// Both fixture tiers are named by MsgAttestRwu, so both may report usage. The
+// list is explicit rather than "any active node", so a tier added later reports
+// nothing until it is added to that list too.
+func TestAttestRwuAllowedTypes(t *testing.T) {
 	f := SetupTest(t)
 
-	for _, nodeType := range []string{types.NodeTypeTrust, nodeTypeNano} {
+	for _, nodeType := range []string{nodeTypeTrust, nodeTypeNano} {
 		node := f.addNode(nodeType, networktypes.NodeActive)
 		_, err := f.msgServer.AttestRwu(f.ctx, &types.MsgAttestRwu{
 			NodeAddress:  node.Address,
@@ -67,6 +71,29 @@ func TestAttestRwuAnyNodeType(t *testing.T) {
 		})
 		require.NoError(t, err)
 	}
+}
+
+// A node type registered in x/network and fully licensed still attests nothing
+// unless an attest message names it. Registration and payment are not
+// authorization; the allowed tiers are compiled into the messages.
+func TestUnconfiguredNodeTypeAttestsNothing(t *testing.T) {
+	f := SetupTest(t)
+
+	const bare = "bare"
+	node := f.network.addNode(bare, networktypes.NodeActive)
+	f.network.license(node.Operator, bare)
+
+	_, err := f.msgServer.AttestRwa(f.ctx, &types.MsgAttestRwa{
+		NodeAddress:  node.Address,
+		Attestations: attestations(1),
+	})
+	require.ErrorIs(t, err, types.ErrNodeTypeNotAllowed)
+
+	_, err = f.msgServer.AttestRwu(f.ctx, &types.MsgAttestRwu{
+		NodeAddress:  node.Address,
+		Attestations: attestations(1),
+	})
+	require.ErrorIs(t, err, types.ErrNodeTypeNotAllowed)
 }
 
 func TestAttestNodeStanding(t *testing.T) {
@@ -79,7 +106,7 @@ func TestAttestNodeStanding(t *testing.T) {
 	})
 	require.ErrorIs(t, err, types.ErrNodeNotFound)
 
-	deactivated := f.addNode(types.NodeTypeTrust, networktypes.NodeDeactivated)
+	deactivated := f.addNode(nodeTypeTrust, networktypes.NodeDeactivated)
 	_, err = f.msgServer.AttestRwa(f.ctx, &types.MsgAttestRwa{
 		NodeAddress:  deactivated.Address,
 		Attestations: attestations(1),
@@ -91,7 +118,7 @@ func TestAttestNodeStanding(t *testing.T) {
 // ante increments the counters, the handler only re-reads them.
 func TestAttestQuotaReread(t *testing.T) {
 	f := SetupTest(t)
-	node := f.addNode(types.NodeTypeTrust, networktypes.NodeActive)
+	node := f.addNode(nodeTypeTrust, networktypes.NodeActive)
 
 	params, err := f.k.Params.Get(f.ctx)
 	require.NoError(t, err)

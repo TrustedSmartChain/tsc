@@ -647,10 +647,10 @@ func NewChainApp(
 	)
 	network.RegisterNamespace(app.PermissionKeeper, app.NetworkKeeper)
 
-	// Create the attestation Keeper. It consumes the network keeper through
-	// a narrow interface (node standing, activity touch, license gate) and
-	// the license keeper to bind a node's declared type to a license of that
-	// same type.
+	// Create the attestation Keeper. It consumes the network keeper through a
+	// narrow interface: node standing, activity touch, and the per-node-type
+	// license gate. Which node types may attest is compiled into the messages
+	// themselves, so nothing here reads the node type registry.
 	app.AttestationKeeper = attestationkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[attestationtypes.StoreKey]),

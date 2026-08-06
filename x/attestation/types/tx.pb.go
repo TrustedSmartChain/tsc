@@ -33,7 +33,9 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // MsgAttestRwa is the Msg/AttestRwa request type.
 type MsgAttestRwa struct {
-	// node_address is the signing node; it must be an active trust node.
+	// node_address is the signing node; it must be active and of a node type
+	// this message admits. The admitted types are compiled into the state
+	// machine rather than carried here.
 	NodeAddress string `protobuf:"bytes,1,opt,name=node_address,json=nodeAddress,proto3" json:"node_address,omitempty"`
 	// attestations are the attested contract-supply observations (max 100).
 	Attestations []ContractAttestation `protobuf:"bytes,2,rep,name=attestations,proto3" json:"attestations"`
@@ -125,7 +127,8 @@ var xxx_messageInfo_MsgAttestRwaResponse proto.InternalMessageInfo
 
 // MsgAttestRwu is the Msg/AttestRwu request type.
 type MsgAttestRwu struct {
-	// node_address is the signing node; it must be an active node.
+	// node_address is the signing node; it must be active and of a node type
+	// this message admits.
 	NodeAddress string `protobuf:"bytes,1,opt,name=node_address,json=nodeAddress,proto3" json:"node_address,omitempty"`
 	// attestations are the attested contract-supply observations (max 100).
 	Attestations []ContractAttestation `protobuf:"bytes,2,rep,name=attestations,proto3" json:"attestations"`
@@ -369,11 +372,11 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// AttestRwa records RWA contract-supply attestations from an active trust
-	// node. Gasless; nano nodes may not RWA-attest.
+	// AttestRwa records RWA contract-supply attestations. Gasless; the signing
+	// node's type must be one MsgAttestRwa admits.
 	AttestRwa(ctx context.Context, in *MsgAttestRwa, opts ...grpc.CallOption) (*MsgAttestRwaResponse, error)
-	// AttestRwu records RWU contract-supply attestations from any active
-	// node. Gasless.
+	// AttestRwu records RWU contract-supply attestations. Gasless; the signing
+	// node's type must be one MsgAttestRwu admits.
 	AttestRwu(ctx context.Context, in *MsgAttestRwu, opts ...grpc.CallOption) (*MsgAttestRwuResponse, error)
 	// UpdateParams defines a governance operation for updating the parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
@@ -416,11 +419,11 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// AttestRwa records RWA contract-supply attestations from an active trust
-	// node. Gasless; nano nodes may not RWA-attest.
+	// AttestRwa records RWA contract-supply attestations. Gasless; the signing
+	// node's type must be one MsgAttestRwa admits.
 	AttestRwa(context.Context, *MsgAttestRwa) (*MsgAttestRwaResponse, error)
-	// AttestRwu records RWU contract-supply attestations from any active
-	// node. Gasless.
+	// AttestRwu records RWU contract-supply attestations. Gasless; the signing
+	// node's type must be one MsgAttestRwu admits.
 	AttestRwu(context.Context, *MsgAttestRwu) (*MsgAttestRwuResponse, error)
 	// UpdateParams defines a governance operation for updating the parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)

@@ -2718,7 +2718,9 @@ type MsgAttestRwa struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// node_address is the signing node; it must be an active trust node.
+	// node_address is the signing node; it must be active and of a node type
+	// this message admits. The admitted types are compiled into the state
+	// machine rather than carried here.
 	NodeAddress string `protobuf:"bytes,1,opt,name=node_address,json=nodeAddress,proto3" json:"node_address,omitempty"`
 	// attestations are the attested contract-supply observations (max 100).
 	Attestations []*ContractAttestation `protobuf:"bytes,2,rep,name=attestations,proto3" json:"attestations,omitempty"`
@@ -2791,7 +2793,8 @@ type MsgAttestRwu struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// node_address is the signing node; it must be an active node.
+	// node_address is the signing node; it must be active and of a node type
+	// this message admits.
 	NodeAddress string `protobuf:"bytes,1,opt,name=node_address,json=nodeAddress,proto3" json:"node_address,omitempty"`
 	// attestations are the attested contract-supply observations (max 100).
 	Attestations []*ContractAttestation `protobuf:"bytes,2,rep,name=attestations,proto3" json:"attestations,omitempty"`

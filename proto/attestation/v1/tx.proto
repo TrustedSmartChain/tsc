@@ -15,14 +15,14 @@ option go_package = "github.com/TrustedSmartChain/tsc/v3/x/attestation/types";
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // AttestRwa records RWA contract-supply attestations from an active trust
-  // node. Gasless; nano nodes may not RWA-attest.
+  // AttestRwa records RWA contract-supply attestations. Gasless; the signing
+  // node's type must be one MsgAttestRwa admits.
   rpc AttestRwa(MsgAttestRwa) returns (MsgAttestRwaResponse) {
     option (google.api.http).post = "/tsc/attestation/v1/tx/attest_rwa";
   }
 
-  // AttestRwu records RWU contract-supply attestations from any active
-  // node. Gasless.
+  // AttestRwu records RWU contract-supply attestations. Gasless; the signing
+  // node's type must be one MsgAttestRwu admits.
   rpc AttestRwu(MsgAttestRwu) returns (MsgAttestRwuResponse) {
     option (google.api.http).post = "/tsc/attestation/v1/tx/attest_rwu";
   }
@@ -37,7 +37,9 @@ service Msg {
 message MsgAttestRwa {
   option (cosmos.msg.v1.signer) = "node_address";
 
-  // node_address is the signing node; it must be an active trust node.
+  // node_address is the signing node; it must be active and of a node type
+  // this message admits. The admitted types are compiled into the state
+  // machine rather than carried here.
   string node_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // attestations are the attested contract-supply observations (max 100).
   repeated ContractAttestation attestations = 2 [(gogoproto.nullable) = false];
@@ -50,7 +52,8 @@ message MsgAttestRwaResponse {}
 message MsgAttestRwu {
   option (cosmos.msg.v1.signer) = "node_address";
 
-  // node_address is the signing node; it must be an active node.
+  // node_address is the signing node; it must be active and of a node type
+  // this message admits.
   string node_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // attestations are the attested contract-supply observations (max 100).
   repeated ContractAttestation attestations = 2 [(gogoproto.nullable) = false];

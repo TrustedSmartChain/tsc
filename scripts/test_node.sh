@@ -18,8 +18,10 @@ set -eu
 
 export KEY="acc0"
 export KEY2="acc1"
-# KEY3 is the validator operator (gentx below), the license/network namespace
-# owner in genesis, and x/distro's DefaultMintingAddress — hence the label.
+# KEY3 is the validator operator (gentx below) and the license/network namespace
+# owner in genesis. The label is historical: it does NOT derive x/distro's
+# DefaultMintingAddress, so MsgMint is not signable on this dev chain. Seed
+# distro's minting_address from $KEY3_ADDR below if you need to exercise it.
 export KEY3="minting"
 
 # Must match app.ChainID in app/app.go. The EIP-155 suffix has to equal
@@ -50,6 +52,30 @@ export ROSETTA=${ROSETTA:-"8080"}
 export JSONRPC=${JSONRPC:-"8545"}
 export JSONRPC_WS=${JSONRPC_WS:-"8546"}
 export BLOCK_TIME=${BLOCK_TIME:-"5s"}
+# SEED_CATALOG=false leaves the license types, node types and permission grants
+# empty, so genesis carries only what the v3 upgrade handler actually seeds:
+# namespace ownership and the network params.
+#
+# Use it to rehearse the real launch runbook against a dev chain: with the
+# catalog pre-seeded, MsgGrantPermissions, MsgCreateLicenseType and
+# MsgCreateNodeType never run, so the ordering they depend on goes untested.
+export SEED_CATALOG=${SEED_CATALOG:-"true"}
+# Minimum gas price in $DENOM per unit of gas, as a decimal. Non-zero by
+# default so the dev chain charges for gas the way a real one does.
+#
+# This is the feemarket param, not the node's --minimum-gas-prices flag. The
+# flag is a local mempool filter and is bypassed here anyway: the ante chain
+# replaces the default TxFeeChecker with one that clears gasless txs at zero
+# fee and hands everything else to the dynamic fee checker, so the flag never
+# runs. The param is the chain rule, applies in CheckTx and DeliverTx alike,
+# and is what MinGasPriceDecorator reads.
+#
+# Gasless txs are unaffected: MinGasPriceDecorator is wrapped in
+# SkipForGaslessDecorator, so an allowlisted zero-fee tx skips it entirely.
+# That asymmetry is the point — with this at zero, a tx mixing a gasless msg
+# with a paid one is indistinguishable from a genuinely gasless one, and the
+# fee floor that separates them is never exercised.
+export MIN_GAS_PRICE=${MIN_GAS_PRICE:-"1000000000"}
 
 # Rebuilding needs the repo. On a host that only carries the binary — a VM, a
 # release artifact — there is no source tree and no Go toolchain, so use the
@@ -112,8 +138,16 @@ from_scratch () {
   add_key $KEY "virus dinner recipe bid ripple amateur zebra frown flip walk acquire leopard poverty picture diamond pitch fresh talent color taste series faculty employ crew"
   # tsc1n2tvn6cqs0xesfe6s706y8r2sarezypwajsctp
   add_key $KEY2 "effort shift garlic pledge tiny where theme advice palm lift elephant giant erase critic off naive neutral person bone silly fall coconut ask boost"
-  # tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4
   add_key $KEY3 "color drastic bachelor local mansion twenty grace camera circle hover ensure civil finger walnut yellow myth sort pottery sustain midnight punch card village clever"
+
+  # Read KEY3's address back from the keyring rather than hardcoding it below.
+  # This used to be a literal, and it had drifted from what the mnemonic
+  # actually derives: genesis named an owner nobody held the key to. Nothing
+  # caught it, because the grants were seeded in genesis too — the address only
+  # has to be signable once someone tries to grant, transfer ownership, or
+  # update a license type, which the pre-seeded path never does.
+  KEY3_ADDR=$($BINARY keys show $KEY3 -a --keyring-backend $KEYRING --home $HOME_DIR)
+  echo "namespace owner / validator operator: $KEY3_ADDR"
 
   $BINARY init $MONIKER --chain-id $CHAIN_ID --default-denom $DENOM --home $HOME_DIR
 
@@ -128,8 +162,18 @@ from_scratch () {
 
   # Gov
   update_test_genesis `printf '.app_state["gov"]["params"]["min_deposit"]=[{"denom":"%s","amount":"1000000"}]' $DENOM`
-  update_test_genesis '.app_state["gov"]["params"]["voting_period"]="30s"'
-  update_test_genesis '.app_state["gov"]["params"]["expedited_voting_period"]="15s"'
+  # expedited_min_deposit is not merely cosmetic here: the SDK default is
+  # denominated in "stake", which does not exist on this chain, so an expedited
+  # proposal could never be funded and would sit in deposit until it expired.
+  # Params validation does not catch it — a cross-denom comparison is not
+  # "less than or equal" — so it fails silently at use rather than at genesis.
+  # 5x min_deposit mirrors the SDK's own ratio, and must stay strictly greater
+  # than min_deposit or validation does reject it.
+  update_test_genesis `printf '.app_state["gov"]["params"]["expedited_min_deposit"]=[{"denom":"%s","amount":"5000000"}]' $DENOM`
+  # Expedited must be strictly shorter than the regular period; gov params
+  # validation rejects genesis outright if these two are equal or swapped.
+  update_test_genesis '.app_state["gov"]["params"]["voting_period"]="15m"'
+  update_test_genesis '.app_state["gov"]["params"]["expedited_voting_period"]="10m"'
 
   # Bank - register denom metadata for EVM (required by cosmos-evm v0.5.1)
   DENOM_METADATA="{\"description\":\"The native staking token of Trusted Smart Chain\",\"denom_units\":[{\"denom\":\"$DENOM\",\"exponent\":0,\"aliases\":[\"atsc\"]},{\"denom\":\"TSC\",\"exponent\":18}],\"base\":\"$DENOM\",\"display\":\"TSC\",\"name\":\"Trusted Smart Chain\",\"symbol\":\"TSC\"}"
@@ -141,13 +185,36 @@ from_scratch () {
   # update_test_genesis `printf '.app_state["erc20"]["token_pairs"]=[{contract_owner:1,erc20_address:"0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",denom:"%s",enabled:true}]' $DENOM`
   update_test_genesis '.app_state["feemarket"]["params"]["no_base_fee"]=true'
   update_test_genesis '.app_state["feemarket"]["params"]["base_fee"]="0.000000000000000000"'
+  # The fee floor. base_fee stays zero — with no_base_fee the dynamic fee
+  # checker asks for nothing — so this param is the only thing a paid tx has
+  # to clear: fee >= ceil(min_gas_price x gas_limit).
+  update_test_genesis `printf '.app_state["feemarket"]["params"]["min_gas_price"]="%s"' $MIN_GAS_PRICE`
 
-  # staking
+  # staking. Staking issues no rewards on this chain — see mint below, which is
+  # where inflation actually lives.
   update_test_genesis `printf '.app_state["staking"]["params"]["bond_denom"]="%s"' $DENOM`
   update_test_genesis '.app_state["staking"]["params"]["min_commission_rate"]="0.050000000000000000"'
 
-  # mint
+  # mint — inflation is off, and the zeros below are the only thing turning it
+  # off. Left at SDK defaults x/mint issues 7-20% annually, and that is not
+  # merely an extra reward stream: x/distro caps issuance by comparing total
+  # aTSC bank supply against its 21M max, so every inflated token permanently
+  # reduces what the halving schedule can ever distribute.
+  #
+  # Both bounds have to be zero, not just the minter. BeginBlocker recomputes
+  # inflation every block and clamps it into [inflation_min, inflation_max], so
+  # a zeroed minter under default bounds is pulled straight back to 7% on the
+  # first block. The minter is zeroed as well so genesis reads as zero rather
+  # than relying on that recompute.
+  #
+  # goal_bonded and blocks_per_year keep their defaults: params validation
+  # rejects zero for both, and neither has any effect once the bounds are equal.
   update_test_genesis `printf '.app_state["mint"]["params"]["mint_denom"]="%s"' $DENOM`
+  update_test_genesis '.app_state["mint"]["params"]["inflation_rate_change"]="0.000000000000000000"'
+  update_test_genesis '.app_state["mint"]["params"]["inflation_max"]="0.000000000000000000"'
+  update_test_genesis '.app_state["mint"]["params"]["inflation_min"]="0.000000000000000000"'
+  update_test_genesis '.app_state["mint"]["minter"]["inflation"]="0.000000000000000000"'
+  update_test_genesis '.app_state["mint"]["minter"]["annual_provisions"]="0.000000000000000000"'
 
   # crisis
   update_test_genesis `printf '.app_state["crisis"]["constant_fee"]={"denom":"%s","amount":"1000"}' $DENOM`
@@ -171,26 +238,46 @@ from_scratch () {
   # registers the node types. What follows is that runbook pre-applied, not a
   # mirror of the handler.
   #
+  # x/attestation needs no genesis of its own — its node type authorization is
+  # compiled in rather than configured.
+  #
   # Namespace owner for both the license and network namespaces is KEY3.
-  update_test_genesis '.app_state["permission"]["namespaces"]=[{"module":"license","owner":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"},{"module":"network","owner":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"}]'
+  update_test_genesis `printf '.app_state["permission"]["namespaces"]=[{"module":"license","owner":"%s"},{"module":"network","owner":"%s"}]' $KEY3_ADDR $KEY3_ADDR`
+  # The catalog. All three seeds below move together and are guarded as a unit:
+  # x/permission validates grant scopes at genesis against the license type
+  # registry, so seeding a grant scoped to "tsc.node.trust" while license_types
+  # is empty panics at InitChain. Guarding only one of the three produces a
+  # chain that will not start.
+  if [ "$SEED_CATALOG" != "false" ]; then
   # The node license types. These ids are license SKUs and are deliberately NOT
   # the node type strings below; the node_types registry binds one to the other.
   # max_supply caps licenses outstanding (active_count), so revoking one frees a
-  # slot. creator is load-bearing rather than informational: x/network only lets
-  # a node type bind to a license type its signer created, so a wrong creator
-  # here makes the binding below unauthorized.
-  update_test_genesis '.app_state["license"]["license_types"]=[{"id":"node.trust","transferrable":false,"max_supply":"240000","issued_count":"0","active_count":"0","revoked_count":"0","creator":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"},{"id":"node.nano","transferrable":false,"max_supply":"200000","issued_count":"0","active_count":"0","revoked_count":"0","creator":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"}]'
+  # slot. No creator is recorded: authorization to build on a license type comes
+  # from the grants below, not from who created it.
+  update_test_genesis '.app_state["license"]["license_types"]=[{"id":"tsc.node.trust","transferrable":false,"max_supply":"240000","issued_count":"0","active_count":"0","revoked_count":"0"},{"id":"tsc.node.nano","transferrable":false,"max_supply":"200000","issued_count":"0","active_count":"0","revoked_count":"0"}]'
   # The node type registry, replacing the old allowed_node_types param. Each
   # entry binds one node type to one license type, one-to-one in both
   # directions, and that binding is what x/network counts and what x/attestation
   # checks a node against. An empty registry fail-closes activation.
-  update_test_genesis '.app_state["network"]["node_types"]=[{"id":"trust","creator":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","license_type_id":"node.trust"},{"id":"nano","creator":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","license_type_id":"node.nano"}]'
+  #
+  # The ids must match x/attestation's NodeTypeTrust/NodeTypeNano exactly.
+  # Nothing enforces that across the two modules: x/attestation compiles in the
+  # tiers it admits rather than reading this registry, so a typo here registers
+  # a node type that activates fine and can never attest.
+  update_test_genesis '.app_state["network"]["node_types"]=[{"id":"tsc.trust","license_type_id":"tsc.node.trust"},{"id":"tsc.nano","license_type_id":"tsc.node.nano"}]'
   # KEY3 may create license types and node types, and issue and revoke node
   # licenses. Required, not merely convenient: both modules check the grant
   # table with no owner bypass. type.create and nodetype.create are module-wide,
   # so their scope is empty — the only form x/permission stores an unscoped
   # grant under.
-  update_test_genesis '.app_state["permission"]["grants"]=[{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"type.create","scope":""},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"issue","scope":"node.trust"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"revoke","scope":"node.trust"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"issue","scope":"node.nano"},{"module":"license","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"revoke","scope":"node.nano"},{"module":"network","grantee":"tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4","permission":"nodetype.create","scope":""}]'
+  #
+  # The issue/revoke scopes are license type ids and are checked against the
+  # registry seeded above: a scope naming a license type that does not exist
+  # panics at InitChain, so renaming a license type means renaming it here too.
+  update_test_genesis `printf '.app_state["permission"]["grants"]=[{"module":"license","grantee":"%s","permission":"type.create","scope":""},{"module":"license","grantee":"%s","permission":"issue","scope":"tsc.node.trust"},{"module":"license","grantee":"%s","permission":"revoke","scope":"tsc.node.trust"},{"module":"license","grantee":"%s","permission":"issue","scope":"tsc.node.nano"},{"module":"license","grantee":"%s","permission":"revoke","scope":"tsc.node.nano"},{"module":"network","grantee":"%s","permission":"nodetype.create","scope":""}]' $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR`
+  else
+    echo "SEED_CATALOG=false — genesis carries namespace ownership only, as the v3 handler does"
+  fi
   # Network params carry only knobs now — the counted license SKUs and the node
   # types an activation may declare both moved into the node_types registry
   # above. The deauthorize fee (0.01 TSC) is the one value here the v3 handler
@@ -208,7 +295,10 @@ from_scratch () {
   # Sign genesis transaction
   # min-self-delegation must be >= 500 TSC (500e18 aTSC) to satisfy the
   # min_self_delegation floor enforced by app/hooks.
-  $BINARY genesis gentx $KEY3 500000000000000000000$DENOM --min-self-delegation 500000000000000000000 --gas-prices 0${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $HOME_DIR
+  # The gentx is delivered through the full ante chain at InitChain, so it has
+  # to clear the fee floor like any other tx — at MIN_GAS_PRICE=0 that is free,
+  # above it the tx must carry a fee or the chain panics on the first block.
+  $BINARY genesis gentx $KEY3 500000000000000000000$DENOM --min-self-delegation 500000000000000000000 --gas-prices ${MIN_GAS_PRICE}${DENOM} --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $HOME_DIR
 
   $BINARY genesis collect-gentxs --home $HOME_DIR
 

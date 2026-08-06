@@ -37,12 +37,11 @@ const (
 	// "network" namespace (wallet.create, the admin fallback for creating
 	// operator accounts, and nodetype.create).
 	//
-	// This is deliberately the same address as LicenseNamespaceOwner, and the
-	// two must stay equal while one account is expected to build the catalog.
-	// x/network only lets a node type bind to a license type its signer
-	// created, so whoever registers node types must also be the account that
-	// created the license types. Splitting these would leave the upgrade
-	// succeeding and the first MsgCreateNodeType failing the creator match.
+	// This is deliberately the same address as LicenseNamespaceOwner: one key
+	// administers both namespaces at launch. Nothing in either module requires
+	// it — a node type binds to any registered license type regardless of who
+	// created it — so the two can be split later by transferring one namespace,
+	// and the catalog operator still only needs the two grants.
 	NetworkNamespaceOwner = LicenseNamespaceOwner
 )
 

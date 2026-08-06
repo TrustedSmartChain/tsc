@@ -12,6 +12,42 @@ var (
 	_ sdk.Msg = &MsgUpdateParams{}
 )
 
+// AttestationMsg is an attestation message that names the node types allowed
+// to send it.
+//
+// The rule lives on the message, one line each, rather than in the handlers: a
+// new attestation kind that forgets to declare its node types will not compile
+// as an AttestationMsg, so it cannot reach checkNode and be admitted by
+// omission.
+//
+// These lists are compiled in. A node type registered in x/network that is not
+// named here cannot attest, and adding one is a binary release — the node type
+// registry is runtime configuration but this authorization is not.
+type AttestationMsg interface {
+	sdk.Msg
+
+	// GetNodeAddress is the signing node, satisfied by the generated getter.
+	GetNodeAddress() string
+
+	// AllowedNodeTypes are the x/network node type ids permitted to send this
+	// message. Empty would admit nothing, so every message names at least one.
+	AllowedNodeTypes() []string
+}
+
+var (
+	_ AttestationMsg = &MsgAttestRwa{}
+	_ AttestationMsg = &MsgAttestRwu{}
+)
+
+// AllowedNodeTypes implements AttestationMsg. RWA attestations make claims
+// about real-world assets, so only the trust tier may send them.
+func (msg *MsgAttestRwa) AllowedNodeTypes() []string { return []string{NodeTypeTrust} }
+
+// AllowedNodeTypes implements AttestationMsg. Usage reporting is open to both
+// tiers, but named rather than assumed: a node type absent from this list is
+// denied, so a tier added later reports nothing until it is added here too.
+func (msg *MsgAttestRwu) AllowedNodeTypes() []string { return []string{NodeTypeTrust, NodeTypeNano} }
+
 // GaslessMessages returns the msg type URLs this module admits with a zero
 // fee, appended to the network module's list when composing the app's
 // gasless allowlist.

@@ -21,19 +21,15 @@ const (
 	QuerierRoute = ModuleName
 )
 
-// NodeTypeTrust is the node type currently allowed to submit RWA
-// attestations.
-//
-// This is the last hardcoded node type in the module, and it is temporary. The
-// node type -> license type mapping that used to live here is gone: x/network
-// owns the registry and resolves the binding itself. What remains is the RWA
-// entitlement, which is TSC-specific and so cannot move to webstack — it
-// becomes a stored per-node-type record set by the node type's creator, at
-// which point this constant and the string comparison in AttestRwa both go.
-//
-// Until then a node type registered in x/network cannot be granted RWA rights
-// without a binary release, which is exactly the coupling being removed.
-const NodeTypeTrust = "trust"
+// Node type ids this module authorizes attestations for, as registered in
+// x/network. They are compiled in rather than read from the registry: which
+// tiers may attest is a protocol rule here, not chain configuration, so a node
+// type registered on chain that is not named in an AttestationMsg's
+// AllowedNodeTypes cannot attest at all.
+const (
+	NodeTypeTrust = "tsc.trust"
+	NodeTypeNano  = "tsc.nano"
+)
 
 // MaxAttestationsPerMsg bounds the attestations array in a single
 // MsgAttestRwa/MsgAttestRwu.
