@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	errorsmod "cosmossdk.io/errors"
 
@@ -13,23 +14,23 @@ import (
 	networktypes "github.com/webstack-sdk/webstack/x/network/types"
 )
 
-// AttestRwa records RWA contract-supply attestations. RWA attestation is
-// trust-only: nano nodes are rejected. The daily quota is consumed in the
-// ante handler; the handler re-reads the counter and never increments.
+// AttestRwa records RWA contract-supply attestations. Which node types may do
+// so is declared on the message itself, so adding a tier is a binary change
+// rather than chain configuration. The daily quota is consumed in the ante
+// handler; the handler re-reads the counter and never increments.
+//
+// There is no type-conditional logic here: the node types allowed to send this
+// message are declared on the message itself, and checkNode enforces that the
+// same way it does for every other attestation.
 func (ms msgServer) AttestRwa(ctx context.Context, msg *types.MsgAttestRwa) (*types.MsgAttestRwaResponse, error) {
 	params, err := ms.k.Params.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	node, err := ms.checkNode(ctx, msg.NodeAddress, ms.k.RwaCounters, params.RwaDailyLimit)
+	node, err := ms.checkNode(ctx, msg, ms.k.RwaCounters, params.RwaDailyLimit)
 	if err != nil {
 		return nil, err
-	}
-	// The only type-conditional rule in the flow: RWA attestations must come
-	// from trust nodes.
-	if node.Type != types.NodeTypeTrust {
-		return nil, errorsmod.Wrapf(types.ErrRwaTrustOnly, "node %s has type %q", msg.NodeAddress, node.Type)
 	}
 
 	if err := ms.recordAttestations(ctx, node, msg.Attestations, types.EventTypeAttestRwa); err != nil {
@@ -39,15 +40,16 @@ func (ms msgServer) AttestRwa(ctx context.Context, msg *types.MsgAttestRwa) (*ty
 	return &types.MsgAttestRwaResponse{}, nil
 }
 
-// AttestRwu records RWU contract-supply attestations, accepted from any
-// active node type.
+// AttestRwu records RWU contract-supply attestations. Like RWA it admits only
+// the node types the message names, so a tier not on that list reports nothing
+// even though it is active and licensed.
 func (ms msgServer) AttestRwu(ctx context.Context, msg *types.MsgAttestRwu) (*types.MsgAttestRwuResponse, error) {
 	params, err := ms.k.Params.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	node, err := ms.checkNode(ctx, msg.NodeAddress, ms.k.RwuCounters, params.RwuDailyLimit)
+	node, err := ms.checkNode(ctx, msg, ms.k.RwuCounters, params.RwuDailyLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -60,10 +62,15 @@ func (ms msgServer) AttestRwu(ctx context.Context, msg *types.MsgAttestRwu) (*ty
 }
 
 // checkNode verifies the signing node exists, is active, is backed by a
-// license of the type it declares, and that its daily counter has not already
-// gone beyond the limit. The counter is re-read only — the ante admission is
-// what increments it.
-func (ms msgServer) checkNode(ctx context.Context, nodeAddr string, counters collections.Map[string, types.ActivityCounter], limit uint64) (networktypes.Node, error) {
+// license of the type it declares, that its type is one the msg admits, and
+// that its daily counter has not already gone beyond the limit. The counter is
+// re-read only — the ante admission is what increments it.
+//
+// Taking the message rather than an address is what keeps the node type rule in
+// one place: every attestation names its own allowed tiers, so adding a third
+// kind needs no change here and cannot accidentally skip the check.
+func (ms msgServer) checkNode(ctx context.Context, msg types.AttestationMsg, counters collections.Map[string, types.ActivityCounter], limit uint64) (networktypes.Node, error) {
+	nodeAddr := msg.GetNodeAddress()
 	node, active, err := ms.k.networkKeeper.IsActiveNode(ctx, nodeAddr)
 	if err != nil {
 		return networktypes.Node{}, err
@@ -81,6 +88,16 @@ func (ms msgServer) checkNode(ctx context.Context, nodeAddr string, counters col
 	// mapping of its own.
 	if err := ms.k.networkKeeper.EnsureOperatorLicensedForNodeType(ctx, node.Operator, node.Type); err != nil {
 		return networktypes.Node{}, err
+	}
+
+	// Being licensed for a node type says the operator paid for the tier; it
+	// does not say the tier may make this particular claim. The allowed tiers
+	// are compiled in, so a node type absent from the list is denied even when
+	// x/network has it registered and licensed.
+	allowed := msg.AllowedNodeTypes()
+	if !slices.Contains(allowed, node.Type) {
+		return networktypes.Node{}, errorsmod.Wrapf(types.ErrNodeTypeNotAllowed,
+			"node %s has type %q; %v may send this attestation", nodeAddr, node.Type, allowed)
 	}
 
 	counter, err := counters.Get(ctx, nodeAddr)

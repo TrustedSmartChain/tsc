@@ -16,7 +16,7 @@ import (
 // resets across UTC days.
 func TestAdmissionQuotaBurn(t *testing.T) {
 	f := SetupTest(t)
-	node := f.addNode(types.NodeTypeTrust, networktypes.NodeActive)
+	node := f.addNode(nodeTypeTrust, networktypes.NodeActive)
 	msg := &types.MsgAttestRwa{NodeAddress: node.Address, Attestations: attestations(1)}
 
 	params, err := f.k.Params.Get(f.ctx)
@@ -42,7 +42,7 @@ func TestAdmissionQuotaBurn(t *testing.T) {
 // the counter's first roll of each UTC day, not on every tx.
 func TestAdmissionLicenseGate(t *testing.T) {
 	f := SetupTest(t)
-	node := f.addNode(types.NodeTypeTrust, networktypes.NodeActive)
+	node := f.addNode(nodeTypeTrust, networktypes.NodeActive)
 	msg := &types.MsgAttestRwa{NodeAddress: node.Address, Attestations: attestations(1)}
 
 	// First tx of the day passes and consumes quota.
@@ -69,7 +69,7 @@ func TestAdmissionStanding(t *testing.T) {
 	}), types.ErrNodeNotFound)
 
 	// Deactivated node.
-	deactivated := f.addNode(types.NodeTypeTrust, networktypes.NodeDeactivated)
+	deactivated := f.addNode(nodeTypeTrust, networktypes.NodeDeactivated)
 	require.ErrorIs(t, f.k.CheckAndConsumeGaslessQuota(f.ctx, &types.MsgAttestRwa{
 		NodeAddress:  deactivated.Address,
 		Attestations: attestations(1),

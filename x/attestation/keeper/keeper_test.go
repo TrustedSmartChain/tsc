@@ -30,11 +30,13 @@ import (
 // roll days advance from here via WithBlockTime.
 var fixtureBlockTime = time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC)
 
-// nodeTypeNano is a second node type for tests that need one the RWA rule does
-// not privilege. It is a test literal rather than a module constant: node types
-// are chain configuration registered in x/network, and this module no longer
-// declares any beyond the one the RWA gate still names.
-const nodeTypeNano = "nano"
+// Node types used by the fixture, aliased to the module constants the attest
+// messages name. nodeTypeTrust is the tier allowed to RWA-attest; nodeTypeNano
+// is allowed RWU only.
+const (
+	nodeTypeTrust = types.NodeTypeTrust
+	nodeTypeNano  = types.NodeTypeNano
+)
 
 // fakeNetworkKeeper implements types.NetworkKeeper for keeper tests.
 //
@@ -65,11 +67,18 @@ func newFakeNetworkKeeper() *fakeNetworkKeeper {
 // license marks operator as holding a license of the type backing nodeType,
 // and registers nodeType if it was not already.
 func (f *fakeNetworkKeeper) license(operator, nodeType string) {
-	f.registered[nodeType] = true
+	f.register(nodeType)
 	if f.licensed[operator] == nil {
 		f.licensed[operator] = make(map[string]bool)
 	}
 	f.licensed[operator][nodeType] = true
+}
+
+// register records nodeType as existing in x/network. Registration and
+// licensing are separate: a node type can be registered with nobody licensed
+// for it.
+func (f *fakeNetworkKeeper) register(nodeType string) {
+	f.registered[nodeType] = true
 }
 
 // revoke drops operator's license for nodeType, leaving the node type
@@ -155,6 +164,11 @@ func SetupTest(t *testing.T) *testFixture {
 	f.queryServer = keeper.NewQuerier(f.k)
 
 	require.NoError(t, f.k.InitGenesis(f.ctx, types.DefaultGenesis()))
+
+	// Both fixture tiers exist in x/network. Which of them may attest is not
+	// state at all — the messages name it — so there is nothing else to seed.
+	f.network.register(nodeTypeTrust)
+	f.network.register(nodeTypeNano)
 
 	_ = module.NewAppModule(encCfg.Codec, f.k)
 

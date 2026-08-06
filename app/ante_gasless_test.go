@@ -90,13 +90,16 @@ var gaslessTestCatalog = []struct {
 	licenseType string
 	maxSupply   math.Int
 }{
-	{nodeType: attestationtypes.NodeTypeTrust, licenseType: "node.trust", maxSupply: math.NewInt(240_000)},
-	{nodeType: "nano", licenseType: "node.nano", maxSupply: math.NewInt(200_000)},
+	{nodeType: trustNodeType, licenseType: trustLicenseType, maxSupply: math.NewInt(240_000)},
+	{nodeType: attestationtypes.NodeTypeNano, licenseType: nanoLicenseType, maxSupply: math.NewInt(200_000)},
 }
 
-// The license types backing the two catalog entries, named for the tests that
-// reference one directly.
+// The node and license types backing the two catalog entries, named for the
+// tests that reference one directly. None of these are module constants: node
+// types live in x/network's registry and license types in x/license, so the
+// test declares the vocabulary it registers.
 const (
+	trustNodeType    = attestationtypes.NodeTypeTrust
 	trustLicenseType = "node.trust"
 	nanoLicenseType  = "node.nano"
 )
@@ -133,9 +136,7 @@ func (env *gaslessEnv) newSigner() (cryptotypes.PrivKey, sdk.AccAddress) {
 // registry.
 //
 // Everything runs through the real msg servers rather than store writes, so
-// this is the actual launch runbook rather than a fixture. MsgCreateNodeType
-// additionally exercises the creator match: the signer must be the recorded
-// creator of the license type it binds to.
+// this is the actual launch runbook rather than a fixture.
 func (env *gaslessEnv) bootstrapCatalog() {
 	env.t.Helper()
 
@@ -143,9 +144,9 @@ func (env *gaslessEnv) bootstrapCatalog() {
 	networkMsgServer := networkkeeper.NewMsgServerImpl(env.app.NetworkKeeper)
 	permissionMsgServer := permissionkeeper.NewMsgServerImpl(env.app.PermissionKeeper)
 
-	// Step one, and the step the upgrade used to cover: the owner grants itself
-	// the two create permissions. Both are module-wide, so both carry the empty
-	// scope — the only key form x/permission stores an unscoped grant under.
+	// Step one: the owner grants itself the two module-wide create permissions.
+	// Both carry the empty scope — the only key form x/permission stores an
+	// unscoped grant under.
 	for _, g := range []struct{ module, permission string }{
 		{licensetypes.ModuleName, licensetypes.PermissionCreateType},
 		{networktypes.ModuleName, networktypes.PermissionNodeTypeCreate},
@@ -187,8 +188,9 @@ func (env *gaslessEnv) bootstrapCatalog() {
 	})
 	require.NoError(env.t, err)
 
-	// Node types last: each binds to a license type that must already exist and
-	// must have been created by this same signer.
+	// Node types last: each binds to a license type that must already exist.
+	// Ordering is the constraint, not authorship — the nodetype.create grant
+	// admits a binding to any registered license type.
 	for _, entry := range gaslessTestCatalog {
 		_, err := networkMsgServer.CreateNodeType(env.ctx, &networktypes.MsgCreateNodeType{
 			Creator:       NetworkNamespaceOwner,
@@ -197,6 +199,7 @@ func (env *gaslessEnv) bootstrapCatalog() {
 		})
 		require.NoError(env.t, err, "owner could not create node type %s", entry.nodeType)
 	}
+
 }
 
 // seedLicense writes one active license of typeID for holder straight into
@@ -237,10 +240,10 @@ func (env *gaslessEnv) seedNode(node sdk.AccAddress) {
 	now := env.ctx.BlockTime()
 	require.NoError(env.t, nk.Nodes.Set(env.ctx, node.String(), networktypes.Node{
 		Address: node.String(), Operator: env.operator.String(), ActivatedBy: env.key.String(),
-		Type: attestationtypes.NodeTypeTrust, Status: networktypes.NodeActive, LastActiveTime: now,
+		Type: trustNodeType, Status: networktypes.NodeActive, LastActiveTime: now,
 	}))
 	require.NoError(env.t, nk.OperatorNodes.Set(env.ctx, collections.Join(env.operator.String(), node.String())))
-	require.NoError(env.t, nk.RecentNodeActivity.Set(env.ctx, collections.Join4(env.operator.String(), attestationtypes.NodeTypeTrust, networktypes.DayEpoch(now), node.String())))
+	require.NoError(env.t, nk.RecentNodeActivity.Set(env.ctx, collections.Join4(env.operator.String(), trustNodeType, networktypes.DayEpoch(now), node.String())))
 }
 
 func setupGaslessEnv(t *testing.T) *gaslessEnv {
@@ -334,7 +337,7 @@ func setupGaslessEnv(t *testing.T) *gaslessEnv {
 	require.NoError(t, nk.OperatorActivationKeys.Set(env.ctx, collections.Join(env.operator.String(), env.key.String())))
 	env.seedNode(env.node)
 	env.seedNode(env.node2)
-	require.NoError(t, nk.OperatorNodeCounts.Set(env.ctx, collections.Join(env.operator.String(), attestationtypes.NodeTypeTrust), networktypes.OperatorNodeCounts{Total: 2, Active: 2}))
+	require.NoError(t, nk.OperatorNodeCounts.Set(env.ctx, collections.Join(env.operator.String(), trustNodeType), networktypes.OperatorNodeCounts{Total: 2, Active: 2}))
 	require.NoError(t, nk.Operators.Set(env.ctx, env.operator.String()))
 
 	// Fund the operator for the paid-path cases.
@@ -514,9 +517,6 @@ func TestGaslessAnte(t *testing.T) {
 			registered = append(registered, id)
 			supply[id] = lt.MaxSupply
 			require.False(t, lt.Transferrable, "node license %s should not be transferrable", id)
-			// The creator is what x/network matches against when a node type
-			// binds to this license type; without it the binding is unauthorized.
-			require.Equal(t, LicenseNamespaceOwner, lt.Creator, "license type %s records the wrong creator", id)
 			return false, nil
 		}))
 
@@ -536,7 +536,6 @@ func TestGaslessAnte(t *testing.T) {
 			nt, err := env.app.NetworkKeeper.NodeTypes.Get(env.ctx, entry.nodeType)
 			require.NoError(t, err, "node type %s is not registered", entry.nodeType)
 			require.Equal(t, entry.licenseType, nt.LicenseTypeId)
-			require.Equal(t, NetworkNamespaceOwner, nt.Creator)
 			require.Contains(t, registered, nt.LicenseTypeId)
 
 			// One-to-one in both directions: the reverse map is what makes a
@@ -544,6 +543,15 @@ func TestGaslessAnte(t *testing.T) {
 			bound, err := env.app.NetworkKeeper.NodeTypeByLicenseType.Get(env.ctx, entry.licenseType)
 			require.NoError(t, err)
 			require.Equal(t, entry.nodeType, bound)
+		}
+
+		// Which node types may attest is compiled into the messages, not stored,
+		// so the catalog only has to register the tiers those messages name.
+		require.Equal(t, []string{attestationtypes.NodeTypeTrust},
+			(&attestationtypes.MsgAttestRwa{}).AllowedNodeTypes())
+		for _, entry := range gaslessTestCatalog {
+			require.Contains(t, (&attestationtypes.MsgAttestRwu{}).AllowedNodeTypes(), entry.nodeType,
+				"registered tier %s cannot RWU-attest", entry.nodeType)
 		}
 
 		for _, entry := range gaslessTestCatalog {

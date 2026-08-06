@@ -28,11 +28,11 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MsgClient interface {
-	// AttestRwa records RWA contract-supply attestations from an active trust
-	// node. Gasless; nano nodes may not RWA-attest.
+	// AttestRwa records RWA contract-supply attestations. Gasless; the signing
+	// node's type must be one MsgAttestRwa admits.
 	AttestRwa(ctx context.Context, in *MsgAttestRwa, opts ...grpc.CallOption) (*MsgAttestRwaResponse, error)
-	// AttestRwu records RWU contract-supply attestations from any active
-	// node. Gasless.
+	// AttestRwu records RWU contract-supply attestations. Gasless; the signing
+	// node's type must be one MsgAttestRwu admits.
 	AttestRwu(ctx context.Context, in *MsgAttestRwu, opts ...grpc.CallOption) (*MsgAttestRwuResponse, error)
 	// UpdateParams defines a governance operation for updating the parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
@@ -77,11 +77,11 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
 type MsgServer interface {
-	// AttestRwa records RWA contract-supply attestations from an active trust
-	// node. Gasless; nano nodes may not RWA-attest.
+	// AttestRwa records RWA contract-supply attestations. Gasless; the signing
+	// node's type must be one MsgAttestRwa admits.
 	AttestRwa(context.Context, *MsgAttestRwa) (*MsgAttestRwaResponse, error)
-	// AttestRwu records RWU contract-supply attestations from any active
-	// node. Gasless.
+	// AttestRwu records RWU contract-supply attestations. Gasless; the signing
+	// node's type must be one MsgAttestRwu admits.
 	AttestRwu(context.Context, *MsgAttestRwu) (*MsgAttestRwuResponse, error)
 	// UpdateParams defines a governance operation for updating the parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
