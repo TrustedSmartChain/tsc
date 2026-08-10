@@ -18,7 +18,7 @@ set -eu
 
 export KEY="acc0"
 export KEY2="acc1"
-# KEY3 is the validator operator (gentx below) and the license/network namespace
+# KEY3 is the validator operator (gentx below) and the license/network module
 # owner in genesis. The label is historical: it does NOT derive x/distro's
 # DefaultMintingAddress, so MsgMint is not signable on this dev chain. Seed
 # distro's minting_address from $KEY3_ADDR below if you need to exercise it.
@@ -52,12 +52,12 @@ export ROSETTA=${ROSETTA:-"8080"}
 export JSONRPC=${JSONRPC:-"8545"}
 export JSONRPC_WS=${JSONRPC_WS:-"8546"}
 export BLOCK_TIME=${BLOCK_TIME:-"5s"}
-# SEED_CATALOG=false leaves the license types, node types and permission grants
+# SEED_CATALOG=false leaves the license types, node types and access grants
 # empty, so genesis carries only what the v3 upgrade handler actually seeds:
-# namespace ownership and the network params.
+# module ownership and the network params.
 #
 # Use it to rehearse the real launch runbook against a dev chain: with the
-# catalog pre-seeded, MsgGrantPermissions, MsgCreateLicenseType and
+# catalog pre-seeded, MsgGrantAccess, MsgCreateLicenseType and
 # MsgCreateNodeType never run, so the ordering they depend on goes untested.
 export SEED_CATALOG=${SEED_CATALOG:-"true"}
 # Minimum gas price in $DENOM per unit of gas, as a decimal. Non-zero by
@@ -147,7 +147,7 @@ from_scratch () {
   # has to be signable once someone tries to grant, transfer ownership, or
   # update a license type, which the pre-seeded path never does.
   KEY3_ADDR=$($BINARY keys show $KEY3 -a --keyring-backend $KEYRING --home $HOME_DIR)
-  echo "namespace owner / validator operator: $KEY3_ADDR"
+  echo "module owner / validator operator: $KEY3_ADDR"
 
   $BINARY init $MONIKER --chain-id $CHAIN_ID --default-denom $DENOM --home $HOME_DIR
 
@@ -227,11 +227,11 @@ from_scratch () {
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_fee"]=[]'
   update_test_genesis '.app_state["tokenfactory"]["params"]["denom_creation_gas_consume"]=100000'
 
-  # license / permission / network / attestation.
+  # license / network / attestation.
   #
   # This is a dev chain, so it seeds a ready-to-use catalog. The v3 upgrade
-  # handler deliberately does NOT: on a real network it seeds namespace
-  # ownership and nothing else — no grants, no license types, no node types.
+  # handler deliberately does NOT: on a real network it seeds module ownership
+  # and nothing else — no grants, no license types, no node types.
   # Everything below is done there by tx once the upgrade lands, in this order:
   # the owner grants itself license type.create and network nodetype.create,
   # creates the license types, grants itself the per-type issue/revoke, then
@@ -241,13 +241,16 @@ from_scratch () {
   # x/attestation needs no genesis of its own — its node type authorization is
   # compiled in rather than configured.
   #
-  # Namespace owner for both the license and network namespaces is KEY3.
-  update_test_genesis `printf '.app_state["permission"]["namespaces"]=[{"module":"license","owner":"%s"},{"module":"network","owner":"%s"}]' $KEY3_ADDR $KEY3_ADDR`
-  # The catalog. All three seeds below move together and are guarded as a unit:
-  # x/permission validates grant scopes at genesis against the license type
+  # Owner of both the license and network modules is KEY3. Ownership is a module
+  # parameter now rather than a record in a shared access module, so it is set
+  # once per module.
+  update_test_genesis `printf '.app_state["license"]["params"]["owner"]="%s"' $KEY3_ADDR`
+  update_test_genesis `printf '.app_state["network"]["params"]["owner"]="%s"' $KEY3_ADDR`
+  # The catalog. All four seeds below move together and are guarded as a unit:
+  # x/license validates grant scopes at genesis against the license type
   # registry, so seeding a grant scoped to "tsc.node.trust" while license_types
-  # is empty panics at InitChain. Guarding only one of the three produces a
-  # chain that will not start.
+  # is empty panics at InitChain. Guarding only some of them produces a chain
+  # that will not start.
   if [ "$SEED_CATALOG" != "false" ]; then
   # The node license types. These ids are license SKUs and are deliberately NOT
   # the node type strings below; the node_types registry binds one to the other.
@@ -267,16 +270,18 @@ from_scratch () {
   update_test_genesis '.app_state["network"]["node_types"]=[{"id":"tsc.trust","license_type_id":"tsc.node.trust"},{"id":"tsc.nano","license_type_id":"tsc.node.nano"}]'
   # KEY3 may create license types and node types, and issue and revoke node
   # licenses. Required, not merely convenient: both modules check the grant
-  # table with no owner bypass. type.create and nodetype.create are module-wide,
-  # so their scope is empty — the only form x/permission stores an unscoped
-  # grant under.
+  # table with no owner bypass. Each module now carries its own grants, so this
+  # is two seeds rather than one. type.create and nodetype.create are
+  # module-wide, so their scope is empty — the only form an unscoped grant is
+  # stored under.
   #
   # The issue/revoke scopes are license type ids and are checked against the
   # registry seeded above: a scope naming a license type that does not exist
   # panics at InitChain, so renaming a license type means renaming it here too.
-  update_test_genesis `printf '.app_state["permission"]["grants"]=[{"module":"license","grantee":"%s","permission":"type.create","scope":""},{"module":"license","grantee":"%s","permission":"issue","scope":"tsc.node.trust"},{"module":"license","grantee":"%s","permission":"revoke","scope":"tsc.node.trust"},{"module":"license","grantee":"%s","permission":"issue","scope":"tsc.node.nano"},{"module":"license","grantee":"%s","permission":"revoke","scope":"tsc.node.nano"},{"module":"network","grantee":"%s","permission":"nodetype.create","scope":""}]' $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR`
+  update_test_genesis `printf '.app_state["license"]["grants"]=[{"grantee":"%s","action":"type.create","scope":""},{"grantee":"%s","action":"issue","scope":"tsc.node.trust"},{"grantee":"%s","action":"revoke","scope":"tsc.node.trust"},{"grantee":"%s","action":"issue","scope":"tsc.node.nano"},{"grantee":"%s","action":"revoke","scope":"tsc.node.nano"}]' $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR $KEY3_ADDR`
+  update_test_genesis `printf '.app_state["network"]["grants"]=[{"grantee":"%s","action":"nodetype.create","scope":""}]' $KEY3_ADDR`
   else
-    echo "SEED_CATALOG=false — genesis carries namespace ownership only, as the v3 handler does"
+    echo "SEED_CATALOG=false — genesis carries module ownership only, as the v3 handler does"
   fi
   # Network params carry only knobs now — the counted license SKUs and the node
   # types an activation may declare both moved into the node_types registry

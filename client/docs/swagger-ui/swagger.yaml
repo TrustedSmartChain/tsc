@@ -763,6 +763,594 @@ paths:
                       format: byte
       tags:
         - Msg
+  /nodelabs/license/actions:
+    get:
+      summary: >-
+        Actions queries the action vocabulary this module recognises. It is
+
+        compiled into the binary rather than stored, so the answer is the same
+        for
+
+        every node running this version.
+      operationId: Actions
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              actions:
+                type: array
+                items:
+                  type: string
+                description: actions is the full vocabulary, in ascending order.
+              unscoped:
+                type: array
+                items:
+                  type: string
+                description: >-
+                  unscoped is the subset of actions granted module-wide, whose
+                  grants must
+
+                  carry an empty scope. Every other action must name a license
+                  type.
+            description: >-
+              QueryActionsResponse is the response type for the Query/Actions
+              RPC method.
+
+              The vocabulary is compiled in rather than stored, so this query is
+              not
+
+              paginated.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /nodelabs/license/can/{grantee}/{action}:
+    get:
+      summary: Can reports whether a grantee holds an (action, scope) grant.
+      operationId: Can
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              can:
+                type: boolean
+            description: >-
+              QueryCanResponse is the response type for the Query/Can RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: grantee
+          in: path
+          required: true
+          type: string
+        - name: action
+          in: path
+          required: true
+          type: string
+        - name: scope
+          description: scope is the license type id, empty for a module-wide action.
+          in: query
+          required: false
+          type: string
+      tags:
+        - Query
+  /nodelabs/license/grants:
+    get:
+      summary: Grants queries every access grant in the module.
+      operationId: Grants
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    grantee:
+                      type: string
+                    action:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    Grant is a single (grantee, action, scope) entry — the flat
+                    form stored in
+
+                    state and served by queries and genesis. The action
+                    vocabulary is static
+
+                    configuration of the module that owns the grant; scope is an
+                    opaque resource
+
+                    identifier owned by that module (e.g. a license type id) and
+                    is empty for
+
+                    modules that do not scope their actions.
+
+
+                    There is no module field: a grant lives in the store of the
+                    module that
+
+                    governs it, so the store is the boundary.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryGrantsResponse is the response type for the Query/Grants RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /nodelabs/license/grants/{grantee}:
+    get:
+      summary: GrantsByGrantee queries the grants held by an address.
+      operationId: GrantsByGrantee
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    grantee:
+                      type: string
+                    action:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    Grant is a single (grantee, action, scope) entry — the flat
+                    form stored in
+
+                    state and served by queries and genesis. The action
+                    vocabulary is static
+
+                    configuration of the module that owns the grant; scope is an
+                    opaque resource
+
+                    identifier owned by that module (e.g. a license type id) and
+                    is empty for
+
+                    modules that do not scope their actions.
+
+
+                    There is no module field: a grant lives in the store of the
+                    module that
+
+                    governs it, so the store is the boundary.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryGrantsByGranteeResponse is the response type for the
+              Query/GrantsByGrantee RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: grantee
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /nodelabs/license/grants_by_scope/{scope}:
+    get:
+      summary: >-
+        GrantsByScope queries the grants that apply to a license type,
+        optionally
+
+        narrowed to a single action.
+      operationId: GrantsByScope
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    grantee:
+                      type: string
+                    action:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    Grant is a single (grantee, action, scope) entry — the flat
+                    form stored in
+
+                    state and served by queries and genesis. The action
+                    vocabulary is static
+
+                    configuration of the module that owns the grant; scope is an
+                    opaque resource
+
+                    identifier owned by that module (e.g. a license type id) and
+                    is empty for
+
+                    modules that do not scope their actions.
+
+
+                    There is no module field: a grant lives in the store of the
+                    module that
+
+                    governs it, so the store is the boundary.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryGrantsByScopeResponse is the response type for the
+              Query/GrantsByScope RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: scope
+          description: >-
+            scope is the license type id. The empty scope selects the
+            module-wide
+
+            grants; it is a real key component, not a wildcard.
+          in: path
+          required: true
+          type: string
+        - name: action
+          description: action optionally narrows the result to a single action.
+          in: query
+          required: false
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
   /nodelabs/license/license/{id}:
     get:
       summary: >-
@@ -1777,12 +2365,70 @@ paths:
           type: boolean
       tags:
         - Query
+  /nodelabs/license/params:
+    get:
+      summary: Params queries the module parameters, including the module owner.
+      operationId: Params
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                type: object
+                properties:
+                  owner:
+                    type: string
+                    description: >-
+                      owner is the address allowed to grant and revoke access
+                      within this
+
+                      module. It is empty until governance sets it, and while
+                      empty no grant can
+
+                      be made — the module fails closed.
+
+
+                      Owning the module confers the right to delegate actions,
+                      not the actions
+
+                      themselves: the owner must grant itself "type.create" like
+                      anyone else.
+                description: Params defines the parameters for the license module.
+            description: >-
+              QueryParamsResponse is the response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
   /nodelabs/license/tx/create_license_type:
     post:
       summary: |-
         CreateLicenseType creates a new license type. Signer must hold the
-        module-wide "type.create" grant; owning the license namespace is not
-        sufficient on its own.
+        module-wide "type.create" grant; owning the module is not sufficient on
+        its own.
       operationId: CreateLicenseType
       responses:
         '200':
@@ -1825,12 +2471,12 @@ paths:
                 type: string
                 description: >-
                   creator is the signer and must hold the module-wide
-                  "type.create"
+                  "type.create" grant.
 
-                  permission. It is not the license namespace owner: ownership
-                  grants the
+                  It is not the module owner: ownership confers the right to
+                  delegate the
 
-                  right, it does not carry it. The address is not recorded on
+                  action, not the action itself. The address is not recorded on
                   the license
 
                   type.
@@ -1841,6 +2487,85 @@ paths:
               max_supply:
                 type: string
             description: MsgCreateLicenseType is the Msg/CreateLicenseType request type.
+      tags:
+        - Msg
+  /nodelabs/license/tx/grant_access:
+    post:
+      summary: >-
+        GrantAccess merges access grants for a grantee. Signer must be the
+        module
+
+        owner. Existing grants are preserved; new (action, scope) pairs are
+
+        unioned in.
+      operationId: GrantAccess
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgGrantAccessResponse is the Msg/GrantAccess response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+                description: owner is the signer and must be the current module owner.
+              grantee:
+                type: string
+                description: grantee is the address receiving the grants.
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action:
+                      type: string
+                    scopes:
+                      type: array
+                      items:
+                        type: string
+                  description: >-
+                    ActionScopes is one entry within a grant message: a single
+                    action applied to
+
+                    a set of scopes. An empty scopes list is the module-wide
+                    grant form.
+                description: >-
+                  grants are the (action, scopes) entries to union onto the
+                  grantee. Scoped
+
+                  actions must name an existing license type; module-wide
+                  actions must carry
+
+                  no scopes.
+            description: MsgGrantAccess is the Msg/GrantAccess request type.
       tags:
         - Msg
   /nodelabs/license/tx/issue_licenses:
@@ -1920,6 +2645,79 @@ paths:
             description: MsgIssueLicenses is the Msg/IssueLicenses request type.
       tags:
         - Msg
+  /nodelabs/license/tx/revoke_access:
+    post:
+      summary: >-
+        RevokeAccess removes the given (action, scope) pairs from a grantee.
+        Pairs
+
+        that are not currently granted are silently ignored. Signer must be the
+
+        module owner.
+      operationId: RevokeAccess
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgRevokeAccessResponse is the Msg/RevokeAccess response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+                description: owner is the signer and must be the current module owner.
+              grantee:
+                type: string
+                description: grantee is the address to remove grants from.
+              actions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    ActionScope identifies a single (action, scope) pair to
+                    revoke. An empty
+
+                    scope targets the module-wide grant.
+                description: >-
+                  actions are the (action, scope) pairs to remove. Pairs that
+                  are not
+
+                  granted are ignored.
+            description: MsgRevokeAccess is the Msg/RevokeAccess request type.
+      tags:
+        - Msg
   /nodelabs/license/tx/revoke_licenses:
     post:
       summary: >-
@@ -1987,11 +2785,74 @@ paths:
             description: MsgRevokeLicenses is the Msg/RevokeLicenses request type.
       tags:
         - Msg
+  /nodelabs/license/tx/transfer_ownership:
+    post:
+      summary: |-
+        TransferOwnership hands the module to a new owner. Signer must be the
+        current owner. It writes only the owner parameter, leaving every other
+        parameter untouched.
+      operationId: TransferOwnership
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgTransferOwnershipResponse is the Msg/TransferOwnership response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+                description: owner is the signer and must be the current module owner.
+              new_owner:
+                type: string
+                description: new_owner is the address to hand the module to.
+            description: >-
+              MsgTransferOwnership is the Msg/TransferOwnership request type. It
+              is the
+
+              only message that lets a non-authority signer write a parameter,
+              and it
+
+              writes just the one: the rest of the parameter set is read back
+              and
+
+              preserved.
+      tags:
+        - Msg
   /nodelabs/license/tx/update_license_type:
     post:
       summary: >-
         UpdateLicenseType updates an existing license type. Signer must be the
-        license namespace owner.
+        module owner.
       operationId: UpdateLicenseType
       responses:
         '200':
@@ -2044,880 +2905,24 @@ paths:
               creation.
       tags:
         - Msg
-  /nodelabs/permission/grants/{module}:
-    get:
-      summary: Grants queries every grant within a namespace.
-      operationId: Grants
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              grants:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    module:
-                      type: string
-                    grantee:
-                      type: string
-                    permission:
-                      type: string
-                    scope:
-                      type: string
-                  description: >-
-                    Grant is a single (module, grantee, permission, scope) entry
-                    — the flat form
-
-                    stored in state and served by queries and genesis. The
-                    permission vocabulary
-
-                    is registered in-process by the consuming module; scope is
-                    an opaque
-
-                    resource identifier owned by that module (e.g. a license
-                    type id) and may be
-
-                    empty for namespaces that do not scope their permissions.
-              pagination:
-                type: object
-                properties:
-                  next_key:
-                    type: string
-                    format: byte
-                    description: |-
-                      next_key is the key to be passed to PageRequest.key to
-                      query the next page most efficiently. It will be empty if
-                      there are no more results.
-                  total:
-                    type: string
-                    format: uint64
-                    title: >-
-                      total is total number of results available if
-                      PageRequest.count_total
-
-                      was set, its value is undefined otherwise
-                description: >-
-                  PageResponse is to be embedded in gRPC response messages where
-                  the
-
-                  corresponding request message has used PageRequest.
-
-                   message SomeResponse {
-                           repeated Bar results = 1;
-                           PageResponse page = 2;
-                   }
-            description: >-
-              QueryGrantsResponse is the response type for the Query/Grants RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: module
-          in: path
-          required: true
-          type: string
-        - name: pagination.key
-          description: |-
-            key is a value returned in PageResponse.next_key to begin
-            querying the next page most efficiently. Only one of offset or key
-            should be set.
-          in: query
-          required: false
-          type: string
-          format: byte
-        - name: pagination.offset
-          description: >-
-            offset is a numeric offset that can be used when key is unavailable.
-
-            It is less efficient than using key. Only one of offset or key
-            should
-
-            be set.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.limit
-          description: >-
-            limit is the total number of results to be returned in the result
-            page.
-
-            If left empty it will default to a value to be set by each app.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.count_total
-          description: >-
-            count_total is set to true  to indicate that the result set should
-            include
-
-            a count of the total number of items available for pagination in
-            UIs.
-
-            count_total is only respected when offset is used. It is ignored
-            when key
-
-            is set.
-          in: query
-          required: false
-          type: boolean
-        - name: pagination.reverse
-          description: >-
-            reverse is set to true if results are to be returned in the
-            descending order.
-          in: query
-          required: false
-          type: boolean
-      tags:
-        - Query
-  /nodelabs/permission/grants/{module}/{grantee}:
-    get:
-      summary: >-
-        GrantsByGrantee queries the grants held by an address within a
-        namespace.
-      operationId: GrantsByGrantee
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              grants:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    module:
-                      type: string
-                    grantee:
-                      type: string
-                    permission:
-                      type: string
-                    scope:
-                      type: string
-                  description: >-
-                    Grant is a single (module, grantee, permission, scope) entry
-                    — the flat form
-
-                    stored in state and served by queries and genesis. The
-                    permission vocabulary
-
-                    is registered in-process by the consuming module; scope is
-                    an opaque
-
-                    resource identifier owned by that module (e.g. a license
-                    type id) and may be
-
-                    empty for namespaces that do not scope their permissions.
-              pagination:
-                type: object
-                properties:
-                  next_key:
-                    type: string
-                    format: byte
-                    description: |-
-                      next_key is the key to be passed to PageRequest.key to
-                      query the next page most efficiently. It will be empty if
-                      there are no more results.
-                  total:
-                    type: string
-                    format: uint64
-                    title: >-
-                      total is total number of results available if
-                      PageRequest.count_total
-
-                      was set, its value is undefined otherwise
-                description: >-
-                  PageResponse is to be embedded in gRPC response messages where
-                  the
-
-                  corresponding request message has used PageRequest.
-
-                   message SomeResponse {
-                           repeated Bar results = 1;
-                           PageResponse page = 2;
-                   }
-            description: >-
-              QueryGrantsByGranteeResponse is the response type for the
-              Query/GrantsByGrantee RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: module
-          in: path
-          required: true
-          type: string
-        - name: grantee
-          in: path
-          required: true
-          type: string
-        - name: pagination.key
-          description: |-
-            key is a value returned in PageResponse.next_key to begin
-            querying the next page most efficiently. Only one of offset or key
-            should be set.
-          in: query
-          required: false
-          type: string
-          format: byte
-        - name: pagination.offset
-          description: >-
-            offset is a numeric offset that can be used when key is unavailable.
-
-            It is less efficient than using key. Only one of offset or key
-            should
-
-            be set.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.limit
-          description: >-
-            limit is the total number of results to be returned in the result
-            page.
-
-            If left empty it will default to a value to be set by each app.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.count_total
-          description: >-
-            count_total is set to true  to indicate that the result set should
-            include
-
-            a count of the total number of items available for pagination in
-            UIs.
-
-            count_total is only respected when offset is used. It is ignored
-            when key
-
-            is set.
-          in: query
-          required: false
-          type: boolean
-        - name: pagination.reverse
-          description: >-
-            reverse is set to true if results are to be returned in the
-            descending order.
-          in: query
-          required: false
-          type: boolean
-      tags:
-        - Query
-  /nodelabs/permission/grants_by_scope/{module}/{scope}:
-    get:
-      summary: >-
-        GrantsByScope queries the grants within a namespace that apply to a
-        scope,
-
-        optionally filtered to a single permission.
-      operationId: GrantsByScope
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              grants:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    module:
-                      type: string
-                    grantee:
-                      type: string
-                    permission:
-                      type: string
-                    scope:
-                      type: string
-                  description: >-
-                    Grant is a single (module, grantee, permission, scope) entry
-                    — the flat form
-
-                    stored in state and served by queries and genesis. The
-                    permission vocabulary
-
-                    is registered in-process by the consuming module; scope is
-                    an opaque
-
-                    resource identifier owned by that module (e.g. a license
-                    type id) and may be
-
-                    empty for namespaces that do not scope their permissions.
-              pagination:
-                type: object
-                properties:
-                  next_key:
-                    type: string
-                    format: byte
-                    description: |-
-                      next_key is the key to be passed to PageRequest.key to
-                      query the next page most efficiently. It will be empty if
-                      there are no more results.
-                  total:
-                    type: string
-                    format: uint64
-                    title: >-
-                      total is total number of results available if
-                      PageRequest.count_total
-
-                      was set, its value is undefined otherwise
-                description: >-
-                  PageResponse is to be embedded in gRPC response messages where
-                  the
-
-                  corresponding request message has used PageRequest.
-
-                   message SomeResponse {
-                           repeated Bar results = 1;
-                           PageResponse page = 2;
-                   }
-            description: >-
-              QueryGrantsByScopeResponse is the response type for the
-              Query/GrantsByScope RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: module
-          in: path
-          required: true
-          type: string
-        - name: scope
-          in: path
-          required: true
-          type: string
-        - name: permission
-          description: permission optionally narrows the result to a single permission.
-          in: query
-          required: false
-          type: string
-        - name: pagination.key
-          description: |-
-            key is a value returned in PageResponse.next_key to begin
-            querying the next page most efficiently. Only one of offset or key
-            should be set.
-          in: query
-          required: false
-          type: string
-          format: byte
-        - name: pagination.offset
-          description: >-
-            offset is a numeric offset that can be used when key is unavailable.
-
-            It is less efficient than using key. Only one of offset or key
-            should
-
-            be set.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.limit
-          description: >-
-            limit is the total number of results to be returned in the result
-            page.
-
-            If left empty it will default to a value to be set by each app.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.count_total
-          description: >-
-            count_total is set to true  to indicate that the result set should
-            include
-
-            a count of the total number of items available for pagination in
-            UIs.
-
-            count_total is only respected when offset is used. It is ignored
-            when key
-
-            is set.
-          in: query
-          required: false
-          type: boolean
-        - name: pagination.reverse
-          description: >-
-            reverse is set to true if results are to be returned in the
-            descending order.
-          in: query
-          required: false
-          type: boolean
-      tags:
-        - Query
-  /nodelabs/permission/has_permission/{module}/{grantee}/{permission}:
-    get:
-      summary: >-
-        HasPermission reports whether a grantee holds a (permission, scope)
-        grant
-
-        within a namespace.
-      operationId: HasPermission
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              has_permission:
-                type: boolean
-            description: >-
-              QueryHasPermissionResponse is the response type for the
-              Query/HasPermission RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: module
-          in: path
-          required: true
-          type: string
-        - name: grantee
-          in: path
-          required: true
-          type: string
-        - name: permission
-          in: path
-          required: true
-          type: string
-        - name: scope
-          in: query
-          required: false
-          type: string
-      tags:
-        - Query
-  /nodelabs/permission/module/{module}:
-    get:
-      summary: >-
-        Module queries a registered module's namespace owner and the permission
-
-        vocabulary the module registered in this binary. The owner is empty if
-        it
-
-        has not been set yet.
-      operationId: Module
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              namespace:
-                type: object
-                properties:
-                  module:
-                    type: string
-                    description: module is the consuming module's name (e.g. "license").
-                  owner:
-                    type: string
-                    description: >-
-                      owner is the address that controls grants within this
-                      namespace.
-                description: >-
-                  Namespace is the per-module grant domain. Each consuming
-                  module owns exactly
-
-                  one namespace, keyed by its module name; the namespace owner
-                  is the address
-
-                  allowed to grant and revoke permissions within it.
-              permissions:
-                type: array
-                items:
-                  type: string
-                description: >-
-                  permissions is the valid permission vocabulary the module
-                  registered in
-
-                  this binary, in ascending order.
-            description: >-
-              QueryModuleResponse is the response type for the Query/Module RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: module
-          in: path
-          required: true
-          type: string
-      tags:
-        - Query
-  /nodelabs/permission/modules:
-    get:
-      summary: >-
-        Modules queries every registered module namespace. The owner is empty
-        for
-
-        modules whose namespace owner has not been set yet.
-      operationId: Modules
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              namespaces:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    module:
-                      type: string
-                      description: module is the consuming module's name (e.g. "license").
-                    owner:
-                      type: string
-                      description: >-
-                        owner is the address that controls grants within this
-                        namespace.
-                  description: >-
-                    Namespace is the per-module grant domain. Each consuming
-                    module owns exactly
-
-                    one namespace, keyed by its module name; the namespace owner
-                    is the address
-
-                    allowed to grant and revoke permissions within it.
-            description: >-
-              QueryModulesResponse is the response type for the Query/Modules
-              RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      tags:
-        - Query
-  /nodelabs/permission/tx/grant_permissions:
-    post:
-      summary: |-
-        GrantPermissions merges permission grants for a grantee within a
-        namespace. Signer must be the namespace owner. Existing grants are
-        preserved; new (permission, scope) pairs are unioned in.
-      operationId: GrantPermissions
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            description: >-
-              MsgGrantPermissionsResponse is the Msg/GrantPermissions response
-              type.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              owner:
-                type: string
-              module:
-                type: string
-              grantee:
-                type: string
-              grants:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    permission:
-                      type: string
-                    scopes:
-                      type: array
-                      items:
-                        type: string
-                  description: >-
-                    PermissionScopes is one grant entry within a
-                    MsgGrantPermissions: a single
-
-                    permission applied to a set of scopes.
-            description: MsgGrantPermissions is the Msg/GrantPermissions request type.
-      tags:
-        - Msg
-  /nodelabs/permission/tx/revoke_permissions:
-    post:
-      summary: |-
-        RevokePermissions removes the given (permission, scope) pairs from a
-        grantee within a namespace. Pairs that are not currently granted are
-        silently ignored. Signer must be the namespace owner.
-      operationId: RevokePermissions
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            description: >-
-              MsgRevokePermissionsResponse is the Msg/RevokePermissions response
-              type.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              owner:
-                type: string
-              module:
-                type: string
-              grantee:
-                type: string
-              permissions:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    permission:
-                      type: string
-                    scope:
-                      type: string
-                  description: >-
-                    PermissionScope identifies a single (permission, scope) pair
-                    to revoke.
-            description: MsgRevokePermissions is the Msg/RevokePermissions request type.
-      tags:
-        - Msg
-  /nodelabs/permission/tx/transfer_ownership:
-    post:
-      summary: |-
-        TransferOwnership hands a namespace to a new owner. Signer must be the
-        current namespace owner.
-      operationId: TransferOwnership
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            description: >-
-              MsgTransferOwnershipResponse is the Msg/TransferOwnership response
-              type.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              owner:
-                type: string
-              module:
-                type: string
-              new_owner:
-                type: string
-            description: MsgTransferOwnership is the Msg/TransferOwnership request type.
-      tags:
-        - Msg
-  /nodelabs/permission/tx/update_namespace_owner:
+  /nodelabs/license/tx/update_params:
     post:
       summary: >-
-        UpdateNamespaceOwner sets or rotates the owner of a registered module's
+        UpdateParams updates the module parameters, including the module owner.
 
-        namespace. Signer must be the module authority (governance); it is how
-        an
+        Signer must be the module authority (governance). It is how an owner is
 
-        owner is first established outside genesis, and how a lost or
-        compromised
+        first established outside genesis, and how a lost or compromised owner
+        key
 
-        owner is recovered without the current owner's key.
-      operationId: UpdateNamespaceOwner
+        is recovered without its cooperation.
+      operationId: UpdateParams
       responses:
         '200':
           description: A successful response.
           schema:
             type: object
-            description: >-
-              MsgUpdateNamespaceOwnerResponse is the Msg/UpdateNamespaceOwner
-              response type.
+            description: MsgUpdateParamsResponse is the Msg/UpdateParams response type.
         default:
           description: An unexpected error response.
           schema:
@@ -2949,15 +2954,93 @@ paths:
             properties:
               authority:
                 type: string
-              module:
-                type: string
-              owner:
-                type: string
-            description: >-
-              MsgUpdateNamespaceOwner is the Msg/UpdateNamespaceOwner request
-              type.
+                description: >-
+                  authority is the address that controls the module (defaults to
+                  x/gov).
+              params:
+                description: >-
+                  params defines the module parameters to update. All parameters
+                  must be
+
+                  supplied.
+                type: object
+                properties:
+                  owner:
+                    type: string
+                    description: >-
+                      owner is the address allowed to grant and revoke access
+                      within this
+
+                      module. It is empty until governance sets it, and while
+                      empty no grant can
+
+                      be made — the module fails closed.
+
+
+                      Owning the module confers the right to delegate actions,
+                      not the actions
+
+                      themselves: the owner must grant itself "type.create" like
+                      anyone else.
+            description: MsgUpdateParams is the Msg/UpdateParams request type.
       tags:
         - Msg
+  /nodelabs/network/actions:
+    get:
+      summary: >-
+        Actions queries the action vocabulary this module recognises. It is
+
+        compiled into the binary rather than stored, so the answer is the same
+        for
+
+        every node running this version.
+      operationId: NetworkActions
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              actions:
+                type: array
+                items:
+                  type: string
+                description: actions is the full vocabulary, in ascending order.
+            description: >-
+              QueryActionsResponse is the response type for the Query/Actions
+              RPC method.
+
+              The vocabulary is compiled in rather than stored, so this query is
+              not
+
+              paginated. There is no unscoped list: this module does not scope
+              its
+
+              actions, so every action is module-wide.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
   /nodelabs/network/activation_key/{address}:
     get:
       summary: ActivationKey queries an activation key by address.
@@ -3120,6 +3203,360 @@ paths:
       parameters:
         - name: operator
           description: operator is the operator wallet address.
+          in: path
+          required: true
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /nodelabs/network/can/{grantee}/{action}:
+    get:
+      summary: |-
+        Can reports whether a grantee holds an action grant. There is no
+        by-scope query: this module does not scope its actions.
+      operationId: NetworkCan
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              can:
+                type: boolean
+            description: >-
+              QueryCanResponse is the response type for the Query/Can RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: grantee
+          in: path
+          required: true
+          type: string
+        - name: action
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /nodelabs/network/grants:
+    get:
+      summary: Grants queries every access grant in the module.
+      operationId: NetworkGrants
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    grantee:
+                      type: string
+                    action:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    Grant is a single (grantee, action, scope) entry — the flat
+                    form stored in
+
+                    state and served by queries and genesis. The action
+                    vocabulary is static
+
+                    configuration of the module that owns the grant; scope is an
+                    opaque resource
+
+                    identifier owned by that module (e.g. a license type id) and
+                    is empty for
+
+                    modules that do not scope their actions.
+
+
+                    There is no module field: a grant lives in the store of the
+                    module that
+
+                    governs it, so the store is the boundary.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryGrantsResponse is the response type for the Query/Grants RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /nodelabs/network/grants/{grantee}:
+    get:
+      summary: GrantsByGrantee queries the grants held by an address.
+      operationId: NetworkGrantsByGrantee
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    grantee:
+                      type: string
+                    action:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    Grant is a single (grantee, action, scope) entry — the flat
+                    form stored in
+
+                    state and served by queries and genesis. The action
+                    vocabulary is static
+
+                    configuration of the module that owns the grant; scope is an
+                    opaque resource
+
+                    identifier owned by that module (e.g. a license type id) and
+                    is empty for
+
+                    modules that do not scope their actions.
+
+
+                    There is no module field: a grant lives in the store of the
+                    module that
+
+                    governs it, so the store is the boundary.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+            description: >-
+              QueryGrantsByGranteeResponse is the response type for the
+              Query/GrantsByGrantee RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: grantee
           in: path
           required: true
           type: string
@@ -3483,7 +3920,6 @@ paths:
                     node's type stays resolvable for the life of the chain.
                 description: node_types are the registered node types in id order.
               pagination:
-                description: pagination is the page response.
                 type: object
                 properties:
                   next_key:
@@ -3501,6 +3937,16 @@ paths:
                       PageRequest.count_total
 
                       was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
             description: >-
               QueryNodeTypesResponse is the response type for the
               Query/NodeTypes RPC method.
@@ -3658,7 +4104,6 @@ paths:
                   description: Node is an activated node record.
                 description: nodes are the node records in address order.
               pagination:
-                description: pagination is the page response.
                 type: object
                 properties:
                   next_key:
@@ -3676,6 +4121,16 @@ paths:
                       PageRequest.count_total
 
                       was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
             description: >-
               QueryNodesResponse is the response type for the Query/Nodes RPC
               method.
@@ -3848,7 +4303,6 @@ paths:
                   description: Node is an activated node record.
                 description: nodes are the operator's node records in address order.
               pagination:
-                description: pagination is the page response.
                 type: object
                 properties:
                   next_key:
@@ -3866,6 +4320,16 @@ paths:
                       PageRequest.count_total
 
                       was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
             description: >-
               QueryNodesByOperatorResponse is the response type for the
               Query/NodesByOperator RPC method.
@@ -3976,7 +4440,7 @@ paths:
         - Query
   /nodelabs/network/params:
     get:
-      summary: Params queries the module parameters.
+      summary: Params queries the module parameters, including the module owner.
       operationId: NetworkParams
       responses:
         '200':
@@ -4077,6 +4541,23 @@ paths:
                     description: >-
                       max_gasless_tx_bytes caps the encoded size of a gasless
                       transaction.
+                  owner:
+                    type: string
+                    description: >-
+                      owner is the address allowed to grant and revoke access
+                      within this
+
+                      module. It is empty until governance sets it, and while
+                      empty no grant can
+
+                      be made — the module fails closed.
+
+
+                      Owning the module confers the right to delegate actions,
+                      not the actions
+
+                      themselves: the owner must grant itself "nodetype.create"
+                      like anyone else.
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
@@ -4239,10 +4720,9 @@ paths:
         CreateNodeType registers a node type bound to a license type. Signer
         must
 
-        hold the "nodetype.create" grant in the network permission namespace,
-        and
+        hold this module's "nodetype.create" grant, and the named license type
 
-        the named license type must exist. Regular gas tx.
+        must exist. Regular gas tx.
       operationId: CreateNodeType
       responses:
         '200':
@@ -4322,11 +4802,11 @@ paths:
         CreateOperatorAccount creates an on-chain account for an operator
         wallet.
 
-        Signer must hold the "wallet.create" grant in the network permission
+        Signer must hold this module's "wallet.create" grant. Fallback for
+        wallets
 
-        namespace. Fallback for wallets that predate account creation on license
-
-        issuance or hold no licenses yet.
+        that predate account creation on license issuance or hold no licenses
+        yet.
       operationId: CreateOperatorAccount
       responses:
         '200':
@@ -4488,6 +4968,214 @@ paths:
               request type.
       tags:
         - Msg
+  /nodelabs/network/tx/grant_access:
+    post:
+      summary: >-
+        GrantAccess merges access grants for a grantee. Signer must be the
+        module
+
+        owner. Existing grants are preserved; new actions are unioned in.
+      operationId: NetworkGrantAccess
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgGrantAccessResponse is the Msg/GrantAccess response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+                description: owner is the signer and must be the current module owner.
+              grantee:
+                type: string
+                description: grantee is the address receiving the grants.
+              grants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action:
+                      type: string
+                    scopes:
+                      type: array
+                      items:
+                        type: string
+                  description: >-
+                    ActionScopes is one entry within a grant message: a single
+                    action applied to
+
+                    a set of scopes. An empty scopes list is the module-wide
+                    grant form.
+                description: >-
+                  grants are the actions to union onto the grantee. This module
+                  does not
+
+                  scope its actions, so every entry must carry an empty scopes
+                  list.
+            description: MsgGrantAccess is the Msg/GrantAccess request type.
+      tags:
+        - Msg
+  /nodelabs/network/tx/revoke_access:
+    post:
+      summary: |-
+        RevokeAccess removes the given actions from a grantee. Actions that are
+        not currently granted are silently ignored. Signer must be the module
+        owner.
+      operationId: NetworkRevokeAccess
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: MsgRevokeAccessResponse is the Msg/RevokeAccess response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+                description: owner is the signer and must be the current module owner.
+              grantee:
+                type: string
+                description: grantee is the address to remove grants from.
+              actions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action:
+                      type: string
+                    scope:
+                      type: string
+                  description: >-
+                    ActionScope identifies a single (action, scope) pair to
+                    revoke. An empty
+
+                    scope targets the module-wide grant.
+                description: >-
+                  actions are the (action, scope) pairs to remove. Pairs that
+                  are not
+
+                  granted are ignored.
+            description: MsgRevokeAccess is the Msg/RevokeAccess request type.
+      tags:
+        - Msg
+  /nodelabs/network/tx/transfer_ownership:
+    post:
+      summary: |-
+        TransferOwnership hands the module to a new owner. Signer must be the
+        current owner. It writes only the owner parameter, leaving every other
+        parameter untouched.
+      operationId: NetworkTransferOwnership
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgTransferOwnershipResponse is the Msg/TransferOwnership response
+              type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              owner:
+                type: string
+                description: owner is the signer and must be the current module owner.
+              new_owner:
+                type: string
+                description: new_owner is the address to hand the module to.
+            description: >-
+              MsgTransferOwnership is the Msg/TransferOwnership request type. It
+              is the
+
+              only message that lets a non-authority signer write a parameter,
+              and it
+
+              writes just the one: the rest of the parameter set is read back
+              and
+
+              preserved.
+      tags:
+        - Msg
   /nodelabs/network/tx/update_node_status:
     post:
       summary: |-
@@ -4570,9 +5258,15 @@ paths:
         - Msg
   /nodelabs/network/tx/update_params:
     post:
-      summary: |-
-        UpdateParams updates the module parameters. Signer must be the module
-        authority.
+      summary: >-
+        UpdateParams updates the module parameters, including the module owner.
+
+        Signer must be the module authority (governance). It is how an owner is
+
+        first established outside genesis, and how a lost or compromised owner
+        key
+
+        is recovered without its cooperation.
       operationId: NetworkUpdateParams
       responses:
         '200':
@@ -4711,6 +5405,23 @@ paths:
                     description: >-
                       max_gasless_tx_bytes caps the encoded size of a gasless
                       transaction.
+                  owner:
+                    type: string
+                    description: >-
+                      owner is the address allowed to grant and revoke access
+                      within this
+
+                      module. It is empty until governance sets it, and while
+                      empty no grant can
+
+                      be made — the module fails closed.
+
+
+                      Owning the module confers the right to delegate actions,
+                      not the actions
+
+                      themselves: the owner must grant itself "nodetype.create"
+                      like anyone else.
             description: MsgUpdateParams is the Msg/UpdateParams request type.
       tags:
         - Msg
@@ -5343,6 +6054,31 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
+  access.v1.Grant:
+    type: object
+    properties:
+      grantee:
+        type: string
+      action:
+        type: string
+      scope:
+        type: string
+    description: >-
+      Grant is a single (grantee, action, scope) entry — the flat form stored in
+
+      state and served by queries and genesis. The action vocabulary is static
+
+      configuration of the module that owns the grant; scope is an opaque
+      resource
+
+      identifier owned by that module (e.g. a license type id) and is empty for
+
+      modules that do not scope their actions.
+
+
+      There is no module field: a grant lives in the store of the module that
+
+      governs it, so the store is the boundary.
   license.v1.License:
     type: object
     properties:
@@ -5426,6 +6162,243 @@ definitions:
         type: string
         description: revoked_count tracks the number of revoked licenses.
     description: LicenseType defines a template for issuing licenses.
+  license.v1.Params:
+    type: object
+    properties:
+      owner:
+        type: string
+        description: >-
+          owner is the address allowed to grant and revoke access within this
+
+          module. It is empty until governance sets it, and while empty no grant
+          can
+
+          be made — the module fails closed.
+
+
+          Owning the module confers the right to delegate actions, not the
+          actions
+
+          themselves: the owner must grant itself "type.create" like anyone
+          else.
+    description: Params defines the parameters for the license module.
+  license.v1.QueryActionsResponse:
+    type: object
+    properties:
+      actions:
+        type: array
+        items:
+          type: string
+        description: actions is the full vocabulary, in ascending order.
+      unscoped:
+        type: array
+        items:
+          type: string
+        description: >-
+          unscoped is the subset of actions granted module-wide, whose grants
+          must
+
+          carry an empty scope. Every other action must name a license type.
+    description: >-
+      QueryActionsResponse is the response type for the Query/Actions RPC
+      method.
+
+      The vocabulary is compiled in rather than stored, so this query is not
+
+      paginated.
+  license.v1.QueryCanResponse:
+    type: object
+    properties:
+      can:
+        type: boolean
+    description: QueryCanResponse is the response type for the Query/Can RPC method.
+  license.v1.QueryGrantsByGranteeResponse:
+    type: object
+    properties:
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            grantee:
+              type: string
+            action:
+              type: string
+            scope:
+              type: string
+          description: >-
+            Grant is a single (grantee, action, scope) entry — the flat form
+            stored in
+
+            state and served by queries and genesis. The action vocabulary is
+            static
+
+            configuration of the module that owns the grant; scope is an opaque
+            resource
+
+            identifier owned by that module (e.g. a license type id) and is
+            empty for
+
+            modules that do not scope their actions.
+
+
+            There is no module field: a grant lives in the store of the module
+            that
+
+            governs it, so the store is the boundary.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryGrantsByGranteeResponse is the response type for the
+      Query/GrantsByGrantee RPC method.
+  license.v1.QueryGrantsByScopeResponse:
+    type: object
+    properties:
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            grantee:
+              type: string
+            action:
+              type: string
+            scope:
+              type: string
+          description: >-
+            Grant is a single (grantee, action, scope) entry — the flat form
+            stored in
+
+            state and served by queries and genesis. The action vocabulary is
+            static
+
+            configuration of the module that owns the grant; scope is an opaque
+            resource
+
+            identifier owned by that module (e.g. a license type id) and is
+            empty for
+
+            modules that do not scope their actions.
+
+
+            There is no module field: a grant lives in the store of the module
+            that
+
+            governs it, so the store is the boundary.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryGrantsByScopeResponse is the response type for the
+      Query/GrantsByScope RPC method.
+  license.v1.QueryGrantsResponse:
+    type: object
+    properties:
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            grantee:
+              type: string
+            action:
+              type: string
+            scope:
+              type: string
+          description: >-
+            Grant is a single (grantee, action, scope) entry — the flat form
+            stored in
+
+            state and served by queries and genesis. The action vocabulary is
+            static
+
+            configuration of the module that owns the grant; scope is an opaque
+            resource
+
+            identifier owned by that module (e.g. a license type id) and is
+            empty for
+
+            modules that do not scope their actions.
+
+
+            There is no module field: a grant lives in the store of the module
+            that
+
+            governs it, so the store is the boundary.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: QueryGrantsResponse is the response type for the Query/Grants RPC method.
   license.v1.QueryLicenseResponse:
     type: object
     properties:
@@ -5879,6 +6852,55 @@ definitions:
     description: >-
       QueryLicensesResponse is the response type for the Query/Licenses RPC
       method.
+  license.v1.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        type: object
+        properties:
+          owner:
+            type: string
+            description: >-
+              owner is the address allowed to grant and revoke access within
+              this
+
+              module. It is empty until governance sets it, and while empty no
+              grant can
+
+              be made — the module fails closed.
+
+
+              Owning the module confers the right to delegate actions, not the
+              actions
+
+              themselves: the owner must grant itself "type.create" like anyone
+              else.
+        description: Params defines the parameters for the license module.
+    description: QueryParamsResponse is the response type for the Query/Params RPC method.
+  access.v1.ActionScope:
+    type: object
+    properties:
+      action:
+        type: string
+      scope:
+        type: string
+    description: |-
+      ActionScope identifies a single (action, scope) pair to revoke. An empty
+      scope targets the module-wide grant.
+  access.v1.ActionScopes:
+    type: object
+    properties:
+      action:
+        type: string
+      scopes:
+        type: array
+        items:
+          type: string
+    description: >-
+      ActionScopes is one entry within a grant message: a single action applied
+      to
+
+      a set of scopes. An empty scopes list is the module-wide grant form.
   license.v1.IssueLicenseEntry:
     type: object
     properties:
@@ -5901,11 +6923,12 @@ definitions:
         type: string
         description: >-
           creator is the signer and must hold the module-wide "type.create"
+          grant.
 
-          permission. It is not the license namespace owner: ownership grants
+          It is not the module owner: ownership confers the right to delegate
           the
 
-          right, it does not carry it. The address is not recorded on the
+          action, not the action itself. The address is not recorded on the
           license
 
           type.
@@ -5919,6 +6942,43 @@ definitions:
   license.v1.MsgCreateLicenseTypeResponse:
     type: object
     description: MsgCreateLicenseTypeResponse is the Msg/CreateLicenseType response type.
+  license.v1.MsgGrantAccess:
+    type: object
+    properties:
+      owner:
+        type: string
+        description: owner is the signer and must be the current module owner.
+      grantee:
+        type: string
+        description: grantee is the address receiving the grants.
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            action:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+          description: >-
+            ActionScopes is one entry within a grant message: a single action
+            applied to
+
+            a set of scopes. An empty scopes list is the module-wide grant form.
+        description: >-
+          grants are the (action, scopes) entries to union onto the grantee.
+          Scoped
+
+          actions must name an existing license type; module-wide actions must
+          carry
+
+          no scopes.
+    description: MsgGrantAccess is the Msg/GrantAccess request type.
+  license.v1.MsgGrantAccessResponse:
+    type: object
+    description: MsgGrantAccessResponse is the Msg/GrantAccess response type.
   license.v1.MsgIssueLicenses:
     type: object
     properties:
@@ -5956,6 +7016,36 @@ definitions:
       MsgIssueLicensesResponse is the Msg/IssueLicenses response type.
       Ids are the issued license ids, flattened in entry order. Ids are unique
       chain-wide, so each one identifies its license without its type.
+  license.v1.MsgRevokeAccess:
+    type: object
+    properties:
+      owner:
+        type: string
+        description: owner is the signer and must be the current module owner.
+      grantee:
+        type: string
+        description: grantee is the address to remove grants from.
+      actions:
+        type: array
+        items:
+          type: object
+          properties:
+            action:
+              type: string
+            scope:
+              type: string
+          description: >-
+            ActionScope identifies a single (action, scope) pair to revoke. An
+            empty
+
+            scope targets the module-wide grant.
+        description: |-
+          actions are the (action, scope) pairs to remove. Pairs that are not
+          granted are ignored.
+    description: MsgRevokeAccess is the Msg/RevokeAccess request type.
+  license.v1.MsgRevokeAccessResponse:
+    type: object
+    description: MsgRevokeAccessResponse is the Msg/RevokeAccess response type.
   license.v1.MsgRevokeLicenses:
     type: object
     properties:
@@ -5981,6 +7071,23 @@ definitions:
       MsgRevokeLicensesResponse is the Msg/RevokeLicenses response type.
       Ids are unique chain-wide, so each one identifies its license without its
       type.
+  license.v1.MsgTransferOwnership:
+    type: object
+    properties:
+      owner:
+        type: string
+        description: owner is the signer and must be the current module owner.
+      new_owner:
+        type: string
+        description: new_owner is the address to hand the module to.
+    description: |-
+      MsgTransferOwnership is the Msg/TransferOwnership request type. It is the
+      only message that lets a non-authority signer write a parameter, and it
+      writes just the one: the rest of the parameter set is read back and
+      preserved.
+  license.v1.MsgTransferOwnershipResponse:
+    type: object
+    description: MsgTransferOwnershipResponse is the Msg/TransferOwnership response type.
   license.v1.MsgUpdateLicenseType:
     type: object
     properties:
@@ -5996,384 +7103,39 @@ definitions:
   license.v1.MsgUpdateLicenseTypeResponse:
     type: object
     description: MsgUpdateLicenseTypeResponse is the Msg/UpdateLicenseType response type.
-  permission.v1.Grant:
-    type: object
-    properties:
-      module:
-        type: string
-      grantee:
-        type: string
-      permission:
-        type: string
-      scope:
-        type: string
-    description: >-
-      Grant is a single (module, grantee, permission, scope) entry — the flat
-      form
-
-      stored in state and served by queries and genesis. The permission
-      vocabulary
-
-      is registered in-process by the consuming module; scope is an opaque
-
-      resource identifier owned by that module (e.g. a license type id) and may
-      be
-
-      empty for namespaces that do not scope their permissions.
-  permission.v1.Namespace:
-    type: object
-    properties:
-      module:
-        type: string
-        description: module is the consuming module's name (e.g. "license").
-      owner:
-        type: string
-        description: owner is the address that controls grants within this namespace.
-    description: >-
-      Namespace is the per-module grant domain. Each consuming module owns
-      exactly
-
-      one namespace, keyed by its module name; the namespace owner is the
-      address
-
-      allowed to grant and revoke permissions within it.
-  permission.v1.QueryGrantsByGranteeResponse:
-    type: object
-    properties:
-      grants:
-        type: array
-        items:
-          type: object
-          properties:
-            module:
-              type: string
-            grantee:
-              type: string
-            permission:
-              type: string
-            scope:
-              type: string
-          description: >-
-            Grant is a single (module, grantee, permission, scope) entry — the
-            flat form
-
-            stored in state and served by queries and genesis. The permission
-            vocabulary
-
-            is registered in-process by the consuming module; scope is an opaque
-
-            resource identifier owned by that module (e.g. a license type id)
-            and may be
-
-            empty for namespaces that do not scope their permissions.
-      pagination:
-        type: object
-        properties:
-          next_key:
-            type: string
-            format: byte
-            description: |-
-              next_key is the key to be passed to PageRequest.key to
-              query the next page most efficiently. It will be empty if
-              there are no more results.
-          total:
-            type: string
-            format: uint64
-            title: >-
-              total is total number of results available if
-              PageRequest.count_total
-
-              was set, its value is undefined otherwise
-        description: |-
-          PageResponse is to be embedded in gRPC response messages where the
-          corresponding request message has used PageRequest.
-
-           message SomeResponse {
-                   repeated Bar results = 1;
-                   PageResponse page = 2;
-           }
-    description: >-
-      QueryGrantsByGranteeResponse is the response type for the
-      Query/GrantsByGrantee RPC method.
-  permission.v1.QueryGrantsByScopeResponse:
-    type: object
-    properties:
-      grants:
-        type: array
-        items:
-          type: object
-          properties:
-            module:
-              type: string
-            grantee:
-              type: string
-            permission:
-              type: string
-            scope:
-              type: string
-          description: >-
-            Grant is a single (module, grantee, permission, scope) entry — the
-            flat form
-
-            stored in state and served by queries and genesis. The permission
-            vocabulary
-
-            is registered in-process by the consuming module; scope is an opaque
-
-            resource identifier owned by that module (e.g. a license type id)
-            and may be
-
-            empty for namespaces that do not scope their permissions.
-      pagination:
-        type: object
-        properties:
-          next_key:
-            type: string
-            format: byte
-            description: |-
-              next_key is the key to be passed to PageRequest.key to
-              query the next page most efficiently. It will be empty if
-              there are no more results.
-          total:
-            type: string
-            format: uint64
-            title: >-
-              total is total number of results available if
-              PageRequest.count_total
-
-              was set, its value is undefined otherwise
-        description: |-
-          PageResponse is to be embedded in gRPC response messages where the
-          corresponding request message has used PageRequest.
-
-           message SomeResponse {
-                   repeated Bar results = 1;
-                   PageResponse page = 2;
-           }
-    description: >-
-      QueryGrantsByScopeResponse is the response type for the
-      Query/GrantsByScope RPC method.
-  permission.v1.QueryGrantsResponse:
-    type: object
-    properties:
-      grants:
-        type: array
-        items:
-          type: object
-          properties:
-            module:
-              type: string
-            grantee:
-              type: string
-            permission:
-              type: string
-            scope:
-              type: string
-          description: >-
-            Grant is a single (module, grantee, permission, scope) entry — the
-            flat form
-
-            stored in state and served by queries and genesis. The permission
-            vocabulary
-
-            is registered in-process by the consuming module; scope is an opaque
-
-            resource identifier owned by that module (e.g. a license type id)
-            and may be
-
-            empty for namespaces that do not scope their permissions.
-      pagination:
-        type: object
-        properties:
-          next_key:
-            type: string
-            format: byte
-            description: |-
-              next_key is the key to be passed to PageRequest.key to
-              query the next page most efficiently. It will be empty if
-              there are no more results.
-          total:
-            type: string
-            format: uint64
-            title: >-
-              total is total number of results available if
-              PageRequest.count_total
-
-              was set, its value is undefined otherwise
-        description: |-
-          PageResponse is to be embedded in gRPC response messages where the
-          corresponding request message has used PageRequest.
-
-           message SomeResponse {
-                   repeated Bar results = 1;
-                   PageResponse page = 2;
-           }
-    description: QueryGrantsResponse is the response type for the Query/Grants RPC method.
-  permission.v1.QueryHasPermissionResponse:
-    type: object
-    properties:
-      has_permission:
-        type: boolean
-    description: >-
-      QueryHasPermissionResponse is the response type for the
-      Query/HasPermission RPC method.
-  permission.v1.QueryModuleResponse:
-    type: object
-    properties:
-      namespace:
-        type: object
-        properties:
-          module:
-            type: string
-            description: module is the consuming module's name (e.g. "license").
-          owner:
-            type: string
-            description: owner is the address that controls grants within this namespace.
-        description: >-
-          Namespace is the per-module grant domain. Each consuming module owns
-          exactly
-
-          one namespace, keyed by its module name; the namespace owner is the
-          address
-
-          allowed to grant and revoke permissions within it.
-      permissions:
-        type: array
-        items:
-          type: string
-        description: >-
-          permissions is the valid permission vocabulary the module registered
-          in
-
-          this binary, in ascending order.
-    description: QueryModuleResponse is the response type for the Query/Module RPC method.
-  permission.v1.QueryModulesResponse:
-    type: object
-    properties:
-      namespaces:
-        type: array
-        items:
-          type: object
-          properties:
-            module:
-              type: string
-              description: module is the consuming module's name (e.g. "license").
-            owner:
-              type: string
-              description: owner is the address that controls grants within this namespace.
-          description: >-
-            Namespace is the per-module grant domain. Each consuming module owns
-            exactly
-
-            one namespace, keyed by its module name; the namespace owner is the
-            address
-
-            allowed to grant and revoke permissions within it.
-    description: >-
-      QueryModulesResponse is the response type for the Query/Modules RPC
-      method.
-  permission.v1.MsgGrantPermissions:
-    type: object
-    properties:
-      owner:
-        type: string
-      module:
-        type: string
-      grantee:
-        type: string
-      grants:
-        type: array
-        items:
-          type: object
-          properties:
-            permission:
-              type: string
-            scopes:
-              type: array
-              items:
-                type: string
-          description: >-
-            PermissionScopes is one grant entry within a MsgGrantPermissions: a
-            single
-
-            permission applied to a set of scopes.
-    description: MsgGrantPermissions is the Msg/GrantPermissions request type.
-  permission.v1.MsgGrantPermissionsResponse:
-    type: object
-    description: MsgGrantPermissionsResponse is the Msg/GrantPermissions response type.
-  permission.v1.MsgRevokePermissions:
-    type: object
-    properties:
-      owner:
-        type: string
-      module:
-        type: string
-      grantee:
-        type: string
-      permissions:
-        type: array
-        items:
-          type: object
-          properties:
-            permission:
-              type: string
-            scope:
-              type: string
-          description: >-
-            PermissionScope identifies a single (permission, scope) pair to
-            revoke.
-    description: MsgRevokePermissions is the Msg/RevokePermissions request type.
-  permission.v1.MsgRevokePermissionsResponse:
-    type: object
-    description: MsgRevokePermissionsResponse is the Msg/RevokePermissions response type.
-  permission.v1.MsgTransferOwnership:
-    type: object
-    properties:
-      owner:
-        type: string
-      module:
-        type: string
-      new_owner:
-        type: string
-    description: MsgTransferOwnership is the Msg/TransferOwnership request type.
-  permission.v1.MsgTransferOwnershipResponse:
-    type: object
-    description: MsgTransferOwnershipResponse is the Msg/TransferOwnership response type.
-  permission.v1.MsgUpdateNamespaceOwner:
+  license.v1.MsgUpdateParams:
     type: object
     properties:
       authority:
         type: string
-      module:
-        type: string
-      owner:
-        type: string
-    description: MsgUpdateNamespaceOwner is the Msg/UpdateNamespaceOwner request type.
-  permission.v1.MsgUpdateNamespaceOwnerResponse:
+        description: authority is the address that controls the module (defaults to x/gov).
+      params:
+        description: |-
+          params defines the module parameters to update. All parameters must be
+          supplied.
+        type: object
+        properties:
+          owner:
+            type: string
+            description: >-
+              owner is the address allowed to grant and revoke access within
+              this
+
+              module. It is empty until governance sets it, and while empty no
+              grant can
+
+              be made — the module fails closed.
+
+
+              Owning the module confers the right to delegate actions, not the
+              actions
+
+              themselves: the owner must grant itself "type.create" like anyone
+              else.
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
+  license.v1.MsgUpdateParamsResponse:
     type: object
-    description: >-
-      MsgUpdateNamespaceOwnerResponse is the Msg/UpdateNamespaceOwner response
-      type.
-  permission.v1.PermissionScope:
-    type: object
-    properties:
-      permission:
-        type: string
-      scope:
-        type: string
-    description: PermissionScope identifies a single (permission, scope) pair to revoke.
-  permission.v1.PermissionScopes:
-    type: object
-    properties:
-      permission:
-        type: string
-      scopes:
-        type: array
-        items:
-          type: string
-    description: |-
-      PermissionScopes is one grant entry within a MsgGrantPermissions: a single
-      permission applied to a set of scopes.
+    description: MsgUpdateParamsResponse is the Msg/UpdateParams response type.
   network.v1.ActivationKey:
     type: object
     properties:
@@ -6621,10 +7383,43 @@ definitions:
         type: string
         format: uint64
         description: max_gasless_tx_bytes caps the encoded size of a gasless transaction.
+      owner:
+        type: string
+        description: >-
+          owner is the address allowed to grant and revoke access within this
+
+          module. It is empty until governance sets it, and while empty no grant
+          can
+
+          be made — the module fails closed.
+
+
+          Owning the module confers the right to delegate actions, not the
+          actions
+
+          themselves: the owner must grant itself "nodetype.create" like anyone
+          else.
     description: |-
       Params defines the parameters for the network module. Defaults are
       deliberately neutral (fail-closed where counting is involved); chains seed
       their real values in an upgrade handler or genesis.
+  network.v1.QueryActionsResponse:
+    type: object
+    properties:
+      actions:
+        type: array
+        items:
+          type: string
+        description: actions is the full vocabulary, in ascending order.
+    description: >-
+      QueryActionsResponse is the response type for the Query/Actions RPC
+      method.
+
+      The vocabulary is compiled in rather than stored, so this query is not
+
+      paginated. There is no unscoped list: this module does not scope its
+
+      actions, so every action is module-wide.
   network.v1.QueryActivationKeyResponse:
     type: object
     properties:
@@ -6714,6 +7509,136 @@ definitions:
     description: >-
       QueryActivationKeysResponse is the response type for the
       Query/ActivationKeys RPC method.
+  network.v1.QueryCanResponse:
+    type: object
+    properties:
+      can:
+        type: boolean
+    description: QueryCanResponse is the response type for the Query/Can RPC method.
+  network.v1.QueryGrantsByGranteeResponse:
+    type: object
+    properties:
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            grantee:
+              type: string
+            action:
+              type: string
+            scope:
+              type: string
+          description: >-
+            Grant is a single (grantee, action, scope) entry — the flat form
+            stored in
+
+            state and served by queries and genesis. The action vocabulary is
+            static
+
+            configuration of the module that owns the grant; scope is an opaque
+            resource
+
+            identifier owned by that module (e.g. a license type id) and is
+            empty for
+
+            modules that do not scope their actions.
+
+
+            There is no module field: a grant lives in the store of the module
+            that
+
+            governs it, so the store is the boundary.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: >-
+      QueryGrantsByGranteeResponse is the response type for the
+      Query/GrantsByGrantee RPC method.
+  network.v1.QueryGrantsResponse:
+    type: object
+    properties:
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            grantee:
+              type: string
+            action:
+              type: string
+            scope:
+              type: string
+          description: >-
+            Grant is a single (grantee, action, scope) entry — the flat form
+            stored in
+
+            state and served by queries and genesis. The action vocabulary is
+            static
+
+            configuration of the module that owns the grant; scope is an opaque
+            resource
+
+            identifier owned by that module (e.g. a license type id) and is
+            empty for
+
+            modules that do not scope their actions.
+
+
+            There is no module field: a grant lives in the store of the module
+            that
+
+            governs it, so the store is the boundary.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+    description: QueryGrantsResponse is the response type for the Query/Grants RPC method.
   network.v1.QueryNodeCountsResponse:
     type: object
     properties:
@@ -6872,7 +7797,6 @@ definitions:
             node's type stays resolvable for the life of the chain.
         description: node_types are the registered node types in id order.
       pagination:
-        description: pagination is the page response.
         type: object
         properties:
           next_key:
@@ -6890,6 +7814,14 @@ definitions:
               PageRequest.count_total
 
               was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
     description: >-
       QueryNodeTypesResponse is the response type for the Query/NodeTypes RPC
       method.
@@ -6947,7 +7879,6 @@ definitions:
           description: Node is an activated node record.
         description: nodes are the operator's node records in address order.
       pagination:
-        description: pagination is the page response.
         type: object
         properties:
           next_key:
@@ -6965,6 +7896,14 @@ definitions:
               PageRequest.count_total
 
               was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
     description: >-
       QueryNodesByOperatorResponse is the response type for the
       Query/NodesByOperator RPC method.
@@ -7022,7 +7961,6 @@ definitions:
           description: Node is an activated node record.
         description: nodes are the node records in address order.
       pagination:
-        description: pagination is the page response.
         type: object
         properties:
           next_key:
@@ -7040,6 +7978,14 @@ definitions:
               PageRequest.count_total
 
               was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
     description: QueryNodesResponse is the response type for the Query/Nodes RPC method.
   network.v1.QueryParamsResponse:
     type: object
@@ -7133,6 +8079,23 @@ definitions:
             description: >-
               max_gasless_tx_bytes caps the encoded size of a gasless
               transaction.
+          owner:
+            type: string
+            description: >-
+              owner is the address allowed to grant and revoke access within
+              this
+
+              module. It is empty until governance sets it, and while empty no
+              grant can
+
+              be made — the module fails closed.
+
+
+              Owning the module confers the right to delegate actions, not the
+              actions
+
+              themselves: the owner must grant itself "nodetype.create" like
+              anyone else.
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
   network.v1.MsgActivateNode:
     type: object
@@ -7265,6 +8228,85 @@ definitions:
     description: >-
       MsgDeauthorizeActivationKeyResponse is the Msg/DeauthorizeActivationKey
       response type.
+  network.v1.MsgGrantAccess:
+    type: object
+    properties:
+      owner:
+        type: string
+        description: owner is the signer and must be the current module owner.
+      grantee:
+        type: string
+        description: grantee is the address receiving the grants.
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            action:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+          description: >-
+            ActionScopes is one entry within a grant message: a single action
+            applied to
+
+            a set of scopes. An empty scopes list is the module-wide grant form.
+        description: |-
+          grants are the actions to union onto the grantee. This module does not
+          scope its actions, so every entry must carry an empty scopes list.
+    description: MsgGrantAccess is the Msg/GrantAccess request type.
+  network.v1.MsgGrantAccessResponse:
+    type: object
+    description: MsgGrantAccessResponse is the Msg/GrantAccess response type.
+  network.v1.MsgRevokeAccess:
+    type: object
+    properties:
+      owner:
+        type: string
+        description: owner is the signer and must be the current module owner.
+      grantee:
+        type: string
+        description: grantee is the address to remove grants from.
+      actions:
+        type: array
+        items:
+          type: object
+          properties:
+            action:
+              type: string
+            scope:
+              type: string
+          description: >-
+            ActionScope identifies a single (action, scope) pair to revoke. An
+            empty
+
+            scope targets the module-wide grant.
+        description: |-
+          actions are the (action, scope) pairs to remove. Pairs that are not
+          granted are ignored.
+    description: MsgRevokeAccess is the Msg/RevokeAccess request type.
+  network.v1.MsgRevokeAccessResponse:
+    type: object
+    description: MsgRevokeAccessResponse is the Msg/RevokeAccess response type.
+  network.v1.MsgTransferOwnership:
+    type: object
+    properties:
+      owner:
+        type: string
+        description: owner is the signer and must be the current module owner.
+      new_owner:
+        type: string
+        description: new_owner is the address to hand the module to.
+    description: |-
+      MsgTransferOwnership is the Msg/TransferOwnership request type. It is the
+      only message that lets a non-authority signer write a parameter, and it
+      writes just the one: the rest of the parameter set is read back and
+      preserved.
+  network.v1.MsgTransferOwnershipResponse:
+    type: object
+    description: MsgTransferOwnershipResponse is the Msg/TransferOwnership response type.
   network.v1.MsgUpdateNodeStatus:
     type: object
     properties:
@@ -7402,6 +8444,23 @@ definitions:
             description: >-
               max_gasless_tx_bytes caps the encoded size of a gasless
               transaction.
+          owner:
+            type: string
+            description: >-
+              owner is the address allowed to grant and revoke access within
+              this
+
+              module. It is empty until governance sets it, and while empty no
+              grant can
+
+              be made — the module fails closed.
+
+
+              Owning the module confers the right to delegate actions, not the
+              actions
+
+              themselves: the owner must grant itself "nodetype.create" like
+              anyone else.
     description: MsgUpdateParams is the Msg/UpdateParams request type.
   network.v1.MsgUpdateParamsResponse:
     type: object
