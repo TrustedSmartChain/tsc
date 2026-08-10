@@ -3,33 +3,110 @@ name: Build Linux Binary
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to build (e.g., 1.0.0)'
+      release_type:
+        description: 'What to publish'
+        type: choice
         required: true
-        default: '1.0.0'
-      create_release:
-        description: 'Create GitHub release'
+        default: 'none'
+        options:
+          # Build and upload the workflow artifact only. Nothing is published.
+          - none
+          # Rolling pre-release at the "nightly" tag, replaced on every run.
+          - nightly
+          # Versioned release at v<version>. Requires the version input.
+          - release
+      version:
+        description: 'Version for a versioned release, e.g. 1.0.0 (ignored for nightly)'
         required: false
-        default: 'true'
+        default: ''
       prerelease:
-        description: 'Mark release as pre-release'
+        description: 'Mark a versioned release as pre-release (nightly always is)'
+        type: boolean
         required: false
-        default: 'true'
+        default: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-    
+      contents: read
+
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+      release_name: ${{ steps.meta.outputs.release_name }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Fetch all history for git describe
 
+    # Everything the release job needs is decided here, once, so the two jobs
+    # cannot disagree about what was built. The version computed here is also
+    # the version compiled into the binary, so `tscd version` always identifies
+    # the release it came from.
+    - name: Resolve build metadata
+      id: meta
+      # The inputs come in as environment variables rather than being
+      # interpolated into the script. A ${{ }} expansion is textual, so a
+      # version input containing shell metacharacters would be executed here.
+      env:
+        RELEASE_TYPE: ${{ inputs.release_type }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_PRERELEASE: ${{ inputs.prerelease }}
+      run: |
+        set -euo pipefail
+        sha_short="$(git rev-parse --short HEAD)"
+
+        case "$RELEASE_TYPE" in
+          release)
+            raw="$INPUT_VERSION"
+            if [ -z "$raw" ]; then
+              echo "::error::release_type=release requires the 'version' input (e.g. 1.0.0)"
+              exit 1
+            fi
+            # Accept both 1.0.0 and v1.0.0; the tag gets exactly one leading v.
+            version="${raw#v}"
+            tag="v${version}"
+            release_name="v${version}"
+            prerelease="$INPUT_PRERELEASE"
+            ;;
+          nightly)
+            # The tag is fixed so the download URL is stable; the sha is what
+            # tells two nightlies apart, so it goes in the version and name.
+            version="nightly-${sha_short}"
+            tag="nightly"
+            release_name="nightly (${sha_short})"
+            prerelease="true"
+            ;;
+          none)
+            # Mirrors what a local `make build` stamps in, so an artifact built
+            # here reports the same version as one built from a checkout.
+            version="$(git describe --tags --always | sed 's/^v//')"
+            tag=""
+            release_name=""
+            prerelease="true"
+            ;;
+          *)
+            echo "::error::unknown release_type '$RELEASE_TYPE'"
+            exit 1
+            ;;
+        esac
+
+        {
+          echo "version=$version"
+          echo "tag=$tag"
+          echo "release_name=$release_name"
+          echo "prerelease=$prerelease"
+        } >> "$GITHUB_OUTPUT"
+
+        echo "Building version $version (release_type=$RELEASE_TYPE)"
+
     - name: Build static binary via Docker
       env:
-        VERSION: ${{ github.event.inputs.version || '1.0.0' }}
+        VERSION: ${{ steps.meta.outputs.version }}
       run: |
         docker build --build-arg VERSION="$VERSION" -t tscd-build .
         mkdir -p build
@@ -41,11 +118,29 @@ jobs:
         echo "Verifying static linking..."
         file build/tscd-linux | grep -q "statically linked"
 
+    # Computed here rather than in the release job so the hash covers the
+    # binary as it left the builder. Carrying it through the artifact means the
+    # verify step downstream also proves the upload/download round trip did not
+    # corrupt anything, which a checksum generated after the download could not.
+    #
+    # Generated from inside build/ so the file records a bare "tscd-linux"
+    # rather than a path; `sha256sum -c` resolves the name relative to the
+    # working directory, and a recorded "build/tscd-linux" would not resolve
+    # for anyone who downloaded the two files side by side.
+    - name: Generate checksum
+      working-directory: build
+      run: |
+        set -euo pipefail
+        sha256sum tscd-linux > tscd-linux.sha256
+        cat tscd-linux.sha256
+
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4
       with:
-        name: tscd-linux-${{ github.event.inputs.version || '1.0.0' }}
-        path: build/tscd-linux
+        name: tscd-linux-${{ steps.meta.outputs.version }}
+        path: |
+          build/tscd-linux
+          build/tscd-linux.sha256
         retention-days: 30
 
     - name: Show binary info
@@ -57,11 +152,11 @@ jobs:
 
   release:
     needs: build
-    if: github.event.inputs.create_release == 'true'
+    if: inputs.release_type != 'none'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -71,33 +166,100 @@ jobs:
     - name: Download binary artifact
       uses: actions/download-artifact@v4
       with:
-        name: tscd-linux-${{ github.event.inputs.version || '1.0.0' }}
+        name: tscd-linux-${{ needs.build.outputs.version }}
         path: build/
+
+    # Re-check before publishing. The hash was computed in the builder, so this
+    # fails the release rather than shipping a binary the artifact round trip
+    # damaged — and it means the .sha256 asset is known-good at publish time,
+    # not merely present.
+    - name: Verify checksum
+      working-directory: build
+      run: |
+        set -euo pipefail
+        sha256sum -c tscd-linux.sha256
+
+    # The nightly tag has to point at the commit just built, and
+    # softprops/action-gh-release will update an existing release but will not
+    # move the tag it already points at. Deleting both first is what makes the
+    # tag roll; without this, every nightly after the first would publish new
+    # binaries under a tag still pinned to the first one's commit.
+    - name: Clear the previous nightly
+      if: inputs.release_type == 'nightly'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        if gh release view nightly >/dev/null 2>&1; then
+          echo "Deleting the previous nightly release and its tag"
+          gh release delete nightly --cleanup-tag --yes
+        else
+          echo "No existing nightly release"
+        fi
+
+    - name: Compose release notes
+      env:
+        RELEASE_TYPE: ${{ inputs.release_type }}
+        RELEASE_NAME: ${{ needs.build.outputs.release_name }}
+        VERSION: ${{ needs.build.outputs.version }}
+      run: |
+        set -euo pipefail
+        # Read the toolchain out of the Dockerfile that actually built this,
+        # rather than restating it here where it would silently go stale.
+        go_version="$(sed -n 's/^FROM golang:\([0-9.]*\).*/\1/p' Dockerfile | head -1)"
+        sha256="$(cut -d' ' -f1 build/tscd-linux.sha256)"
+
+        {
+          echo "## ${RELEASE_NAME}"
+          echo
+          if [ "$RELEASE_TYPE" = "nightly" ]; then
+            echo "> **Unstable nightly build — not for production.**"
+            echo "> The \`nightly\` tag is rolling: it is replaced on every nightly run,"
+            echo "> so this download URL always serves the most recent build and the"
+            echo "> binaries here will be overwritten without notice."
+            echo
+            echo "> Because the assets are replaced in place, pin the SHA-256 below if"
+            echo "> you need to be sure which build you are running later."
+            echo
+          fi
+          echo "### Downloads"
+          echo "- **Linux (x86_64)**: \`tscd-linux\`"
+          echo "- **Checksum**: \`tscd-linux.sha256\`"
+          echo
+          echo "### Installation"
+          echo '```bash'
+          echo "# Verify the download against the published checksum"
+          echo "sha256sum -c tscd-linux.sha256"
+          echo
+          echo "# Make executable"
+          echo "chmod +x tscd-linux"
+          echo
+          echo "# Move to your PATH"
+          echo "sudo mv tscd-linux /usr/local/bin/tscd"
+          echo '```'
+          echo
+          echo "### Build info"
+          echo "- Version: \`${VERSION}\` (as reported by \`tscd version\`)"
+          echo "- Commit: \`${GITHUB_SHA}\`"
+          echo "- Go: ${go_version}"
+          echo "- SHA-256: \`${sha256}\`"
+        } > build/RELEASE_NOTES.md
+
+        cat build/RELEASE_NOTES.md
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v${{ github.event.inputs.version || '1.0.0' }}
-        name: v${{ github.event.inputs.version || '1.0.0' }}
+        tag_name: ${{ needs.build.outputs.tag }}
+        name: ${{ needs.build.outputs.release_name }}
         target_commitish: ${{ github.sha }}
-        body: |
-          ## v${{ github.event.inputs.version || '1.0.0' }}
-          
-          ### Downloads
-          - **Linux (x86_64)**: `tscd-linux`
-          
-          ### Installation
-          ```bash
-          # Download and make executable
-          chmod +x tscd-linux
-          
-          # Move to your PATH
-          sudo mv tscd-linux /usr/local/bin/tscd
-          ```
-          
-          ### Version Info
-          Built with Go 1.23.6
+        body_path: build/RELEASE_NOTES.md
         draft: false
-        prerelease: ${{ github.event.inputs.prerelease == 'true' }}
-        files: build/tscd-linux
-        token: ${{ secrets.GITHUB_TOKEN }} 
+        prerelease: ${{ needs.build.outputs.prerelease == 'true' }}
+        # A nightly must never become the repo's "Latest release", even if it
+        # is the newest thing published.
+        make_latest: ${{ inputs.release_type == 'release' && needs.build.outputs.prerelease != 'true' }}
+        files: |
+          build/tscd-linux
+          build/tscd-linux.sha256
+        token: ${{ secrets.GITHUB_TOKEN }}
