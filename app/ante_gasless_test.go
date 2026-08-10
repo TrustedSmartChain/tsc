@@ -39,13 +39,12 @@ import (
 	evmante "github.com/cosmos/evm/ante"
 	antetypes "github.com/cosmos/evm/ante/types"
 
+	accesstypes "github.com/nodelabs-sdk/nodelabs/x/access/types"
 	licensekeeper "github.com/nodelabs-sdk/nodelabs/x/license/keeper"
 	licensetypes "github.com/nodelabs-sdk/nodelabs/x/license/types"
 	networkante "github.com/nodelabs-sdk/nodelabs/x/network/ante"
 	networkkeeper "github.com/nodelabs-sdk/nodelabs/x/network/keeper"
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
-	permissionkeeper "github.com/nodelabs-sdk/nodelabs/x/permission/keeper"
-	permissiontypes "github.com/nodelabs-sdk/nodelabs/x/permission/types"
 
 	chainante "github.com/TrustedSmartChain/tsc/v3/app/ante"
 	attestationtypes "github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
@@ -74,7 +73,7 @@ type gaslessEnv struct {
 	postUpgradeNetworkParams networktypes.Params
 	postUpgradeLicenseTypes  []string
 	postUpgradeNodeTypes     []string
-	postUpgradeGrants        []collections.Quad[string, string, string, string]
+	postUpgradeGrants        []accesstypes.Grant
 }
 
 // gaslessTestCatalog is the node tier vocabulary this test builds after the
@@ -125,14 +124,14 @@ func (env *gaslessEnv) newSigner() (cryptotypes.PrivKey, sdk.AccAddress) {
 }
 
 // bootstrapCatalog performs every post-upgrade admin step, in the order a real
-// operator would have to: the namespace owner grants itself the two module-wide
-// create permissions, creates the node license types, grants itself issue and
+// operator would have to: the module owner grants itself the two module-wide
+// create actions, creates the node license types, grants itself issue and
 // revoke over them, and registers a node type bound to each.
 //
 // The upgrade seeds no grants at all, so the self-grants here are load-bearing
-// rather than ceremonial — the only thing the upgrade establishes is namespace
-// ownership, and ownership is what makes MsgGrantPermissions signable. There is
-// no params step: x/network derives the counted license set from the node type
+// rather than ceremonial — the only thing the upgrade establishes is the owner
+// parameter, and ownership is what makes MsgGrantAccess signable. There is no
+// params step: x/network derives the counted license set from the node type
 // registry.
 //
 // Everything runs through the real msg servers rather than store writes, so
@@ -142,28 +141,29 @@ func (env *gaslessEnv) bootstrapCatalog() {
 
 	licenseMsgServer := licensekeeper.NewMsgServerImpl(env.app.LicenseKeeper)
 	networkMsgServer := networkkeeper.NewMsgServerImpl(env.app.NetworkKeeper)
-	permissionMsgServer := permissionkeeper.NewMsgServerImpl(env.app.PermissionKeeper)
 
-	// Step one: the owner grants itself the two module-wide create permissions.
-	// Both carry the empty scope — the only key form x/permission stores an
-	// unscoped grant under.
-	for _, g := range []struct{ module, permission string }{
-		{licensetypes.ModuleName, licensetypes.PermissionCreateType},
-		{networktypes.ModuleName, networktypes.PermissionNodeTypeCreate},
-	} {
-		_, err := permissionMsgServer.GrantPermissions(env.ctx, &permissiontypes.MsgGrantPermissions{
-			Owner:   LicenseNamespaceOwner,
-			Module:  g.module,
-			Grantee: LicenseNamespaceOwner,
-			Grants:  []permissiontypes.PermissionScopes{{Permission: g.permission}},
-		})
-		require.NoError(env.t, err, "owner could not grant itself %s/%s", g.module, g.permission)
-	}
+	// Step one: the owner grants itself the two module-wide create actions.
+	// Each module now serves its own grant message, so this is two calls rather
+	// than two namespaces on one shared module. Both carry the empty scope —
+	// the only key form an unscoped grant is stored under.
+	_, err := licenseMsgServer.GrantAccess(env.ctx, &licensetypes.MsgGrantAccess{
+		Owner:   LicenseModuleOwner,
+		Grantee: LicenseModuleOwner,
+		Grants:  []accesstypes.ActionScopes{{Action: licensetypes.ActionCreateType}},
+	})
+	require.NoError(env.t, err, "owner could not grant itself license/%s", licensetypes.ActionCreateType)
+
+	_, err = networkMsgServer.GrantAccess(env.ctx, &networktypes.MsgGrantAccess{
+		Owner:   NetworkModuleOwner,
+		Grantee: NetworkModuleOwner,
+		Grants:  []accesstypes.ActionScopes{{Action: networktypes.ActionNodeTypeCreate}},
+	})
+	require.NoError(env.t, err, "owner could not grant itself network/%s", networktypes.ActionNodeTypeCreate)
 
 	var scopes []string
 	for _, entry := range gaslessTestCatalog {
 		_, err := licenseMsgServer.CreateLicenseType(env.ctx, &licensetypes.MsgCreateLicenseType{
-			Creator: LicenseNamespaceOwner,
+			Creator: LicenseModuleOwner,
 			Id:      entry.licenseType,
 			// Non-transferrable: a node license stays with the operator it was
 			// issued to, so the activation limit it feeds cannot be traded away.
@@ -177,13 +177,12 @@ func (env *gaslessEnv) bootstrapCatalog() {
 	// issue and revoke are scoped per license type, so they can only be granted
 	// now that the types exist — the ordering constraint that makes a single
 	// blanket grant step impossible.
-	_, err := permissionMsgServer.GrantPermissions(env.ctx, &permissiontypes.MsgGrantPermissions{
-		Owner:   LicenseNamespaceOwner,
-		Module:  licensetypes.ModuleName,
-		Grantee: LicenseNamespaceOwner,
-		Grants: []permissiontypes.PermissionScopes{
-			{Permission: licensetypes.PermissionIssue, Scopes: scopes},
-			{Permission: licensetypes.PermissionRevoke, Scopes: scopes},
+	_, err = licenseMsgServer.GrantAccess(env.ctx, &licensetypes.MsgGrantAccess{
+		Owner:   LicenseModuleOwner,
+		Grantee: LicenseModuleOwner,
+		Grants: []accesstypes.ActionScopes{
+			{Action: licensetypes.ActionIssue, Scopes: scopes},
+			{Action: licensetypes.ActionRevoke, Scopes: scopes},
 		},
 	})
 	require.NoError(env.t, err)
@@ -193,7 +192,7 @@ func (env *gaslessEnv) bootstrapCatalog() {
 	// admits a binding to any registered license type.
 	for _, entry := range gaslessTestCatalog {
 		_, err := networkMsgServer.CreateNodeType(env.ctx, &networktypes.MsgCreateNodeType{
-			Creator:       NetworkNamespaceOwner,
+			Creator:       NetworkModuleOwner,
 			Id:            entry.nodeType,
 			LicenseTypeId: entry.licenseType,
 		})
@@ -282,7 +281,7 @@ func setupGaslessEnv(t *testing.T) *gaslessEnv {
 
 	// Run the real v3 upgrade handler for the network/attestation param
 	// seeding — not hand-seeded values. RunMigrations no-ops (the version
-	// map is current), then the handler seeds namespace owners and params.
+	// map is current), then the handler seeds module owners and params.
 	// The handler enables the license precompile, which a fresh test genesis
 	// already activates — deactivate it first to mimic the pre-v3 state.
 	evmParams := chainApp.EVMKeeper.GetParams(env.ctx)
@@ -312,10 +311,13 @@ func setupGaslessEnv(t *testing.T) *gaslessEnv {
 		env.postUpgradeNodeTypes = append(env.postUpgradeNodeTypes, id)
 		return false, nil
 	}))
-	require.NoError(t, chainApp.PermissionKeeper.Grants.Walk(env.ctx, nil, func(k collections.Quad[string, string, string, string]) (bool, error) {
-		env.postUpgradeGrants = append(env.postUpgradeGrants, k)
-		return false, nil
-	}))
+	// Grants live in each module's own store now, so "no grants at all" is a
+	// claim about both of them.
+	licenseGrants, err := chainApp.LicenseKeeper.Grants.Export(env.ctx)
+	require.NoError(t, err)
+	networkGrants, err := chainApp.NetworkKeeper.Grants.Export(env.ctx)
+	require.NoError(t, err)
+	env.postUpgradeGrants = append(append(env.postUpgradeGrants, licenseGrants...), networkGrants...)
 
 	// Everything the upgrade deliberately omits, done the way an admin would
 	// after it lands.
@@ -473,28 +475,30 @@ func TestGaslessAnte(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, attestationtypes.DefaultParams(), attestationParams)
 
-		owner, err := env.app.PermissionKeeper.IsOwner(env.ctx, networktypes.ModuleName, NetworkNamespaceOwner)
-		require.NoError(t, err)
-		require.True(t, owner)
+		// Ownership rides in this same parameter set now, so the seed has to
+		// have preserved it alongside the fee.
+		require.Equal(t, NetworkModuleOwner, networkParams.Owner)
 	})
 
 	// The upgrade establishes ownership and nothing else: no catalog, and no
-	// grants of any kind. Every permission is issued by tx afterwards, so the
+	// grants of any kind. Every action is granted by tx afterwards, so the
 	// catalog operator is chosen live rather than fixed in the binary.
 	t.Run("v3 upgrade handler seeded ownership only", func(t *testing.T) {
 		require.Empty(t, env.postUpgradeLicenseTypes, "upgrade must not register license types")
 		require.Empty(t, env.postUpgradeNodeTypes, "upgrade must not register node types")
 		require.Empty(t, env.postUpgradeGrants, "upgrade must seed no grants at all")
 
-		// Ownership is the one thing it must seed. MsgGrantPermissions is signed
-		// by the namespace owner, so without this the only route to a first
-		// grant is the gov-gated MsgUpdateNamespaceOwner — the whole tx-driven
-		// path hangs off these two records existing.
-		for _, module := range []string{licensetypes.ModuleName, networktypes.ModuleName} {
-			owner, err := env.app.PermissionKeeper.IsOwner(env.ctx, module, LicenseNamespaceOwner)
-			require.NoError(t, err)
-			require.True(t, owner, "upgrade must seed the %s namespace owner", module)
-		}
+		// Ownership is the one thing it must seed. MsgGrantAccess is signed by
+		// the module owner, so without this the only route to a first grant is
+		// the gov-gated MsgUpdateParams — the whole tx-driven path hangs off
+		// these two parameters being set.
+		licenseParams, err := env.app.LicenseKeeper.GetParams(env.ctx)
+		require.NoError(t, err)
+		require.Equal(t, LicenseModuleOwner, licenseParams.Owner, "upgrade must seed the license module owner")
+
+		networkParams, err := env.app.NetworkKeeper.GetParams(env.ctx)
+		require.NoError(t, err)
+		require.Equal(t, NetworkModuleOwner, networkParams.Owner, "upgrade must seed the network module owner")
 
 		// An empty node type registry is what fails activation closed now that
 		// the vocabulary left params: MsgActivateNode resolves its node_type
@@ -503,7 +507,7 @@ func TestGaslessAnte(t *testing.T) {
 		// Ownership alone confers nothing — both create handlers check the grant
 		// table with no owner short-circuit — so a chain that upgrades and stops
 		// here can neither issue a license nor activate a node.
-		require.Contains(t, licensetypes.UnscopedPermissions, licensetypes.PermissionCreateType)
+		require.Contains(t, licensetypes.UnscopedActions, licensetypes.ActionCreateType)
 	})
 
 	// The catalog the upgrade omits is buildable by the owner it does seed.
@@ -555,11 +559,10 @@ func TestGaslessAnte(t *testing.T) {
 		}
 
 		for _, entry := range gaslessTestCatalog {
-			for _, permission := range []string{licensetypes.PermissionIssue, licensetypes.PermissionRevoke} {
-				has, err := env.app.PermissionKeeper.Grants.Has(env.ctx,
-					collections.Join4(licensetypes.ModuleName, LicenseNamespaceOwner, permission, entry.licenseType))
+			for _, action := range []string{licensetypes.ActionIssue, licensetypes.ActionRevoke} {
+				has, err := env.app.LicenseKeeper.Grants.HasGrant(env.ctx, LicenseModuleOwner, action, entry.licenseType)
 				require.NoError(t, err)
-				require.True(t, has, "owner lacks %s grant for %s", permission, entry.licenseType)
+				require.True(t, has, "owner lacks %s grant for %s", action, entry.licenseType)
 			}
 		}
 
@@ -569,7 +572,7 @@ func TestGaslessAnte(t *testing.T) {
 		// dropped.
 		_, holder := env.newSigner()
 		_, err := licensekeeper.NewMsgServerImpl(env.app.LicenseKeeper).IssueLicenses(env.ctx, &licensetypes.MsgIssueLicenses{
-			Issuer: LicenseNamespaceOwner,
+			Issuer: LicenseModuleOwner,
 			Entries: []licensetypes.IssueLicenseEntry{{
 				LicenseTypeId: nanoLicenseType,
 				Holder:        holder.String(),
@@ -586,7 +589,7 @@ func TestGaslessAnte(t *testing.T) {
 		// The cap is live, not merely recorded. x/license checks supply before
 		// writing anything, so an over-cap batch is rejected without issuing.
 		_, err = licensekeeper.NewMsgServerImpl(env.app.LicenseKeeper).IssueLicenses(env.ctx, &licensetypes.MsgIssueLicenses{
-			Issuer: LicenseNamespaceOwner,
+			Issuer: LicenseModuleOwner,
 			Entries: []licensetypes.IssueLicenseEntry{{
 				LicenseTypeId: nanoLicenseType,
 				Holder:        holder.String(),
@@ -608,7 +611,7 @@ func TestGaslessAnte(t *testing.T) {
 		require.Equal(t, math.OneInt(), nano.ActiveCount)
 
 		_, err = licensekeeper.NewMsgServerImpl(env.app.LicenseKeeper).RevokeLicenses(env.ctx, &licensetypes.MsgRevokeLicenses{
-			Revoker:       LicenseNamespaceOwner,
+			Revoker:       LicenseModuleOwner,
 			LicenseTypeId: nanoLicenseType,
 			Holder:        holder.String(),
 			Count:         1,

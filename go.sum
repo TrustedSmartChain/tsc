@@ -1469,6 +1469,10 @@ github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OS
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nodelabs-sdk/nodelabs v0.0.0-20260806171542-b1a6d6574a5e h1:5TWRchD3GOgR2eiJ//Vc1yWi59SumQgoya3Xod/n5oo=
 github.com/nodelabs-sdk/nodelabs v0.0.0-20260806171542-b1a6d6574a5e/go.mod h1:fn2Slz5To2YfeQiXW1eKrwJtlKps1R3xWWO3tcQUX5A=
+github.com/nodelabs-sdk/nodelabs v0.0.0-20260807174730-325da27d6606 h1:XpRB509J0v8Zw35Yd9PphJJ5jjysCn2NDmFpNJgZJjw=
+github.com/nodelabs-sdk/nodelabs v0.0.0-20260807174730-325da27d6606/go.mod h1:fn2Slz5To2YfeQiXW1eKrwJtlKps1R3xWWO3tcQUX5A=
+github.com/nodelabs-sdk/nodelabs v0.0.0-20260807205459-9abced959b31 h1:30j3Hg/aS9bnVxGWgx8YcV9LUpG4eABLZjS+OonWbpQ=
+github.com/nodelabs-sdk/nodelabs v0.0.0-20260807205459-9abced959b31/go.mod h1:fn2Slz5To2YfeQiXW1eKrwJtlKps1R3xWWO3tcQUX5A=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=
 github.com/nxadm/tail v1.4.11/go.mod h1:OTaG3NK980DZzxbRq6lEuzgU+mug70nY11sMd4JXXHc=

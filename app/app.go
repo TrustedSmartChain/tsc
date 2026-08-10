@@ -151,9 +151,6 @@ import (
 	networkante "github.com/nodelabs-sdk/nodelabs/x/network/ante"
 	networkkeeper "github.com/nodelabs-sdk/nodelabs/x/network/keeper"
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
-	permission "github.com/nodelabs-sdk/nodelabs/x/permission"
-	permissionkeeper "github.com/nodelabs-sdk/nodelabs/x/permission/keeper"
-	permissiontypes "github.com/nodelabs-sdk/nodelabs/x/permission/types"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	attestationmodule "github.com/TrustedSmartChain/tsc/v3/x/attestation"
@@ -281,7 +278,6 @@ type ChainApp struct {
 	DistroKeeper      distrokeeper.Keeper
 	LockupKeeper      lockupkeeper.Keeper
 	LicenseKeeper     licensekeeper.Keeper
-	PermissionKeeper  permissionkeeper.Keeper
 	NetworkKeeper     networkkeeper.Keeper
 	AttestationKeeper attestationkeeper.Keeper
 
@@ -375,7 +371,6 @@ func NewChainApp(
 		distrotypes.StoreKey,
 		lockuptypes.StoreKey,
 		licensetypes.StoreKey,
-		permissiontypes.StoreKey,
 		networktypes.StoreKey,
 		attestationtypes.StoreKey,
 		// CosmWasm keys
@@ -609,43 +604,30 @@ func NewChainApp(
 		app.BankKeeper,
 	)
 
-	// Create the permission Keeper. It hosts per-module grant namespaces;
-	// consuming modules register their namespace specs (permission vocabulary,
-	// scope validator) below during wiring.
-	app.PermissionKeeper = permissionkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[permissiontypes.StoreKey]),
-		logger,
-		authAddr,
-	)
-
-	// Create the license Keeper. Ownership and grants for the license module
-	// live in the permission keeper's "license" namespace. Issuance creates
-	// holder accounts, so license holders can sign their first (gasless) tx.
+	// Create the license Keeper. Ownership and grants are the module's own
+	// state: the owner is a module parameter and grants live in the module's
+	// store. Issuance creates holder accounts, so license holders can sign
+	// their first (gasless) tx.
 	app.LicenseKeeper = licensekeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[licensetypes.StoreKey]),
 		logger,
 		authAddr,
-		app.PermissionKeeper,
 		app.AccountKeeper,
 	)
-	license.RegisterNamespace(app.PermissionKeeper, app.LicenseKeeper)
 
 	// Create the network Keeper. It consumes the license keeper (activation
-	// limits count active node licenses) and the permission keeper's
-	// "network" namespace.
+	// limits count active node licenses) and, like license, owns its access
+	// grants directly.
 	app.NetworkKeeper = networkkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[networktypes.StoreKey]),
 		logger,
 		authAddr,
 		app.LicenseKeeper,
-		app.PermissionKeeper,
 		app.AccountKeeper,
 		app.BankKeeper,
 	)
-	network.RegisterNamespace(app.PermissionKeeper, app.NetworkKeeper)
 
 	// Create the attestation Keeper. It consumes the network keeper through a
 	// narrow interface: node standing, activity touch, and the per-node-type
@@ -899,7 +881,6 @@ func NewChainApp(
 		distro.NewAppModule(appCodec, app.DistroKeeper),
 		lockup.NewAppModule(appCodec, app.LockupKeeper),
 		license.NewAppModule(appCodec, app.LicenseKeeper),
-		permission.NewAppModule(appCodec, app.PermissionKeeper),
 		network.NewAppModule(appCodec, app.NetworkKeeper),
 		attestationmodule.NewAppModule(appCodec, app.AttestationKeeper),
 		// CosmWasm module
@@ -958,7 +939,6 @@ func NewChainApp(
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
 		licensetypes.ModuleName,
-		permissiontypes.ModuleName,
 		networktypes.ModuleName,
 		attestationtypes.ModuleName,
 	)
@@ -987,7 +967,6 @@ func NewChainApp(
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
 		licensetypes.ModuleName,
-		permissiontypes.ModuleName,
 		networktypes.ModuleName,
 		attestationtypes.ModuleName,
 	)
@@ -1030,13 +1009,11 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
-		// The permission module initializes after license so grant scopes that
-		// reference license state (e.g. license type ids) can be validated
-		// against it on import. The network module comes after both (it
-		// consumes the license keeper and the permission namespace), and
-		// attestation after network.
+		// The network module initializes after license because it consumes the
+		// license keeper, and attestation after network. Each module imports
+		// its own grants, so ordering no longer has to account for a separate
+		// grant store validating scopes against license state.
 		licensetypes.ModuleName,
-		permissiontypes.ModuleName,
 		networktypes.ModuleName,
 		attestationtypes.ModuleName,
 	}
