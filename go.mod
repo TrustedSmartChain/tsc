@@ -48,7 +48,7 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/nodelabs-sdk/nodelabs v0.0.0-20260807205459-9abced959b31
+	github.com/nodelabs-sdk/nodelabs v0.0.0-20260814211157-65e253224314
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
