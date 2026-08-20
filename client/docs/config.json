@@ -39,18 +39,47 @@
       }
     },
     {
-      "url": "./tmp-swagger-gen/licenses/v1/query.swagger.json",
+      "url": "./tmp-swagger-gen/license/v1/query.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/license/v1/tx.swagger.json"
+    },
+    {
+      "url": "./tmp-swagger-gen/network/v1/query.swagger.json",
       "operationIds": {
         "rename": {
-          "Params": "LicensesParams"
+          "Params": "NetworkParams",
+          "Actions": "NetworkActions",
+          "Grants": "NetworkGrants",
+          "GrantsByGrantee": "NetworkGrantsByGrantee",
+          "Can": "NetworkCan"
         }
       }
     },
     {
-      "url": "./tmp-swagger-gen/licenses/v1/tx.swagger.json",
+      "url": "./tmp-swagger-gen/network/v1/tx.swagger.json",
       "operationIds": {
         "rename": {
-          "UpdateParams": "LicensesUpdateParams"
+          "UpdateParams": "NetworkUpdateParams",
+          "TransferOwnership": "NetworkTransferOwnership",
+          "GrantAccess": "NetworkGrantAccess",
+          "RevokeAccess": "NetworkRevokeAccess"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/attestation/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "AttestationParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/attestation/v1/tx.swagger.json",
+      "operationIds": {
+        "rename": {
+          "UpdateParams": "AttestationUpdateParams"
         }
       }
     }

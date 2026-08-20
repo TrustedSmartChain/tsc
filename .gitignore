@@ -11,3 +11,11 @@ build/
 lockup-test/
 
 .claude/
+
+# Local chain-exercising tooling. Deliberately untracked: it drives a running
+# dev chain rather than being part of the chain, and go.mod carries no
+# dependency on it — verified by tidying with it absent.
+cmd/fleetsim/
+internal/fleetsim/
+
+.DS_Store

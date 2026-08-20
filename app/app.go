@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -142,10 +143,19 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
-	licenses "github.com/webstack-sdk/webstack/x/licenses"
-	licenseskeeper "github.com/webstack-sdk/webstack/x/licenses/keeper"
-	licensestypes "github.com/webstack-sdk/webstack/x/licenses/types"
+	license "github.com/nodelabs-sdk/nodelabs/x/license"
+	licensekeeper "github.com/nodelabs-sdk/nodelabs/x/license/keeper"
+	licenseprecompile "github.com/nodelabs-sdk/nodelabs/x/license/precompile"
+	licensetypes "github.com/nodelabs-sdk/nodelabs/x/license/types"
+	network "github.com/nodelabs-sdk/nodelabs/x/network"
+	networkante "github.com/nodelabs-sdk/nodelabs/x/network/ante"
+	networkkeeper "github.com/nodelabs-sdk/nodelabs/x/network/keeper"
+	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 	"google.golang.org/protobuf/reflect/protoregistry"
+
+	attestationmodule "github.com/TrustedSmartChain/tsc/v3/x/attestation"
+	attestationkeeper "github.com/TrustedSmartChain/tsc/v3/x/attestation/keeper"
+	attestationtypes "github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
 
 	// CosmWasm imports
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -265,9 +275,11 @@ type ChainApp struct {
 	EVMMempool      *evmmempool.ExperimentalEVMMempool
 
 	// Custom keepers
-	DistroKeeper   distrokeeper.Keeper
-	LockupKeeper   lockupkeeper.Keeper
-	LicensesKeeper licenseskeeper.Keeper
+	DistroKeeper      distrokeeper.Keeper
+	LockupKeeper      lockupkeeper.Keeper
+	LicenseKeeper     licensekeeper.Keeper
+	NetworkKeeper     networkkeeper.Keeper
+	AttestationKeeper attestationkeeper.Keeper
 
 	// Wasm keeper
 	WasmKeeper wasmkeeper.Keeper
@@ -358,7 +370,9 @@ func NewChainApp(
 		// Custom keys
 		distrotypes.StoreKey,
 		lockuptypes.StoreKey,
-		licensestypes.StoreKey,
+		licensetypes.StoreKey,
+		networktypes.StoreKey,
+		attestationtypes.StoreKey,
 		// CosmWasm keys
 		wasmtypes.StoreKey,
 	)
@@ -590,12 +604,41 @@ func NewChainApp(
 		app.BankKeeper,
 	)
 
-	// Create the licenses Keeper
-	app.LicensesKeeper = licenseskeeper.NewKeeper(
+	// Create the license Keeper. Ownership and grants are the module's own
+	// state: the owner is a module parameter and grants live in the module's
+	// store. Issuance creates holder accounts, so license holders can sign
+	// their first (gasless) tx.
+	app.LicenseKeeper = licensekeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(keys[licensestypes.StoreKey]),
+		runtime.NewKVStoreService(keys[licensetypes.StoreKey]),
 		logger,
 		authAddr,
+		app.AccountKeeper,
+	)
+
+	// Create the network Keeper. It consumes the license keeper (activation
+	// limits count active node licenses) and, like license, owns its access
+	// grants directly.
+	app.NetworkKeeper = networkkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[networktypes.StoreKey]),
+		logger,
+		authAddr,
+		app.LicenseKeeper,
+		app.AccountKeeper,
+		app.BankKeeper,
+	)
+
+	// Create the attestation Keeper. It consumes the network keeper through a
+	// narrow interface: node standing, activity touch, and the per-node-type
+	// license gate. Which node types may attest is compiled into the messages
+	// themselves, so nothing here reads the node type registry.
+	app.AttestationKeeper = attestationkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[attestationtypes.StoreKey]),
+		logger,
+		authAddr,
+		app.NetworkKeeper,
 	)
 
 	// Cosmos EVM keepers
@@ -647,6 +690,19 @@ func NewChainApp(
 		app.BankKeeper,
 	)
 	app.EVMKeeper.RegisterStaticPrecompile(lockupPrecompile.Address(), lockupPrecompile)
+
+	// Register the license precompile. It claims an application-reserved
+	// address; RegisterStaticPrecompile would silently overwrite, so guard
+	// against a future cosmos/evm release shipping a stock precompile there.
+	if slices.Contains(evmtypes.AvailableStaticPrecompiles, licensetypes.PrecompileAddress) {
+		panic(fmt.Sprintf("precompile address %s is already registered upstream", licensetypes.PrecompileAddress))
+	}
+	licensePrecompile := licenseprecompile.NewPrecompile(
+		app.LicenseKeeper,
+		evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
+		common.HexToAddress(licensetypes.PrecompileAddress),
+	)
+	app.EVMKeeper.RegisterStaticPrecompile(licensePrecompile.Address(), licensePrecompile)
 
 	app.Erc20Keeper = erc20keeper.NewKeeper(
 		keys[erc20types.StoreKey],
@@ -824,7 +880,9 @@ func NewChainApp(
 		// Custom modules
 		distro.NewAppModule(appCodec, app.DistroKeeper),
 		lockup.NewAppModule(appCodec, app.LockupKeeper),
-		licenses.NewAppModule(appCodec, app.LicensesKeeper),
+		license.NewAppModule(appCodec, app.LicenseKeeper),
+		network.NewAppModule(appCodec, app.NetworkKeeper),
+		attestationmodule.NewAppModule(appCodec, app.AttestationKeeper),
 		// CosmWasm module
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
@@ -880,7 +938,9 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
-		licensestypes.ModuleName,
+		licensetypes.ModuleName,
+		networktypes.ModuleName,
+		attestationtypes.ModuleName,
 	)
 
 	// NOTE: the feemarket module should go last in order of end blockers that are actually doing something,
@@ -906,7 +966,9 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
-		licensestypes.ModuleName,
+		licensetypes.ModuleName,
+		networktypes.ModuleName,
+		attestationtypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -947,7 +1009,13 @@ func NewChainApp(
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
-		licensestypes.ModuleName,
+		// The network module initializes after license because it consumes the
+		// license keeper, and attestation after network. Each module imports
+		// its own grants, so ordering no longer has to account for a separate
+		// grant store validating scopes against license state.
+		licensetypes.ModuleName,
+		networktypes.ModuleName,
+		attestationtypes.ModuleName,
 	}
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)
@@ -1035,6 +1103,14 @@ func NewChainApp(
 }
 
 func (app *ChainApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted uint64) {
+	// Gasless msgs ride the cosmos ante path with a zero fee, subject to
+	// hard resource caps and per-module admission checks: the network
+	// module's msgs route to the network keeper, the attestation msgs to
+	// the attestation keeper.
+	gaslessAllowlist := networkante.NewAllowlist(networktypes.GaslessMessages(), attestationtypes.GaslessMessages())
+	admissionRouter := networkante.NewAdmissionRouter(app.NetworkKeeper, networktypes.GaslessMessages()).
+		Merge(networkante.NewAdmissionRouter(app.AttestationKeeper, attestationtypes.GaslessMessages()))
+
 	options := chainante.HandlerOptions{
 		Cdc:                    app.appCodec,
 		AccountKeeper:          app.AccountKeeper,
@@ -1049,6 +1125,10 @@ func (app *ChainApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted uint6
 		MaxTxGasWanted:         maxGasWanted,
 		DynamicFeeChecker:      true,
 		PendingTxListener:      app.onPendingTx,
+
+		NetworkKeeper:    app.NetworkKeeper,
+		GaslessAllowlist: gaslessAllowlist,
+		AdmissionRouter:  admissionRouter,
 	}
 	if err := options.Validate(); err != nil {
 		panic(err)
@@ -1308,7 +1388,10 @@ func BlockedAddresses() map[string]bool {
 	// allow the following addresses to receive funds
 	delete(blockedAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
-	blockedPrecompilesHex := append(evmtypes.AvailableStaticPrecompiles, lockupprecompile.LockupPrecompileAddress) //nolint:gocritic
+	blockedPrecompilesHex := append(evmtypes.AvailableStaticPrecompiles, //nolint:gocritic
+		lockupprecompile.LockupPrecompileAddress,
+		licensetypes.PrecompileAddress,
+	)
 	for _, precompile := range blockedPrecompilesHex {
 		blockedAddrs[utils.EthHexToCosmosAddr(precompile).String()] = true
 	}
