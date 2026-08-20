@@ -17,3 +17,5 @@ lockup-test/
 # dependency on it — verified by tidying with it absent.
 cmd/fleetsim/
 internal/fleetsim/
+
+.DS_Store

@@ -1,0 +1,6 @@
+# Keep the image build context to what the compile actually reads. This is
+# not only size: COPY . /code is a cache key, so anything volatile in the
+# context — build outputs, upgrade-test logs and cached release binaries —
+# would invalidate the compiled layer and force a full rebuild on every run.
+build/
+.git/
