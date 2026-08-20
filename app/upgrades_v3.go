@@ -30,7 +30,7 @@ const (
 	// the module owner, and the only way to install an owner without one is
 	// MsgUpdateParams, which is gov-gated. Seeding ownership is what makes the
 	// tx-driven path reachable without a proposal.
-	LicenseModuleOwner = "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"
+	LicenseModuleOwner = "tsc1xkymmauvpa7y7zjlxj2j448xx7whmjrxpfzjpl"
 	// NetworkModuleOwner is the x/network owner parameter, controlling grants
 	// of wallet.create (the admin fallback for creating operator accounts) and
 	// nodetype.create.
