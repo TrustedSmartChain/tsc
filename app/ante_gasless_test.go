@@ -46,8 +46,8 @@ import (
 	networkkeeper "github.com/nodelabs-sdk/nodelabs/x/network/keeper"
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 
-	chainante "github.com/TrustedSmartChain/tsc/v3/app/ante"
-	attestationtypes "github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
+	chainante "github.com/TrustedSmartChain/tsc/v4/app/ante"
+	attestationtypes "github.com/TrustedSmartChain/tsc/v4/x/attestation/types"
 )
 
 const gaslessTestChainID = "chain-test"
@@ -610,11 +610,22 @@ func TestGaslessAnte(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, math.OneInt(), nano.ActiveCount)
 
+		// Revocation is by explicit license id: collect the holder's active
+		// ids for the type from the (holder, type, id) index.
+		var revokeIDs []uint64
+		err = env.app.LicenseKeeper.ActiveLicensesByHolder.Walk(env.ctx,
+			collections.NewSuperPrefixedTripleRange[string, string, uint64](holder.String(), nanoLicenseType),
+			func(key collections.Triple[string, string, uint64]) (bool, error) {
+				revokeIDs = append(revokeIDs, key.K3())
+				return false, nil
+			})
+		require.NoError(t, err)
+		require.Len(t, revokeIDs, 1)
+
 		_, err = licensekeeper.NewMsgServerImpl(env.app.LicenseKeeper).RevokeLicenses(env.ctx, &licensetypes.MsgRevokeLicenses{
 			Revoker:       LicenseModuleOwner,
 			LicenseTypeId: nanoLicenseType,
-			Holder:        holder.String(),
-			Count:         1,
+			LicenseIds:    revokeIDs,
 		})
 		require.NoError(t, err)
 

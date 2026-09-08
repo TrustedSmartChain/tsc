@@ -31,16 +31,16 @@ import (
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	chainante "github.com/TrustedSmartChain/tsc/v3/app/ante"
-	"github.com/TrustedSmartChain/tsc/v3/app/hooks"
-	docs "github.com/TrustedSmartChain/tsc/v3/client/docs"
-	lockupprecompile "github.com/TrustedSmartChain/tsc/v3/precompiles/lockup"
-	distro "github.com/TrustedSmartChain/tsc/v3/x/distro"
-	distrokeeper "github.com/TrustedSmartChain/tsc/v3/x/distro/keeper"
-	distrotypes "github.com/TrustedSmartChain/tsc/v3/x/distro/types"
-	lockup "github.com/TrustedSmartChain/tsc/v3/x/lockup"
-	lockupkeeper "github.com/TrustedSmartChain/tsc/v3/x/lockup/keeper"
-	lockuptypes "github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
+	chainante "github.com/TrustedSmartChain/tsc/v4/app/ante"
+	"github.com/TrustedSmartChain/tsc/v4/app/hooks"
+	docs "github.com/TrustedSmartChain/tsc/v4/client/docs"
+	lockupprecompile "github.com/TrustedSmartChain/tsc/v4/precompiles/lockup"
+	distro "github.com/TrustedSmartChain/tsc/v4/x/distro"
+	distrokeeper "github.com/TrustedSmartChain/tsc/v4/x/distro/keeper"
+	distrotypes "github.com/TrustedSmartChain/tsc/v4/x/distro/types"
+	lockup "github.com/TrustedSmartChain/tsc/v4/x/lockup"
+	lockupkeeper "github.com/TrustedSmartChain/tsc/v4/x/lockup/keeper"
+	lockuptypes "github.com/TrustedSmartChain/tsc/v4/x/lockup/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -118,9 +118,6 @@ import (
 	feemarketkeeper "github.com/cosmos/evm/x/feemarket/keeper"
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
 	ibccallbackskeeper "github.com/cosmos/evm/x/ibc/callbacks/keeper"
-	"github.com/cosmos/evm/x/ibc/transfer"
-	transferKeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
-	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
 	"github.com/cosmos/evm/x/vm"
 	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -134,7 +131,8 @@ import (
 	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
 	ibccallbacks "github.com/cosmos/ibc-go/v10/modules/apps/callbacks"
-	ibctransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	transfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	transferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/v10/modules/core"
 	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
@@ -153,9 +151,9 @@ import (
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
-	attestationmodule "github.com/TrustedSmartChain/tsc/v3/x/attestation"
-	attestationkeeper "github.com/TrustedSmartChain/tsc/v3/x/attestation/keeper"
-	attestationtypes "github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
+	attestationmodule "github.com/TrustedSmartChain/tsc/v4/x/attestation"
+	attestationkeeper "github.com/TrustedSmartChain/tsc/v4/x/attestation/keeper"
+	attestationtypes "github.com/TrustedSmartChain/tsc/v4/x/attestation/types"
 
 	// CosmWasm imports
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -223,7 +221,6 @@ var maccPerms = map[string][]string{
 	feemarkettypes.ModuleName:      nil,
 	erc20types.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	distrotypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
-	precisebanktypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 	wasmtypes.ModuleName:           {authtypes.Burner},
 }
 
@@ -263,7 +260,7 @@ type ChainApp struct {
 
 	// IBC keepers
 	IBCKeeper           *ibckeeper.Keeper
-	TransferKeeper      transferKeeper.Keeper
+	TransferKeeper      transferkeeper.Keeper
 	CallbackKeeper      ibccallbackskeeper.ContractKeeper
 	ICAControllerKeeper icacontrollerkeeper.Keeper
 	ICAHostKeeper       icahostkeeper.Keeper
@@ -317,6 +314,10 @@ func NewChainApp(
 	// and the real start call also uses EVMChainID — both hit the same value,
 	// so we guard with loadLatest to distinguish the temp app (false) from
 	// the real app (true).
+	// In test builds this clears cosmos/evm's set-once global chain config so
+	// multi-app test binaries work; in production it is a no-op.
+	resetEVMChainConfig()
+
 	evmChainID := EVMChainID
 	if !loadLatest {
 		// Temp app for encoding config — use the cosmos/evm default so
@@ -737,20 +738,21 @@ func NewChainApp(
 		authAddr,
 	)
 
-	// instantiate IBC transfer keeper AFTER the ERC-20 keeper
-	ibctransferKeeper := transferKeeper.NewKeeper(
+	// instantiate IBC transfer keeper AFTER the ERC-20 keeper. cosmos/evm
+	// v0.6 removed its transfer-keeper wrapper: this is ibc-go's keeper
+	// directly, and ERC20 conversions now happen only in the ICS20 precompile.
+	app.TransferKeeper = transferkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[ibctransfertypes.StoreKey]),
+		nil, // ICS4Wrapper: defaults to the channel keeper
 		app.IBCKeeper.ChannelKeeper,
 		app.IBCKeeper.ChannelKeeper,
 		app.MsgServiceRouter(),
 		app.AccountKeeper,
 		app.BankKeeper,
-		app.Erc20Keeper,
 		authAddr,
 	)
-	ibctransferKeeper.SetAddressCodec(evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix()))
-	app.TransferKeeper = ibctransferKeeper
+	app.TransferKeeper.SetAddressCodec(evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix()))
 
 	/*
 		Create Transfer Stack
@@ -812,7 +814,7 @@ func NewChainApp(
 		distrkeeper.NewQuerier(app.DistrKeeper),
 		app.IBCKeeper.ChannelKeeper, // ICS4Wrapper
 		app.IBCKeeper.ChannelKeeper, // ChannelKeeper
-		app.TransferKeeper.Keeper,   // ICS20TransferPortSource - use embedded keeper which has GetPort
+		app.TransferKeeper,          // ICS20TransferPortSource
 		app.MsgServiceRouter(),      // MessageRouter
 		app.GRPCQueryRouter(),       // GRPCQueryRouter (unused but needed)
 		wasmDir,
@@ -897,7 +899,7 @@ func NewChainApp(
 			genutiltypes.ModuleName:     genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
 			stakingtypes.ModuleName:     stakingAppModuleBasic{},
 			govtypes.ModuleName:         gov.NewAppModuleBasic(nil),
-			ibctransfertypes.ModuleName: transfer.AppModuleBasic{AppModuleBasic: &ibctransfer.AppModuleBasic{}},
+			ibctransfertypes.ModuleName: transfer.AppModuleBasic{},
 			evmtypes.ModuleName:         evmAppModuleBasic{},
 			banktypes.ModuleName:        bankAppModuleBasic{},
 			minttypes.ModuleName:        mintAppModuleBasic{},
@@ -931,7 +933,6 @@ func NewChainApp(
 		nft.ModuleName,
 		genutiltypes.ModuleName, authz.ModuleName, feegrant.ModuleName,
 		consensusparamtypes.ModuleName,
-		precisebanktypes.ModuleName,
 		vestingtypes.ModuleName,
 		// CosmWasm
 		wasmtypes.ModuleName,
@@ -959,7 +960,6 @@ func NewChainApp(
 		nft.ModuleName,
 		feegrant.ModuleName, upgradetypes.ModuleName, consensusparamtypes.ModuleName,
 		epochstypes.ModuleName,
-		precisebanktypes.ModuleName,
 		vestingtypes.ModuleName,
 		// CosmWasm
 		wasmtypes.ModuleName,
@@ -989,7 +989,6 @@ func NewChainApp(
 		evmtypes.ModuleName,
 		feemarkettypes.ModuleName,
 		erc20types.ModuleName,
-		precisebanktypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
@@ -1173,6 +1172,9 @@ func (app *ChainApp) Name() string { return app.BaseApp.Name() }
 
 // PreBlocker application updates every pre block
 func (app *ChainApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	// Fork-style upgrades (no plan in state) are applied here, before the
+	// upgrade module's own PreBlock runs. See upgrades_v4.go.
+	app.applyForkUpgrades(ctx)
 	return app.ModuleManager.PreBlock(ctx)
 }
 
@@ -1465,7 +1467,7 @@ func (app *ChainApp) GetCallbackKeeper() ibccallbackskeeper.ContractKeeper {
 	return app.CallbackKeeper
 }
 
-func (app *ChainApp) GetTransferKeeper() transferKeeper.Keeper {
+func (app *ChainApp) GetTransferKeeper() transferkeeper.Keeper {
 	return app.TransferKeeper
 }
 

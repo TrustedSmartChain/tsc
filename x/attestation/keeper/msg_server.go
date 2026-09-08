@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/errors"
 
-	"github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
+	"github.com/TrustedSmartChain/tsc/v4/x/attestation/types"
 )
 
 type msgServer struct {

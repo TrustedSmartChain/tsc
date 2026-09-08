@@ -12,7 +12,7 @@ import (
 	licensetypes "github.com/nodelabs-sdk/nodelabs/x/license/types"
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 
-	attestationtypes "github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
+	attestationtypes "github.com/TrustedSmartChain/tsc/v4/x/attestation/types"
 )
 
 const (

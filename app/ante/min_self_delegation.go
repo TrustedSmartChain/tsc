@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/TrustedSmartChain/tsc/v3/app/hooks"
+	"github.com/TrustedSmartChain/tsc/v4/app/hooks"
 )
 
 // maxNestedMsgs caps recursion through authz.MsgExec wrappers, matching the

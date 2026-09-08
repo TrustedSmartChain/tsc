@@ -2,7 +2,7 @@
 
 set -e
 
-GO_MOD_PACKAGE="github.com/TrustedSmartChain/tsc/v3"
+GO_MOD_PACKAGE="github.com/TrustedSmartChain/tsc/v4"
 
 echo "Generating gogo proto code"
 cd proto

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/TrustedSmartChain/tsc/v3/x/distro/types"
+	"github.com/TrustedSmartChain/tsc/v4/x/distro/types"
 )
 
 func TestParams(t *testing.T) {

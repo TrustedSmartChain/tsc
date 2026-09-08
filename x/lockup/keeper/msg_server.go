@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
+	"github.com/TrustedSmartChain/tsc/v4/x/lockup/types"
 )
 
 type msgServer struct {
