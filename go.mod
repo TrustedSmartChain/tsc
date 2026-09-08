@@ -1,4 +1,4 @@
-module github.com/TrustedSmartChain/tsc/v3
+module github.com/TrustedSmartChain/tsc/v4
 
 go 1.24.0
 
@@ -12,7 +12,7 @@ replace (
 	// what cosmos-sdk v0.53.8 requires — leaving it lower silently downgrades
 	// the SDK below the cometbft it ships against.
 	github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.38.23
-	// use Cosmos geth fork - required for cosmos/evm v0.5.1
+	// use Cosmos geth fork - required for cosmos/evm v0.6.x
 	github.com/ethereum/go-ethereum => github.com/cosmos/go-ethereum v1.16.2-cosmos-1
 	// Security Advisory https://github.com/advisories/GHSA-h395-qcrw-5vmq
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
@@ -41,14 +41,14 @@ require (
 	github.com/cosmos/cosmos-db v1.1.3
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
 	github.com/cosmos/cosmos-sdk v0.53.8
-	github.com/cosmos/evm v0.5.1
+	github.com/cosmos/evm v0.6.3
 	github.com/cosmos/gogoproto v1.7.2
 	github.com/cosmos/ibc-go/v10 v10.5.0
 	github.com/ethereum/go-ethereum v1.15.11
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/nodelabs-sdk/nodelabs v0.1.0
+	github.com/nodelabs-sdk/nodelabs v0.2.0
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0

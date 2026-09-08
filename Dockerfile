@@ -34,7 +34,12 @@ ARG VERSION=""
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
 # then log output of file /code/bin/tscd
 # then ensure static linking
-RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build VERSION="${VERSION}" \
+#
+# touch go.sum first: make's go.sum target runs `go mod verify`, which cannot
+# pass here — the wasmvm module dir was patched above with the muslc lib. The
+# rule only fires when go.mod is newer than go.sum (COPY preserves host mtimes).
+RUN touch /code/go.sum \
+  && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build VERSION="${VERSION}" \
   && file /code/build/tscd \
   && echo "Ensuring binary is statically linked ..." \
   && (file /code/build/tscd | grep "statically linked")

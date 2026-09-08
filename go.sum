@@ -861,8 +861,8 @@ github.com/cosmos/cosmos-proto v1.0.0-beta.5 h1:eNcayDLpip+zVLRLYafhzLvQlSmyab+R
 github.com/cosmos/cosmos-proto v1.0.0-beta.5/go.mod h1:hQGLpiIUloJBMdQMMWb/4wRApmI9hjHH05nefC0Ojec=
 github.com/cosmos/cosmos-sdk v0.53.8 h1:rKQIgqifo3Izv/JQLpPIjReOJ7jK+Qh8Rt8GIttDADw=
 github.com/cosmos/cosmos-sdk v0.53.8/go.mod h1:b/De6uhCfooGEy4kE5G4C0A+MxK9aPr0nZNMyR+PmY0=
-github.com/cosmos/evm v0.5.1 h1:eSRsxFxy/Tr2jiga/h8X5DojnC8JJwd21MB+HTa1SIg=
-github.com/cosmos/evm v0.5.1/go.mod h1:AiKOtGMt539qICNH2Kdy+iw9yK3rlcU6MWet3+g8sWs=
+github.com/cosmos/evm v0.6.3 h1:1G8+iqyQWslZ2g7873h90Fcr3pL6RV24PgOS1wiK2SY=
+github.com/cosmos/evm v0.6.3/go.mod h1:QnaJDtxqon2mywiYqxM8VwW8FKeFazi0au0qzVpFAG8=
 github.com/cosmos/go-bip39 v1.0.0 h1:pcomnQdrdH22njcAatO0yWojsUnCO3y2tNoV1cb6hHY=
 github.com/cosmos/go-bip39 v1.0.0/go.mod h1:RNJv0H/pOIVgxw6KS7QeX2a0Uo0aKUlfhZ4xuwvCdJw=
 github.com/cosmos/go-ethereum v1.16.2-cosmos-1 h1:QIaIS6HIdPSBdTvpFhxswhMLUJgcr4irbd2o9ZKldAI=
@@ -1467,8 +1467,8 @@ github.com/nats-io/nkeys v0.1.0/go.mod h1:xpnFELMwJABBLVhffcfd1MZx6VsNRFpEugbxzi
 github.com/nats-io/nkeys v0.1.3/go.mod h1:xpnFELMwJABBLVhffcfd1MZx6VsNRFpEugbxziKVo7w=
 github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OSON2c=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
-github.com/nodelabs-sdk/nodelabs v0.1.0 h1:2pVnIhfkvQNsdK6mUXSKkhcHCLO/bJgqA/vsIHvJPL8=
-github.com/nodelabs-sdk/nodelabs v0.1.0/go.mod h1:fn2Slz5To2YfeQiXW1eKrwJtlKps1R3xWWO3tcQUX5A=
+github.com/nodelabs-sdk/nodelabs v0.2.0 h1:qa0KWINrU62xiRPCrjT7kSxFjxOjPS3HLLJOEMXkSC8=
+github.com/nodelabs-sdk/nodelabs v0.2.0/go.mod h1:J9+8/OnoIRoO4EqstRoSr1B2j/lks5cTwq79FUARWOI=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=
 github.com/nxadm/tail v1.4.11/go.mod h1:OTaG3NK980DZzxbRq6lEuzgU+mug70nY11sMd4JXXHc=

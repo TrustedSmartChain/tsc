@@ -14,8 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	lockupprecompile "github.com/TrustedSmartChain/tsc/v3/precompiles/lockup"
-	lockuptypes "github.com/TrustedSmartChain/tsc/v3/x/lockup/types"
+	lockupprecompile "github.com/TrustedSmartChain/tsc/v4/precompiles/lockup"
+	lockuptypes "github.com/TrustedSmartChain/tsc/v4/x/lockup/types"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 )
 

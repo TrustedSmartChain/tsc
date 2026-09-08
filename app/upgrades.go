@@ -8,6 +8,7 @@ import (
 func (app *ChainApp) RegisterUpgradeHandlers() {
 	app.registerV2UpgradeHandler()
 	app.registerV3UpgradeHandler()
+	app.registerV4UpgradeHandler()
 
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {

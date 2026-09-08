@@ -21,9 +21,9 @@ import (
 
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 
-	module "github.com/TrustedSmartChain/tsc/v3/x/attestation"
-	"github.com/TrustedSmartChain/tsc/v3/x/attestation/keeper"
-	"github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
+	module "github.com/TrustedSmartChain/tsc/v4/x/attestation"
+	"github.com/TrustedSmartChain/tsc/v4/x/attestation/keeper"
+	"github.com/TrustedSmartChain/tsc/v4/x/attestation/types"
 )
 
 // fixtureBlockTime is the fixture context's initial block time; tests that

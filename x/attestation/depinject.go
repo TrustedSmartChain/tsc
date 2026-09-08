@@ -14,8 +14,8 @@ import (
 
 	networkkeeper "github.com/nodelabs-sdk/nodelabs/x/network/keeper"
 
-	modulev1 "github.com/TrustedSmartChain/tsc/v3/api/attestation/module/v1"
-	"github.com/TrustedSmartChain/tsc/v3/x/attestation/keeper"
+	modulev1 "github.com/TrustedSmartChain/tsc/v4/api/attestation/module/v1"
+	"github.com/TrustedSmartChain/tsc/v4/x/attestation/keeper"
 )
 
 var _ appmodule.AppModule = AppModule{}

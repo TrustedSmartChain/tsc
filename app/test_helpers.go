@@ -33,7 +33,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/TrustedSmartChain/tsc/v3/app/hooks"
+	"github.com/TrustedSmartChain/tsc/v4/app/hooks"
 )
 
 // SetupOptions defines arguments that are passed into `Simapp` constructor.

@@ -19,3 +19,5 @@ cmd/fleetsim/
 internal/fleetsim/
 
 .DS_Store
+
+.gitconfig

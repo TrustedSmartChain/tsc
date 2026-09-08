@@ -10,7 +10,7 @@ SIMAPP = ./app
 
 # for dockerized protobuf tools
 DOCKER := $(shell which docker)
-HTTPS_GIT := github.com/TrustedSmartChain/tsc/v3.git
+HTTPS_GIT := github.com/TrustedSmartChain/tsc/v4.git
 
 export GO111MODULE = on
 
@@ -157,13 +157,13 @@ test: test-unit
 test-all: test-race test-cover test-system
 
 test-unit:
-	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./...
+	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock test' ./...
 
 test-race:
-	@VERSION=$(VERSION) go test -mod=readonly -race -tags='ledger test_ledger_mock' ./...
+	@VERSION=$(VERSION) go test -mod=readonly -race -tags='ledger test_ledger_mock test' ./...
 
 test-cover:
-	@go test -mod=readonly -timeout 30m -race -coverprofile=coverage.txt -covermode=atomic -tags='ledger test_ledger_mock' ./...
+	@go test -mod=readonly -timeout 30m -race -coverprofile=coverage.txt -covermode=atomic -tags='ledger test_ledger_mock test' ./...
 
 benchmark:
 	@go test -mod=readonly -bench=. ./...

@@ -8,7 +8,7 @@ import (
 
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 
-	"github.com/TrustedSmartChain/tsc/v3/x/attestation/types"
+	"github.com/TrustedSmartChain/tsc/v4/x/attestation/types"
 )
 
 // TestAdmissionQuotaBurn: every admitted attempt burns the per-node daily

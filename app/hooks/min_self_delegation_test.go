@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/TrustedSmartChain/tsc/v3/app/hooks"
+	"github.com/TrustedSmartChain/tsc/v4/app/hooks"
 )
 
 // stubKeeper returns the configured validator for any address. The hook only
