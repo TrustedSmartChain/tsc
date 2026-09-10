@@ -4,12 +4,10 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/TrustedSmartChain/tsc/v4/app"
 	cmtcfg "github.com/cometbft/cometbft/config"
 	dbm "github.com/cosmos/cosmos-db"
-	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -30,7 +28,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
-	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	evmosserverconfig "github.com/cosmos/evm/server/config"
 
 	evmoscmd "github.com/cosmos/evm/client"
@@ -60,7 +57,9 @@ type CustomAppConfig struct {
 
 // initAppConfig helps to override default appConfig template and configs.
 // return "", nil if no custom configuration is required for the application.
-func initAppConfig() (string, interface{}) {
+// evmChainID seeds the evm-chain-id of a freshly written app.toml; at runtime
+// the app derives the value from the chain id (see app.ResolveEVMChainID).
+func initAppConfig(evmChainID uint64) (string, interface{}) {
 	// The following code snippet is just for reference.
 
 	// Optionally allow the chain developer to overwrite the SDK's default
@@ -81,7 +80,7 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.MinGasPrices = "0" + app.BaseDenom
 
 	evmCfg := evmosserverconfig.DefaultEVMConfig()
-	evmCfg.EVMChainID = app.EVMChainID
+	evmCfg.EVMChainID = evmChainID
 
 	customAppConfig := CustomAppConfig{
 		Config:  *srvCfg,
@@ -212,24 +211,6 @@ func newApp(
 		appOpts,
 		baseappOptions...,
 	)
-}
-
-// getChainIDFromOpts returns the chain Id from app Opts
-// It first tries to get from the chainId flag, if not available
-// it will load from home
-func getChainIDFromOpts(appOpts servertypes.AppOptions) (chainID string, err error) {
-	chainID = cast.ToString(appOpts.Get(flags.FlagChainID))
-	if chainID != "" {
-		return chainID, nil
-	}
-
-	homeDir := cast.ToString(appOpts.Get(flags.FlagHome))
-	genDocFile := filepath.Join(homeDir, cast.ToString(appOpts.Get("genesis_file")))
-	appGenesis, err := genutiltypes.AppGenesisFromFile(genDocFile)
-	if err != nil {
-		return "", err
-	}
-	return appGenesis.ChainID, nil
 }
 
 func appExport(

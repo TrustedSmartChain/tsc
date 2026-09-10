@@ -22,6 +22,8 @@ import (
 
 	"github.com/TrustedSmartChain/tsc/v4/app"
 	"github.com/cosmos/evm/crypto/hd"
+	evmserverconfig "github.com/cosmos/evm/server/config"
+	srvflags "github.com/cosmos/evm/server/flags"
 )
 
 // NewRootCmd creates a new root command for chain app. It is called once in the
@@ -97,10 +99,42 @@ func NewRootCmd() *cobra.Command {
 				return err
 			}
 
-			customAppTemplate, customAppConfig := initAppConfig()
+			// The EVM chain id follows the cosmos chain id ("tsc_8878788-1" ->
+			// 8878788). Seed a fresh app.toml with it when `init` is given
+			// --chain-id, so the file documents the value the node will run
+			// with; a chain id without an EIP-155 suffix keeps the cosmos/evm
+			// default.
+			defaultEVMChainID := uint64(evmserverconfig.DefaultEVMChainID)
+			if chainID, _ := cmd.Flags().GetString(flags.FlagChainID); chainID != "" {
+				if id, ok := app.EVMChainIDFromChainID(chainID); ok {
+					defaultEVMChainID = id
+				}
+			}
+
+			customAppTemplate, customAppConfig := initAppConfig(defaultEVMChainID)
 			customCMTConfig := initCometBFTConfig()
 
-			return server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig)
+			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig); err != nil {
+				return err
+			}
+
+			// For commands that take --evm.evm-chain-id (start), resolve the
+			// EVM chain id from the genesis chain id once app.toml and the
+			// flags are loaded and pin it in viper. The app resolves it on its
+			// own too (app.ResolveEVMChainID), but the JSON-RPC server reads
+			// evm.evm-chain-id from this viper before the app exists, so
+			// without this an app.toml from an older build would make
+			// net_version disagree with the state machine. A configured value
+			// or a --chain-id that contradicts genesis refuses to start here.
+			if cmd.Flags().Lookup(srvflags.EVMChainID) != nil {
+				serverCtx := server.GetServerContextFromCmd(cmd)
+				evmChainID, err := app.ResolveEVMChainID(serverCtx.Viper)
+				if err != nil {
+					return err
+				}
+				serverCtx.Viper.Set(srvflags.EVMChainID, evmChainID)
+			}
+			return nil
 		},
 	}
 

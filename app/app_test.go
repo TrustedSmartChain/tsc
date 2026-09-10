@@ -13,23 +13,38 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	evmtypes "github.com/cosmos/evm/x/vm/types"
 	"github.com/cosmos/evm/testutil/integration/evm/network"
+	evmtypes "github.com/cosmos/evm/x/vm/types"
 
 	"github.com/TrustedSmartChain/tsc/v4/app/hooks"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
 	"cosmossdk.io/log"
 
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
+
+// testChainID is the chain id used by tests that need an EIP-155 suffix; the
+// app derives its EVM chain id (8878788) from it.
+const testChainID = "tsc_8878788-1"
+
+// testAppOptions mirrors what the CLI resolves from --chain-id for a throwaway
+// app rooted at a fresh temp dir.
+func testAppOptions(t *testing.T, chainID string) simtestutil.AppOptionsMap {
+	t.Helper()
+	return simtestutil.AppOptionsMap{
+		flags.FlagHome:    t.TempDir(),
+		flags.FlagChainID: chainID,
+	}
+}
 
 func TestAppExport(t *testing.T) {
 	db := dbm.NewMemDB()
@@ -39,8 +54,8 @@ func TestAppExport(t *testing.T) {
 		db,
 		nil,
 		true,
-		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-		baseapp.SetChainID(ChainID),
+		testAppOptions(t, testChainID),
+		baseapp.SetChainID(testChainID),
 	)
 
 	// init chain from the default genesis plus one validator: cosmos/evm v0.7
@@ -86,7 +101,7 @@ func TestAppExport(t *testing.T) {
 	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
 	require.NoError(t, err)
 	_, err = gapp.InitChain(&abci.RequestInitChain{
-		ChainId:         ChainID,
+		ChainId:         testChainID,
 		Validators:      []abci.ValidatorUpdate{},
 		AppStateBytes:   stateBytes,
 		ConsensusParams: simtestutil.DefaultConsensusParams,
@@ -104,8 +119,8 @@ func TestAppExport(t *testing.T) {
 
 	// Making a new app object with the db, so that initchain hasn't been called
 	newGapp := NewChainApp(
-		logger, db, nil, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-		baseapp.SetChainID(ChainID),
+		logger, db, nil, true, testAppOptions(t, testChainID),
+		baseapp.SetChainID(testChainID),
 	)
 	_, err = newGapp.ExportAppStateAndValidators(false, []string{}, nil)
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
