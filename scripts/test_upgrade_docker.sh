@@ -89,7 +89,7 @@ fi
 # Pass the test's tuning knobs through only when set on the host, so the
 # script's own defaults stay authoritative.
 ENV_ARGS=()
-for v in OLD_VERSION UPGRADE_NAME GITHUB_REPO CHAIN_ID EVM_CHAIN_ID DENOM \
+for v in OLD_VERSION UPGRADE_NAME GITHUB_REPO CHAIN_ID DENOM \
          BLOCK_TIME VOTING_PERIOD EXPEDITED_VOTING_PERIOD UPGRADE_DELTA \
          DEPOSIT GAS_PRICES; do
   if [ -n "${!v:-}" ]; then

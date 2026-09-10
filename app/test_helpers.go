@@ -3,9 +3,11 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/cosmos/evm/config"
+	srvflags "github.com/cosmos/evm/server/flags"
 	"github.com/cosmos/evm/testutil/integration/evm/network"
 	"github.com/cosmos/evm/x/vm/types"
 
@@ -57,12 +59,22 @@ func init() {
 	config.SetBip44CoinType(cfg)
 }
 
-func setup(withGenesis bool, invCheckPeriod uint, chainID string, evmChainID uint64) (*ChainApp, GenesisState) {
+// setup builds a ChainApp rooted at homeDir, which must be a fresh directory:
+// the app resolves its chain id from <home>/config/genesis.json when one
+// exists, so pointing tests at a real node home would silently pick up that
+// chain's ids.
+func setup(withGenesis bool, invCheckPeriod uint, homeDir, chainID string, evmChainID uint64) (*ChainApp, GenesisState) {
 	db := dbm.NewMemDB()
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
-	appOptions[flags.FlagHome] = DefaultNodeHome
+	appOptions[flags.FlagHome] = homeDir
 	appOptions[server.FlagInvCheckPeriod] = invCheckPeriod
+	// No genesis file exists in a fresh home, so the chain id flag stands in
+	// for it and the app derives its EVM chain id the same way it does in
+	// production. A chain id with an EIP-155 suffix wins over evmChainID
+	// (see ResolveEVMChainID).
+	appOptions[flags.FlagChainID] = chainID
+	appOptions[srvflags.EVMChainID] = evmChainID
 
 	app := NewChainApp(log.NewNopLogger(), db, nil, true, appOptions, baseapp.SetChainID(chainID))
 	if withGenesis {
@@ -104,7 +116,7 @@ func Setup(t *testing.T, chainID string, evmChainID uint64) *ChainApp {
 func SetupWithGenesisValSet(t *testing.T, chainID string, evmChainID uint64, valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *ChainApp {
 	t.Helper()
 
-	app, genesisState := setup(true, 5, chainID, evmChainID)
+	app, genesisState := setup(true, 5, t.TempDir(), chainID, evmChainID)
 	genesisState, err := simtestutil.GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, genAccs, balances...)
 	var bankGenesis banktypes.GenesisState
 	app.AppCodec().MustUnmarshalJSON(genesisState[banktypes.ModuleName], &bankGenesis)
@@ -165,10 +177,19 @@ func SetupWithGenesisValSet(t *testing.T, chainID string, evmChainID uint64, val
 func SetupTestingApp(chainID string) func() (ibctesting.TestingApp, map[string]json.RawMessage) {
 	return func() (ibctesting.TestingApp, map[string]json.RawMessage) {
 		db := dbm.NewMemDB()
+		// A fresh home per app: never a real node home (see setup), and
+		// wasmvm file-locks <home>/wasm so two apps cannot share one.
+		homeDir, err := os.MkdirTemp("", "tsc-ibctesting-")
+		if err != nil {
+			panic(err)
+		}
 		app := NewChainApp(
 			log.NewNopLogger(),
 			db, nil, true,
-			simtestutil.NewAppOptionsWithFlagHome(DefaultNodeHome),
+			simtestutil.AppOptionsMap{
+				flags.FlagHome:    homeDir,
+				flags.FlagChainID: chainID,
+			},
 			baseapp.SetChainID(chainID),
 		)
 		return app, app.DefaultGenesis()

@@ -25,8 +25,9 @@
 
 set -eu
 
+# The EIP-155 suffix of the chain id is the EVM chain id; the new binary
+# derives it from genesis at start, so no --evm.evm-chain-id is needed.
 export CHAIN_ID=${CHAIN_ID:-"tsc_8878788-1"}
-export EVM_CHAIN_ID=${EVM_CHAIN_ID:-"8878788"}
 export MONIKER="localvalidator"
 export KEYALGO="eth_secp256k1"
 export KEYRING=${KEYRING:-"test"}
@@ -360,12 +361,11 @@ echo "v2 node halted with UPGRADE \"$UPGRADE_NAME\" NEEDED, upgrade-info.json wr
 # ---------------------------------------------------------------------------
 step "Restarting on the $UPGRADE_NAME binary"
 
-# --evm.evm-chain-id is passed explicitly: this app.toml was written by the v2
-# binary, and start must not depend on what an older build put there.
+# This app.toml was written by the v2 binary; the EVM chain id it carries does
+# not matter, the new binary derives it from the chain id in genesis.
 "$NEW_BIN" start --home "$HOME_DIR" --chain-id "$CHAIN_ID" \
   --pruning=nothing --minimum-gas-prices=0$DENOM \
   --rpc.laddr "tcp://127.0.0.1:$RPC" \
-  --evm.evm-chain-id "$EVM_CHAIN_ID" \
   > "$NEW_LOG" 2>&1 &
 NODE_PID=$!
 echo "pid $NODE_PID, log $NEW_LOG"
@@ -410,5 +410,5 @@ if [ "$KEEP_RUNNING" != "false" ]; then
 else
   echo ""
   echo "Stopping the node. Restart the upgraded chain any time with:"
-  echo "  $NEW_BIN start --home $HOME_DIR --chain-id $CHAIN_ID --evm.evm-chain-id $EVM_CHAIN_ID --rpc.laddr tcp://127.0.0.1:$RPC --minimum-gas-prices=0$DENOM"
+  echo "  $NEW_BIN start --home $HOME_DIR --chain-id $CHAIN_ID --rpc.laddr tcp://127.0.0.1:$RPC --minimum-gas-prices=0$DENOM"
 fi

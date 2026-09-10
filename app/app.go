@@ -170,9 +170,6 @@ const (
 	appName      = "tscd"
 	NodeDir      = ".tsc"
 	Bech32Prefix = "tsc"
-
-	ChainID    = "tsc_87878-1"
-	EVMChainID = uint64(87878)
 )
 
 func init() {
@@ -306,24 +303,18 @@ func NewChainApp(
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *ChainApp {
 
-	// Use the EVM chain ID from app options if explicitly set to our chain's
-	// value, otherwise fall back to our hardcoded ID. The cosmos/evm global
-	// SetChainConfig panics if a non-default chain ID is set twice per
-	// process. The temp ChainApp created in root.go for encoding config has
-	// no EVM flags set (resolves to 0), so it will use EVMChainID here once,
-	// and the real start call also uses EVMChainID — both hit the same value,
-	// so we guard with loadLatest to distinguish the temp app (false) from
-	// the real app (true).
 	// In test builds this clears cosmos/evm's set-once global chain config so
 	// multi-app test binaries work; in production it is a no-op.
 	resetEVMChainConfig()
 
-	evmChainID := EVMChainID
-	if !loadLatest {
-		// Temp app for encoding config — use the cosmos/evm default so
-		// SetChainConfig does not lock the global to our custom chain ID.
-		evmChainID = 262144
-	}
+	// The EVM (EIP-155) chain id comes from the suffix of the chain id in the
+	// genesis file ("tsc_8878788-1" -> 8878788), so every node signs with the
+	// value genesis dictates; a --chain-id flag is only checked against it.
+	// See ResolveEVMChainID for the fallbacks. The throwaway app built in
+	// cmd/tscd/root.go for the encoding config has no genesis and lands on the
+	// cosmos/evm default, which is the one value SetChainConfig lets the real
+	// app overwrite later in the same process.
+	evmChainID := mustResolveEVMChainID(appOpts)
 	encodingConfig := evmencoding.MakeConfig(evmChainID)
 
 	appCodec := encodingConfig.Codec

@@ -24,16 +24,10 @@ export KEY2="acc1"
 # distro's minting_address from $KEY3_ADDR below if you need to exercise it.
 export KEY3="minting"
 
-# Must match app.ChainID in app/app.go. The EIP-155 suffix has to equal
-# app.EVMChainID: the EVM keeper and the tx encoder are compiled with that
-# constant (app/app.go), so a chain id whose suffix says anything else is
-# lying to wallets and tooling.
+# The EIP-155 suffix of the chain id ("tsc_8878788-1" -> 8878788) is the EVM
+# chain id: tscd derives it from --chain-id / genesis at start, so the
+# JSON-RPC, the tx encoder and the state machine always agree with genesis.
 export CHAIN_ID=${CHAIN_ID:-"tsc_8878788-1"}
-# EVM (EIP-155) chain id served by the JSON-RPC. app.toml is written with
-# app.EVMChainID at init time, but an app.toml from an older build keeps its
-# old value, so pass it explicitly on start — if the JSON-RPC reports a
-# different id than the state machine signs with, every EVM tx is rejected.
-export EVM_CHAIN_ID=${EVM_CHAIN_ID:-"8878788"}
 export MONIKER="localvalidator"
 export KEYALGO="eth_secp256k1"
 export KEYRING=${KEYRING:-"test"}
@@ -357,14 +351,13 @@ sed -i -e 's/address = "localhost:9090"/address = "0.0.0.0:'$GRPC'"/g' $HOME_DIR
 sed -i -e 's/address = "localhost:9091"/address = "0.0.0.0:'$GRPC_WEB'"/g' $HOME_DIR/config/app.toml
 
 # EVM JSON-RPC. cosmos/evm binds 127.0.0.1:8545 / 127.0.0.1:8546 by default
-# (127.0.0.1, not localhost — the obvious sed patterns silently match nothing),
-# and evm-chain-id is whatever app.EVMChainID was when this app.toml was first
-# written, so an app.toml carried over from an older build keeps the old id.
+# (127.0.0.1, not localhost — the obvious sed patterns silently match nothing).
+# evm-chain-id is left alone: tscd derives it from the chain id at start and
+# overrides whatever an older app.toml carries.
 # The blanket "enable = false" -> true above already flips [json-rpc] enable;
 # start passes --json-rpc.enable so it does not depend on that.
 sed -i -e 's/^address = "127.0.0.1:8545"/address = "0.0.0.0:'$JSONRPC'"/g' $HOME_DIR/config/app.toml
 sed -i -e 's/^ws-address = .*/ws-address = "0.0.0.0:'$JSONRPC_WS'"/g' $HOME_DIR/config/app.toml
-sed -i -e 's/^evm-chain-id = .*/evm-chain-id = '$EVM_CHAIN_ID'/g' $HOME_DIR/config/app.toml
 # ws-origins is deliberately NOT set here: the registered --json-rpc.ws-origins
 # flag beats app.toml even when unset, so the ws handshake would keep 403ing
 # browser clients no matter what the file says. It is passed on start instead.
@@ -375,4 +368,4 @@ sed -i -e 's/address = ":8080"/address = "0.0.0.0:'$ROSETTA'"/g' $HOME_DIR/confi
 # Faster blocks
 sed -i -e 's/timeout_commit = "5s"/timeout_commit = "'$BLOCK_TIME'"/g' $HOME_DIR/config/config.toml
 
-$BINARY start --pruning=nothing  --minimum-gas-prices=0$DENOM --rpc.laddr="tcp://0.0.0.0:$RPC" --home $HOME_DIR --api.enabled-unsafe-cors --json-rpc.enable --json-rpc.api=eth,txpool,personal,net,debug,web3 --json-rpc.address="0.0.0.0:$JSONRPC" --json-rpc.ws-address="0.0.0.0:$JSONRPC_WS" --json-rpc.ws-origins="*" --evm.evm-chain-id="$EVM_CHAIN_ID" --chain-id="$CHAIN_ID"
+$BINARY start --pruning=nothing  --minimum-gas-prices=0$DENOM --rpc.laddr="tcp://0.0.0.0:$RPC" --home $HOME_DIR --api.enabled-unsafe-cors --json-rpc.enable --json-rpc.api=eth,txpool,personal,net,debug,web3 --json-rpc.address="0.0.0.0:$JSONRPC" --json-rpc.ws-address="0.0.0.0:$JSONRPC_WS" --json-rpc.ws-origins="*" --chain-id="$CHAIN_ID"
