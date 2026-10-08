@@ -13,33 +13,15 @@ RUN set -eux; apk add --no-cache \
 WORKDIR /code
 
 ADD go.mod go.sum ./
-RUN set -eux; \
-    go mod download; \
-    ARCH=$(uname -m); \
-    WASM_VERSION=$(go list -m all | grep github.com/CosmWasm/wasmvm || true); \
-    if [ ! -z "${WASM_VERSION}" ]; then \
-      WASMVM_REPO=$(echo $WASM_VERSION | awk '{print $1}');\
-      WASMVM_VERS=$(echo $WASM_VERSION | awk '{print $2}');\
-      WASMVM_RELEASE_REPO=$(echo $WASMVM_REPO | sed 's#/v[0-9]\+$##');\
-      WASMVM_DIR=$(go list -m -f '{{.Dir}}' ${WASMVM_REPO});\
-      chmod -R u+w "${WASMVM_DIR}/internal/api";\
-      wget -O "${WASMVM_DIR}/internal/api/libwasmvm_muslc.${ARCH}.a" https://${WASMVM_RELEASE_REPO}/releases/download/${WASMVM_VERS}/libwasmvm_muslc.${ARCH}.a;\
-    fi;
+RUN go mod download
 
 # Copy over code
 COPY . /code
 
 ARG VERSION=""
 
-# force it to use static lib (from above) not standard libgo_cosmwasm.so file
-# then log output of file /code/bin/tscd
-# then ensure static linking
-#
-# touch go.sum first: make's go.sum target runs `go mod verify`, which cannot
-# pass here — the wasmvm module dir was patched above with the muslc lib. The
-# rule only fires when go.mod is newer than go.sum (COPY preserves host mtimes).
-RUN touch /code/go.sum \
-  && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build VERSION="${VERSION}" \
+# Build, then make sure the binary is statically linked.
+RUN LEDGER_ENABLED=false LINK_STATICALLY=true make build VERSION="${VERSION}" \
   && file /code/build/tscd \
   && echo "Ensuring binary is statically linked ..." \
   && (file /code/build/tscd | grep "statically linked")

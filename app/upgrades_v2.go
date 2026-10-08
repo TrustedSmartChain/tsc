@@ -13,7 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/group"
 	"github.com/ethereum/go-ethereum/common"
 
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	lockupprecompile "github.com/TrustedSmartChain/tsc/v4/precompiles/lockup"
 	lockuptypes "github.com/TrustedSmartChain/tsc/v4/x/lockup/types"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -85,7 +84,7 @@ func v2StoreUpgrades() storetypes.StoreUpgrades {
 	return storetypes.StoreUpgrades{
 		Added: []string{
 			epochstypes.StoreKey,
-			wasmtypes.StoreKey,
+			wasmStoreKey,
 			lockuptypes.StoreKey,
 		},
 		Deleted: []string{

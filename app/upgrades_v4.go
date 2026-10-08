@@ -41,6 +41,24 @@ func (app *ChainApp) registerV4UpgradeHandler() {
 	)
 }
 
+// forkUpgrade is an upgrade scheduled by code rather than by an on-chain
+// plan: validators coordinate a halt, swap binaries, and the new binary
+// applies the upgrade at a hardcoded height.
+type forkUpgrade struct {
+	Name   string
+	Height int64
+}
+
+// forkUpgrades lists every fork-style upgrade this binary knows about. A zero
+// height disables fork activation for that entry, leaving the plan-in-state
+// path (local nets, tests, the upgrade harness) as the only way to apply it.
+func forkUpgrades() []forkUpgrade {
+	return []forkUpgrade{
+		{Name: UpgradeNameV4, Height: ForkHeightV4},
+		{Name: UpgradeNameV4_1, Height: ForkHeightV4_1},
+	}
+}
+
 // applyForkUpgrades hard-applies scheduled-by-code upgrades at their fork
 // height. Called from PreBlocker before the upgrade module's own PreBlock, so
 // a fork upgrade behaves exactly like a plan-in-state upgrade from the
@@ -49,15 +67,23 @@ func (app *ChainApp) registerV4UpgradeHandler() {
 // version map. Deterministic across validators because height and code are
 // identical everywhere.
 func (app *ChainApp) applyForkUpgrades(ctx sdk.Context) {
-	if ForkHeightV4 == 0 || ctx.BlockHeight() != ForkHeightV4 {
+	for _, fu := range forkUpgrades() {
+		app.applyForkUpgrade(ctx, fu)
+	}
+}
+
+// applyForkUpgrade applies a single fork upgrade if ctx is at its height and
+// it has not already been applied.
+func (app *ChainApp) applyForkUpgrade(ctx sdk.Context, fu forkUpgrade) {
+	if fu.Height == 0 || ctx.BlockHeight() != fu.Height {
 		return
 	}
-	if done, _ := app.UpgradeKeeper.GetDoneHeight(ctx, UpgradeNameV4); done != 0 {
+	if done, _ := app.UpgradeKeeper.GetDoneHeight(ctx, fu.Name); done != 0 {
 		return
 	}
 	if err := app.UpgradeKeeper.ApplyUpgrade(ctx, upgradetypes.Plan{
-		Name:   UpgradeNameV4,
-		Height: ForkHeightV4,
+		Name:   fu.Name,
+		Height: fu.Height,
 	}); err != nil {
 		panic(err)
 	}
