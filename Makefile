@@ -91,15 +91,15 @@ all: install lint test
 
 build: go.sum
 ifeq ($(OS),Windows_NT)
-	$(error wasmd server not supported. Use "make build-windows-client" for client)
+	$(error tscd server not supported on Windows. Use "make build-windows-client" for client)
 	exit 1
 else
 	go build -mod=readonly $(BUILD_FLAGS) -o build/tscd ./cmd/tscd
 endif
 
 # Builds the release linux binary through the Dockerfile. A host cross-compile
-# cannot work here: GOOS=linux disables cgo, and both libsecp256k1 (cosmos/evm)
-# and libwasmvm are cgo-only.
+# cannot work here: GOOS=linux disables cgo, and libsecp256k1 (cosmos/evm) is
+# cgo-only.
 #
 # Pinned to amd64 to match the release artifact regardless of host; on an arm64
 # host that build runs emulated and is slow. Override for a native local build:
@@ -199,7 +199,7 @@ lint: format-tools
 format: format-tools
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "./tests/system/vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gofumpt -w
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "./tests/system/vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs misspell -w
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "./tests/system/vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gci write --skip-generated -s standard -s default -s "prefix(cosmossdk.io)" -s "prefix(github.com/cosmos/cosmos-sdk)" -s "prefix(github.com/CosmWasm/wasmd)" --custom-order
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "./tests/system/vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gci write --skip-generated -s standard -s default -s "prefix(cosmossdk.io)" -s "prefix(github.com/cosmos/cosmos-sdk)" --custom-order
 
 mod-tidy:
 	go mod tidy
@@ -285,10 +285,6 @@ ictest-basic:
 ictest-ibc:
 	@echo "Running IBC e2e test"
 	@cd interchaintest && go test -race -v -run TestIBCBasic .
-
-ictest-wasm:
-	@echo "Running cosmwasm e2e test"
-	@cd interchaintest && go test -race -v -run TestCosmWasmIntegration .
 
 ictest-packetforward:
 	@echo "Running packet forward middleware e2e test"

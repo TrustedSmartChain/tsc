@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -155,11 +154,6 @@ import (
 	attestationkeeper "github.com/TrustedSmartChain/tsc/v4/x/attestation/keeper"
 	attestationtypes "github.com/TrustedSmartChain/tsc/v4/x/attestation/types"
 
-	// CosmWasm imports
-	"github.com/CosmWasm/wasmd/x/wasm"
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-
 	"github.com/ethereum/go-ethereum/common"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
@@ -221,7 +215,12 @@ var maccPerms = map[string][]string{
 	feemarkettypes.ModuleName:      nil,
 	erc20types.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	distrotypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
-	wasmtypes.ModuleName:           {authtypes.Burner},
+}
+
+// retiredModuleAccounts are module accounts left in state by modules this
+// binary no longer runs. They are kept blocked (see BlockedAddresses).
+var retiredModuleAccounts = []string{
+	"wasm", // x/wasm, removed in v4.1
 }
 
 var (
@@ -277,9 +276,6 @@ type ChainApp struct {
 	LicenseKeeper     licensekeeper.Keeper
 	NetworkKeeper     networkkeeper.Keeper
 	AttestationKeeper attestationkeeper.Keeper
-
-	// Wasm keeper
-	WasmKeeper wasmkeeper.Keeper
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -374,8 +370,10 @@ func NewChainApp(
 		licensetypes.StoreKey,
 		networktypes.StoreKey,
 		attestationtypes.StoreKey,
-		// CosmWasm keys
-		wasmtypes.StoreKey,
+		// x/wasm's store, kept mounted (with no module behind it) so this
+		// binary hashes state exactly like the pre-removal binary until the
+		// v4.1 upgrade empties it. See upgrades_v4_1.go.
+		wasmStoreKey,
 	)
 	tkeys := storetypes.NewTransientStoreKeys(paramstypes.TStoreKey, evmtypes.TransientKey, feemarkettypes.TransientKey)
 
@@ -792,48 +790,11 @@ func NewChainApp(
 	icaControllerStack := icacontroller.NewIBCMiddleware(app.ICAControllerKeeper)
 	icaHostStack := icahost.NewIBCModule(app.ICAHostKeeper)
 
-	// Create Wasm Keeper
-	wasmDir := filepath.Join(homePath, "wasm")
-
-	// Configure wasm node config
-	wasmNodeConfig := wasmtypes.NodeConfig{
-		SmartQueryGasLimit: uint64(3_000_000),
-		MemoryCacheSize:    uint32(100),
-		ContractDebugMode:  false,
-	}
-
-	// The last arguments can contain custom message handlers, and custom query handlers,
-	// if we want to allow any custom callbacks
-	availableCapabilities := wasmkeeper.BuiltInCapabilities()
-	app.WasmKeeper = wasmkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[wasmtypes.StoreKey]),
-		app.AccountKeeper,
-		app.BankKeeper,
-		app.StakingKeeper,
-		distrkeeper.NewQuerier(app.DistrKeeper),
-		app.IBCKeeper.ChannelKeeper, // ICS4Wrapper
-		app.IBCKeeper.ChannelKeeper, // ChannelKeeper
-		app.TransferKeeper,          // ICS20TransferPortSource
-		app.MsgServiceRouter(),      // MessageRouter
-		app.GRPCQueryRouter(),       // GRPCQueryRouter (unused but needed)
-		wasmDir,
-		wasmNodeConfig,
-		wasmtypes.VMConfig{},
-		availableCapabilities,
-		authAddr,
-	)
-
-	// Create wasm IBC stack
-	var wasmStack porttypes.IBCModule
-	wasmStack = wasm.NewIBCHandler(app.WasmKeeper, app.IBCKeeper.ChannelKeeper, app.IBCKeeper.ChannelKeeper)
-
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferStack)
 	ibcRouter.AddRoute(icacontrollertypes.SubModuleName, icaControllerStack)
 	ibcRouter.AddRoute(icahosttypes.SubModuleName, icaHostStack)
-	ibcRouter.AddRoute(wasmtypes.ModuleName, wasmStack)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	clientKeeper := app.IBCKeeper.ClientKeeper
@@ -885,8 +846,6 @@ func NewChainApp(
 		license.NewAppModule(appCodec, app.LicenseKeeper),
 		network.NewAppModule(appCodec, app.NetworkKeeper),
 		attestationmodule.NewAppModule(appCodec, app.AttestationKeeper),
-		// CosmWasm module
-		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), nil),
 	)
 
 	// BasicModuleManager defines the module BasicManager which is in charge of setting up basic,
@@ -934,8 +893,6 @@ func NewChainApp(
 		genutiltypes.ModuleName, authz.ModuleName, feegrant.ModuleName,
 		consensusparamtypes.ModuleName,
 		vestingtypes.ModuleName,
-		// CosmWasm
-		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
@@ -961,8 +918,6 @@ func NewChainApp(
 		feegrant.ModuleName, upgradetypes.ModuleName, consensusparamtypes.ModuleName,
 		epochstypes.ModuleName,
 		vestingtypes.ModuleName,
-		// CosmWasm
-		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
@@ -1003,8 +958,6 @@ func NewChainApp(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		epochstypes.ModuleName,
-		// CosmWasm - must be after ibc and bank
-		wasmtypes.ModuleName,
 		// Custom
 		distrotypes.ModuleName,
 		lockuptypes.ModuleName,
@@ -1390,6 +1343,12 @@ func BlockedAddresses() map[string]bool {
 	// allow the following addresses to receive funds
 	delete(blockedAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
+	// Module accounts of removed modules stay blocked: they still exist in
+	// state, and nothing could ever move funds back out of them.
+	for _, acc := range retiredModuleAccounts {
+		blockedAddrs[authtypes.NewModuleAddress(acc).String()] = true
+	}
+
 	blockedPrecompilesHex := append(evmtypes.AvailableStaticPrecompiles, //nolint:gocritic
 		lockupprecompile.LockupPrecompileAddress,
 		licensetypes.PrecompileAddress,
@@ -1412,7 +1371,6 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
 	paramsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
-	paramsKeeper.Subspace(wasmtypes.ModuleName)
 	paramsKeeper.Subspace(lockuptypes.ModuleName)
 
 	return paramsKeeper
@@ -1469,10 +1427,6 @@ func (app *ChainApp) GetCallbackKeeper() ibccallbackskeeper.ContractKeeper {
 
 func (app *ChainApp) GetTransferKeeper() transferkeeper.Keeper {
 	return app.TransferKeeper
-}
-
-func (app *ChainApp) GetWasmKeeper() wasmkeeper.Keeper {
-	return app.WasmKeeper
 }
 
 func (app *ChainApp) GetMempool() sdkmempool.ExtMempool {
