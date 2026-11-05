@@ -11,6 +11,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	licensetypes "github.com/nodelabs-sdk/nodelabs/x/license/types"
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
@@ -190,4 +191,88 @@ func TestV4_2ForkUpgrade(t *testing.T) {
 
 	// Idempotent: a second pass at the same height is a no-op, not a panic.
 	require.NotPanics(t, func() { chainApp.applyForkUpgrade(ctx, fu) })
+}
+
+// Counters of the retired gasless "authorize" kind are deleted; the live
+// activate counters are not.
+func TestV4_2UpgradeClearsLegacyAuthorizeCounters(t *testing.T) {
+	env, ctx := setupV4_2(t)
+	chainApp := env.app
+	gc := chainApp.NetworkKeeper.GaslessCounters
+
+	authorizeKey := collections.Join3(legacyGaslessKindAuthorize, env.operator.String(), networktypes.GaslessScopeNone)
+	activateKey := collections.Join3(networktypes.GaslessKindActivate, env.key.String(), trustNodeType)
+	require.NoError(t, gc.Set(ctx, authorizeKey, networktypes.ActivityCounter{DailyCount: 3}))
+	require.NoError(t, gc.Set(ctx, activateKey, networktypes.ActivityCounter{DailyCount: 7}))
+
+	applyV4_2(t, chainApp, ctx)
+
+	has, err := gc.Has(ctx, authorizeKey)
+	require.NoError(t, err)
+	require.False(t, has, "legacy authorize counter survived")
+	got, err := gc.Get(ctx, activateKey)
+	require.NoError(t, err)
+	require.Equal(t, uint64(7), got.DailyCount)
+}
+
+// signed_blocks_window goes 1,000 -> 10,000 with every other slashing param
+// unchanged, and missed-block records kept under the old window are reset.
+func TestV4_2UpgradeRaisesSignedBlocksWindow(t *testing.T) {
+	env, ctx := setupV4_2(t)
+	sk := env.app.SlashingKeeper
+
+	params, err := sk.GetParams(ctx)
+	require.NoError(t, err)
+	params.SignedBlocksWindow = 1000 // mainnet's value
+	require.NoError(t, sk.SetParams(ctx, params))
+
+	cons := sdk.ConsAddress(make([]byte, 20))
+	cons[19] = 7
+	require.NoError(t, sk.SetValidatorSigningInfo(ctx, cons, slashingtypes.NewValidatorSigningInfo(cons, 5, 1234, time.Time{}, false, 2)))
+	require.NoError(t, sk.SetMissedBlockBitmapValue(ctx, cons, 234, true))
+	require.NoError(t, sk.SetMissedBlockBitmapValue(ctx, cons, 233, true))
+
+	applyV4_2(t, env.app, ctx)
+
+	after, err := sk.GetParams(ctx)
+	require.NoError(t, err)
+	require.Equal(t, v4_2SignedBlocksWindow, after.SignedBlocksWindow)
+	after.SignedBlocksWindow = params.SignedBlocksWindow
+	require.Equal(t, params, after, "only signed_blocks_window may change")
+
+	info, err := sk.GetValidatorSigningInfo(ctx, cons)
+	require.NoError(t, err)
+	require.Zero(t, info.MissedBlocksCounter)
+	require.Zero(t, info.IndexOffset)
+	require.Equal(t, int64(5), info.StartHeight, "start height is kept")
+	for _, idx := range []int64{233, 234} {
+		missed, err := sk.GetMissedBlockBitmapValue(ctx, cons, idx)
+		require.NoError(t, err)
+		require.False(t, missed)
+	}
+}
+
+// A window already at or above the target is kept, and signing records are
+// left alone.
+func TestV4_2UpgradeKeepsLargerSignedBlocksWindow(t *testing.T) {
+	env, ctx := setupV4_2(t)
+	sk := env.app.SlashingKeeper
+
+	params, err := sk.GetParams(ctx)
+	require.NoError(t, err)
+	params.SignedBlocksWindow = 20_000
+	require.NoError(t, sk.SetParams(ctx, params))
+	cons := sdk.ConsAddress(make([]byte, 20))
+	cons[19] = 8
+	require.NoError(t, sk.SetValidatorSigningInfo(ctx, cons, slashingtypes.NewValidatorSigningInfo(cons, 5, 1234, time.Time{}, false, 2)))
+
+	applyV4_2(t, env.app, ctx)
+
+	after, err := sk.GetParams(ctx)
+	require.NoError(t, err)
+	require.Equal(t, int64(20_000), after.SignedBlocksWindow)
+	info, err := sk.GetValidatorSigningInfo(ctx, cons)
+	require.NoError(t, err)
+	require.Equal(t, int64(2), info.MissedBlocksCounter)
+	require.Equal(t, int64(1234), info.IndexOffset)
 }
