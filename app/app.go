@@ -407,6 +407,11 @@ func NewChainApp(
 		evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
 		sdk.GetConfig().GetBech32AccountAddrPrefix(),
 		authAddr,
+		// Unordered transactions (v4.2): a Cosmos tx may set unordered=true and
+		// a timeout_timestamp instead of a sequence. The SDK's sigverify ante
+		// enforces the TTL (10 minute max) and nonce uniqueness, and x/auth's
+		// PreBlocker prunes expired nonces. EVM txs keep their Ethereum nonces.
+		authkeeper.WithUnorderedTransactions(true),
 	)
 
 	app.BankKeeper = bankkeeper.NewBaseKeeper(
