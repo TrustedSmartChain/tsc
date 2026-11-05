@@ -229,6 +229,9 @@ func (env *gaslessEnv) seedLicense(holder, typeID string) {
 	}))
 	require.NoError(env.t, lk.LicensesByType.Set(env.ctx, collections.Join(typeID, id)))
 	require.NoError(env.t, lk.ActiveLicensesByHolder.Set(env.ctx, collections.Join3(holder, typeID, id)))
+	// CountActiveLicenses reads the denormalized per-holder counts, so keep
+	// them in step with the index written above.
+	require.NoError(env.t, lk.RebuildActiveLicenseCounts(env.ctx))
 }
 
 // seedNode writes an active trust node for the operator straight into
@@ -242,7 +245,18 @@ func (env *gaslessEnv) seedNode(node sdk.AccAddress) {
 		Type: trustNodeType, Status: networktypes.NodeActive, LastActiveTime: now,
 	}))
 	require.NoError(env.t, nk.OperatorNodes.Set(env.ctx, collections.Join(env.operator.String(), node.String())))
-	require.NoError(env.t, nk.RecentNodeActivity.Set(env.ctx, collections.Join4(env.operator.String(), trustNodeType, networktypes.DayEpoch(now), node.String())))
+	// Count the node into today's slot of its recent-activity window, as
+	// activation does.
+	windowKey := collections.Join(env.operator.String(), trustNodeType)
+	window, err := nk.RecentNodeCounts.Get(env.ctx, windowKey)
+	if err != nil {
+		window = networktypes.RecentNodeWindow{}
+	}
+	if day := networktypes.DayEpoch(now); window.Epoch != day {
+		window = networktypes.RecentNodeWindow{Epoch: day}
+	}
+	window.Today++
+	require.NoError(env.t, nk.RecentNodeCounts.Set(env.ctx, windowKey, window))
 }
 
 func setupGaslessEnv(t *testing.T) *gaslessEnv {

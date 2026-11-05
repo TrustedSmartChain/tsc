@@ -56,6 +56,7 @@ func forkUpgrades() []forkUpgrade {
 	return []forkUpgrade{
 		{Name: UpgradeNameV4, Height: ForkHeightV4},
 		{Name: UpgradeNameV4_1, Height: ForkHeightV4_1},
+		{Name: UpgradeNameV4_2, Height: ForkHeightV4_2},
 	}
 }
 
