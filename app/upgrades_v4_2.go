@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/collections"
+	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -51,6 +52,10 @@ const (
 	// MsgAuthorizeActivationKey used before nodelabs v0.3.0-alpha.2 made it a
 	// paid msg. Nothing reads these counters any more.
 	legacyGaslessKindAuthorize = "authorize"
+
+	// mintStoreKey is x/mint's store key, spelled out because v4.2 removes the
+	// module from the app.
+	mintStoreKey = "mint"
 )
 
 // registerV4_2UpgradeHandler registers the v4.2 handler.
@@ -68,6 +73,11 @@ const (
 //   - nodelabs v0.3.0-alpha.2: MsgAuthorizeActivationKey always pays a fee
 //     (off the gasless allowlist). Its leftover daily admission counters are
 //     deleted (clearLegacyAuthorizeCounters).
+//   - Fixed 21,000,000 TSC supply: x/distro's max_supply param is replaced by
+//     the compiled-in types.MaxSupply (x/distro v1->v2 migration, run by
+//     RunMigrations, re-writes its params without the field), and x/mint is
+//     removed from the app: its store is deleted (v4_2StoreUpgrades) and its
+//     module account stays blocked (retiredModuleAccounts).
 //   - 10s blocks: x/slashing's signed_blocks_window goes to
 //     v4_2SignedBlocksWindow, and every validator's missed-block record is
 //     reset to match the new window (raiseSignedBlocksWindow). The block time
@@ -209,4 +219,15 @@ func (app *ChainApp) raiseSignedBlocksWindow(ctx context.Context, floor int64) e
 
 	sdk.UnwrapSDKContext(ctx).Logger().Info("Raised signed_blocks_window", "before", before, "after", floor, "signing_infos_reset", len(infos))
 	return nil
+}
+
+// v4_2StoreUpgrades deletes x/mint's store. The supply is fixed at
+// types.MaxSupply and x/distro is its only issuer, so v4.2 removes x/mint (it
+// ran at zero inflation, but governance could have turned it on).
+//
+// Deletion is disk cleanup: the app hash covers only mounted stores, and this
+// binary no longer mounts "mint", so consensus does not depend on the loader
+// running.
+func v4_2StoreUpgrades() storetypes.StoreUpgrades {
+	return storetypes.StoreUpgrades{Deleted: []string{mintStoreKey}}
 }

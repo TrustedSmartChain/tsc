@@ -183,31 +183,11 @@ from_scratch () {
   # to clear: fee >= ceil(min_gas_price x gas_limit).
   update_test_genesis `printf '.app_state["feemarket"]["params"]["min_gas_price"]="%s"' $MIN_GAS_PRICE`
 
-  # staking. Staking issues no rewards on this chain — see mint below, which is
-  # where inflation actually lives.
+  # staking. Staking issues no rewards on this chain: there is no inflation
+  # module (x/mint was removed in v4.2), and new TSC comes only from x/distro,
+  # capped at the fixed 21,000,000 TSC supply.
   update_test_genesis `printf '.app_state["staking"]["params"]["bond_denom"]="%s"' $DENOM`
   update_test_genesis '.app_state["staking"]["params"]["min_commission_rate"]="0.050000000000000000"'
-
-  # mint — inflation is off, and the zeros below are the only thing turning it
-  # off. Left at SDK defaults x/mint issues 7-20% annually, and that is not
-  # merely an extra reward stream: x/distro caps issuance by comparing total
-  # aTSC bank supply against its 21M max, so every inflated token permanently
-  # reduces what the halving schedule can ever distribute.
-  #
-  # Both bounds have to be zero, not just the minter. BeginBlocker recomputes
-  # inflation every block and clamps it into [inflation_min, inflation_max], so
-  # a zeroed minter under default bounds is pulled straight back to 7% on the
-  # first block. The minter is zeroed as well so genesis reads as zero rather
-  # than relying on that recompute.
-  #
-  # goal_bonded and blocks_per_year keep their defaults: params validation
-  # rejects zero for both, and neither has any effect once the bounds are equal.
-  update_test_genesis `printf '.app_state["mint"]["params"]["mint_denom"]="%s"' $DENOM`
-  update_test_genesis '.app_state["mint"]["params"]["inflation_rate_change"]="0.000000000000000000"'
-  update_test_genesis '.app_state["mint"]["params"]["inflation_max"]="0.000000000000000000"'
-  update_test_genesis '.app_state["mint"]["params"]["inflation_min"]="0.000000000000000000"'
-  update_test_genesis '.app_state["mint"]["minter"]["inflation"]="0.000000000000000000"'
-  update_test_genesis '.app_state["mint"]["minter"]["annual_provisions"]="0.000000000000000000"'
 
   # crisis
   update_test_genesis `printf '.app_state["crisis"]["constant_fee"]={"denom":"%s","amount":"1000"}' $DENOM`

@@ -38,6 +38,7 @@ var maccPerms = map[string][]string{
 	stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 	minttypes.ModuleName:           {authtypes.Minter},
 	govtypes.ModuleName:            {authtypes.Burner},
+	types.ModuleName:               {authtypes.Minter, authtypes.Burner},
 }
 
 type testFixture struct {
@@ -79,7 +80,7 @@ func SetupTest(t *testing.T) *testFixture {
 	f.govModAddr = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	f.addrs = simtestutil.CreateIncrementalAccounts(3)
 
-	keys := storetypes.NewKVStoreKeys(authtypes.ModuleName, banktypes.ModuleName, stakingtypes.ModuleName, minttypes.ModuleName, types.ModuleName)
+	keys := storetypes.NewKVStoreKeys(authtypes.StoreKey, banktypes.ModuleName, stakingtypes.ModuleName, minttypes.ModuleName, types.ModuleName)
 	f.ctx = sdk.NewContext(integration.CreateMultiStore(keys, logger), cmtproto.Header{}, false, logger)
 
 	// Register SDK modules.

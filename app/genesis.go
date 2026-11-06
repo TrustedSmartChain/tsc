@@ -8,8 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/cosmos/cosmos-sdk/x/mint"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	erc20types "github.com/cosmos/evm/x/erc20/types"
@@ -53,14 +51,6 @@ func NewErc20GenesisState() *erc20types.GenesisState {
 	erc20GenState := erc20types.DefaultGenesisState()
 
 	return erc20GenState
-}
-
-// NewMintGenesisState returns the default genesis state for the mint module.
-func NewMintGenesisState() *minttypes.GenesisState {
-	mintGenState := minttypes.DefaultGenesisState()
-
-	mintGenState.Params.MintDenom = BaseDenom
-	return mintGenState
 }
 
 // NewFeeMarketGenesisState returns the default genesis state for the feemarket module.
@@ -125,11 +115,4 @@ type bankAppModuleBasic struct{ bank.AppModuleBasic }
 
 func (bankAppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	return cdc.MustMarshalJSON(NewBankGenesisState())
-}
-
-// mintAppModuleBasic wraps the mint module's AppModuleBasic.
-type mintAppModuleBasic struct{ mint.AppModuleBasic }
-
-func (mintAppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
-	return cdc.MustMarshalJSON(NewMintGenesisState())
 }

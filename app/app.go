@@ -90,9 +90,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/cosmos-sdk/x/mint"
-	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -201,7 +198,6 @@ var (
 var maccPerms = map[string][]string{
 	authtypes.FeeCollectorName:     nil,
 	distrtypes.ModuleName:          nil,
-	minttypes.ModuleName:           {authtypes.Minter},
 	stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 	stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 	govtypes.ModuleName:            {authtypes.Burner},
@@ -218,6 +214,7 @@ var maccPerms = map[string][]string{
 // binary no longer runs. They are kept blocked (see BlockedAddresses).
 var retiredModuleAccounts = []string{
 	"wasm", // x/wasm, removed in v4.1
+	"mint", // x/mint, removed in v4.2: the supply is fixed (x/distro is the only issuer)
 }
 
 var (
@@ -242,7 +239,6 @@ type ChainApp struct {
 	BankKeeper            bankkeeper.Keeper
 	StakingKeeper         *stakingkeeper.Keeper
 	SlashingKeeper        slashingkeeper.Keeper
-	MintKeeper            mintkeeper.Keeper
 	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             govkeeper.Keeper
 	UpgradeKeeper         *upgradekeeper.Keeper
@@ -334,7 +330,6 @@ func NewChainApp(
 		authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
-		minttypes.StoreKey,
 		distrtypes.StoreKey,
 		slashingtypes.StoreKey,
 		govtypes.StoreKey,
@@ -446,16 +441,6 @@ func NewChainApp(
 		authAddr,
 		evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
 		evmaddress.NewEvmCodec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
-	)
-
-	app.MintKeeper = mintkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[minttypes.StoreKey]),
-		app.StakingKeeper,
-		app.AccountKeeper,
-		app.BankKeeper,
-		authtypes.FeeCollectorName,
-		authAddr,
 	)
 
 	app.DistrKeeper = distrkeeper.NewKeeper(
@@ -816,7 +801,6 @@ func NewChainApp(
 		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
 		gov.NewAppModule(appCodec, &app.GovKeeper, app.AccountKeeper, app.BankKeeper, nil),
 		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
-		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper, nil, nil),
 		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, nil, app.interfaceRegistry),
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, nil),
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, nil),
@@ -857,7 +841,6 @@ func NewChainApp(
 			ibctransfertypes.ModuleName: transfer.AppModuleBasic{},
 			evmtypes.ModuleName:         evmAppModuleBasic{},
 			banktypes.ModuleName:        bankAppModuleBasic{},
-			minttypes.ModuleName:        mintAppModuleBasic{},
 		},
 	)
 	app.BasicModuleManager.RegisterLegacyAminoCodec(legacyAmino)
@@ -874,7 +857,6 @@ func NewChainApp(
 	// there is nothing left over in the validator fee pool.
 	app.ModuleManager.SetOrderBeginBlockers(
 		epochstypes.ModuleName,
-		minttypes.ModuleName,
 		// IBC modules
 		ibcexported.ModuleName, ibctransfertypes.ModuleName,
 		icatypes.ModuleName,
@@ -908,7 +890,7 @@ func NewChainApp(
 		evmtypes.ModuleName, erc20types.ModuleName, feemarkettypes.ModuleName,
 		// no-ops
 		ibcexported.ModuleName, ibctransfertypes.ModuleName, icatypes.ModuleName,
-		distrtypes.ModuleName, slashingtypes.ModuleName, minttypes.ModuleName,
+		distrtypes.ModuleName, slashingtypes.ModuleName,
 		genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
 		nft.ModuleName,
 		feegrant.ModuleName, upgradetypes.ModuleName, consensusparamtypes.ModuleName,
@@ -931,7 +913,6 @@ func NewChainApp(
 		stakingtypes.ModuleName,
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
-		minttypes.ModuleName,
 		ibcexported.ModuleName,
 		icatypes.ModuleName,
 		// Cosmos EVM modules
@@ -1220,9 +1201,6 @@ func (app *ChainApp) AutoCliOpts() autocli.AppOptions {
 func (app *ChainApp) DefaultGenesis() map[string]json.RawMessage {
 	genesis := app.BasicModuleManager.DefaultGenesis(app.appCodec)
 
-	mintGenState := NewMintGenesisState()
-	genesis[minttypes.ModuleName] = app.appCodec.MustMarshalJSON(mintGenState)
-
 	evmGenState := NewEVMGenesisState()
 	genesis[evmtypes.ModuleName] = app.appCodec.MustMarshalJSON(evmGenState)
 
@@ -1411,10 +1389,6 @@ func (app *ChainApp) GetDistrKeeper() distrkeeper.Keeper {
 
 func (app *ChainApp) GetStakingKeeper() *stakingkeeper.Keeper {
 	return app.StakingKeeper
-}
-
-func (app *ChainApp) GetMintKeeper() mintkeeper.Keeper {
-	return app.MintKeeper
 }
 
 func (app *ChainApp) GetCallbackKeeper() ibccallbackskeeper.ContractKeeper {
