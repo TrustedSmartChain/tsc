@@ -15,7 +15,6 @@ func NewMsgUpdateParams(
 	mintingAddress string,
 	receivingAddress string,
 	denom string,
-	maxSupply string,
 	distroStartDate string,
 	monthsInHalvingPeriod uint64,
 ) *MsgUpdateParams {
@@ -25,7 +24,6 @@ func NewMsgUpdateParams(
 			MintingAddress:        mintingAddress,
 			ReceivingAddress:      receivingAddress,
 			Denom:                 denom,
-			MaxSupply:             maxSupply,
 			DistributionStartDate: distroStartDate,
 			MonthsInHalvingPeriod: monthsInHalvingPeriod,
 		},

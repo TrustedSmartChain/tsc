@@ -41,11 +41,7 @@ func (ms msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgM
 	}
 
 	currentSupply := supply.Amount
-	maxSupply, ok := math.NewIntFromString(params.MaxSupply)
-	if !ok {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid max supply")
-	}
-	if currentSupply.Add(amount).GT(maxSupply) {
+	if currentSupply.Add(amount).GT(types.MaxSupply()) {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "max supply exceeded")
 	}
 
@@ -134,11 +130,6 @@ func newHalvingSchedule(params types.Params) (*HalvingSchedule, error) {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid distribution start date: %v", err)
 	}
 
-	maxSupply, ok := math.NewIntFromString(params.MaxSupply)
-	if !ok {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid max supply")
-	}
-
 	if params.MonthsInHalvingPeriod == 0 {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "param MonthsInHalvingPeriod must be greater than zero")
 	}
@@ -146,7 +137,7 @@ func newHalvingSchedule(params types.Params) (*HalvingSchedule, error) {
 	return &HalvingSchedule{
 		StartDate:       startDate,
 		MonthsPerPeriod: params.MonthsInHalvingPeriod,
-		MaxSupply:       maxSupply,
+		MaxSupply:       types.MaxSupply(),
 	}, nil
 }
 

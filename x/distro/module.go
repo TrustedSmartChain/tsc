@@ -3,6 +3,7 @@ package module
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -24,7 +25,7 @@ import (
 
 const (
 	// ConsensusVersion defines the current x/distro module consensus version.
-	ConsensusVersion = 1
+	ConsensusVersion = 2
 )
 
 var (
@@ -139,6 +140,11 @@ func (a AppModule) QuerierRoute() string {
 func (a AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(a.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQuerier(a.keeper))
+
+	m := keeper.NewMigrator(a.keeper)
+	if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
+		panic(fmt.Sprintf("failed to register %s migration 1->2: %v", types.ModuleName, err))
+	}
 }
 
 // ConsensusVersion is a sequence number for state-breaking change of the

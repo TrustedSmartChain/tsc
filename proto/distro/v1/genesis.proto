@@ -20,7 +20,11 @@ message Params {
   string minting_address = 1;
   string receiving_address = 2;
   string denom = 3;
-  string max_supply = 4;
+  // max_supply (field 4) was removed in v4.2: the supply cap is the fixed
+  // 21,000,000 TSC of the whitepaper, compiled in as types.MaxSupply rather
+  // than a governance-changeable param. Never reuse field 4 or the name.
+  reserved 4;
+  reserved "max_supply";
   string distribution_start_date = 5;
   uint64 months_in_halving_period = 6;
 }
