@@ -11,30 +11,36 @@ import (
 const DefaultMintingAddress string = "tsc1cd3de90g8ktz20qtyc945chwg8pg8xn9trwpz4"
 const DefaultReceivingAddress string = "tsc1grl8wuaj0yg6wvzvyxdtnnajp9em49m5fjz07v"
 const DefaultDenom string = "aTSC"
-const DefaultMaxSupply string = "21000000000000000000000000"
 const DefaultDistributionStartDate string = "2025-07-22"
 const DefaultMonthsInHalvingPeriod uint64 = 48
+
+// maxSupply is the fixed TSC supply cap of the whitepaper: 21,000,000 TSC,
+// i.e. 21,000,000 * 10^18 aTSC. It is compiled in rather than a param (the
+// max_supply param was removed in v4.2) so governance cannot raise it.
+var maxSupply = math.NewIntWithDecimal(21_000_000, 18)
+
+// MaxSupply returns the fixed supply cap in aTSC. Total supply of the denom,
+// from any source, may never exceed it through x/distro minting.
+func MaxSupply() math.Int { return maxSupply }
 
 // NewParams creates a new Params instance.
 func NewParams(
 	minting_address string,
 	receiving_address string,
 	denom string,
-	max_supply string,
 	distribution_start_date string,
 	months_in_halving_period uint64) Params {
 	return Params{
 		MintingAddress:        minting_address,
 		ReceivingAddress:      receiving_address,
 		Denom:                 denom,
-		MaxSupply:             max_supply,
 		DistributionStartDate: distribution_start_date,
 		MonthsInHalvingPeriod: months_in_halving_period,
 	}
 }
 
 func DefaultParams() Params {
-	return NewParams(DefaultMintingAddress, DefaultReceivingAddress, DefaultDenom, DefaultMaxSupply, DefaultDistributionStartDate, DefaultMonthsInHalvingPeriod)
+	return NewParams(DefaultMintingAddress, DefaultReceivingAddress, DefaultDenom, DefaultDistributionStartDate, DefaultMonthsInHalvingPeriod)
 }
 
 // Validate validates the set of params.
@@ -46,9 +52,6 @@ func (p Params) Validate() error {
 		return err
 	}
 	if err := validateDenom(p.Denom); err != nil {
-		return err
-	}
-	if err := validateMaxSupply(p.MaxSupply); err != nil {
 		return err
 	}
 	if err := validateDistributionStartDate(p.DistributionStartDate); err != nil {
@@ -87,21 +90,6 @@ func validateDenom(v string) error {
 
 	if DefaultDenom != v {
 		return fmt.Errorf("denom must be '%s'", DefaultDenom)
-	}
-	return nil
-}
-func validateMaxSupply(v string) error {
-	if v == "" {
-		return fmt.Errorf("max supply cannot be empty")
-	}
-
-	maxSupply, ok := math.NewIntFromString(v)
-	if !ok {
-		return fmt.Errorf("max supply must be a valid integer")
-	}
-
-	if !maxSupply.IsPositive() {
-		return fmt.Errorf("max supply must be positive")
 	}
 	return nil
 }

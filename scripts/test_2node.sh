@@ -127,9 +127,6 @@ from_scratch() {
   update_genesis "$(printf '.app_state["staking"]["params"]["bond_denom"]="%s"' $DENOM)"
   update_genesis '.app_state["staking"]["params"]["min_commission_rate"]="0.050000000000000000"'
 
-  # Mint
-  update_genesis "$(printf '.app_state["mint"]["params"]["mint_denom"]="%s"' $DENOM)"
-
   # Crisis
   update_genesis "$(printf '.app_state["crisis"]["constant_fee"]={"denom":"%s","amount":"1000"}' $DENOM)"
 

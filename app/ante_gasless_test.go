@@ -25,6 +25,7 @@ import (
 	"cosmossdk.io/math"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
+	distrotypes "github.com/TrustedSmartChain/tsc/v4/x/distro/types"
 	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -34,7 +35,6 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
 	evmante "github.com/cosmos/evm/ante"
 	antetypes "github.com/cosmos/evm/ante/types"
@@ -358,8 +358,8 @@ func setupGaslessEnv(t *testing.T) *gaslessEnv {
 
 	// Fund the operator for the paid-path cases.
 	fund := sdk.NewCoins(sdk.NewCoin(BaseDenom, math.NewIntWithDecimal(1000, 18)))
-	require.NoError(t, chainApp.BankKeeper.MintCoins(env.ctx, minttypes.ModuleName, fund))
-	require.NoError(t, chainApp.BankKeeper.SendCoinsFromModuleToAccount(env.ctx, minttypes.ModuleName, env.operator, fund))
+	require.NoError(t, chainApp.BankKeeper.MintCoins(env.ctx, distrotypes.ModuleName, fund))
+	require.NoError(t, chainApp.BankKeeper.SendCoinsFromModuleToAccount(env.ctx, distrotypes.ModuleName, env.operator, fund))
 
 	// Build the ante handler exactly as setAnteHandler does.
 	gaslessAllowlist := networkante.NewAllowlist(networktypes.GaslessMessages(), attestationtypes.GaslessMessages())

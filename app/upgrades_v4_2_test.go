@@ -5,15 +5,24 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protowire"
+
+	dbm "github.com/cosmos/cosmos-db"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/header"
+	"cosmossdk.io/log"
+	"cosmossdk.io/store/metrics"
+	"cosmossdk.io/store/rootmulti"
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	licensetypes "github.com/nodelabs-sdk/nodelabs/x/license/types"
+
+	distrotypes "github.com/TrustedSmartChain/tsc/v4/x/distro/types"
 	networktypes "github.com/nodelabs-sdk/nodelabs/x/network/types"
 )
 
@@ -275,4 +284,133 @@ func TestV4_2UpgradeKeepsLargerSignedBlocksWindow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(2), info.MissedBlocksCounter)
 	require.Equal(t, int64(1234), info.IndexOffset)
+}
+
+// v4.2 removes x/mint: no module, no store, no permissions, and its module
+// account stays blocked.
+func TestV4_2RemovesMint(t *testing.T) {
+	env, _ := setupV4_2(t)
+	chainApp := env.app
+
+	_, wired := chainApp.ModuleManager.Modules[mintStoreKey]
+	require.False(t, wired, "x/mint must not be in the module manager")
+	require.Nil(t, chainApp.GetKey(mintStoreKey), "the mint store must not be mounted")
+	_, inPerms := GetMaccPerms()[mintStoreKey]
+	require.False(t, inPerms)
+	require.True(t, BlockedAddresses()[authtypes.NewModuleAddress(mintStoreKey).String()])
+}
+
+func TestPendingStoreUpgrades(t *testing.T) {
+	v42 := v4_2StoreUpgrades()
+	v3 := v3StoreUpgrades()
+	tests := []struct {
+		name       string
+		info       upgradetypes.Plan
+		forkHeight int64
+		wantHeight int64
+		want       *storetypes.StoreUpgrades
+	}{
+		{name: "no upgrade info, no fork", info: upgradetypes.Plan{}},
+		{name: "v4.2 through a plan", info: upgradetypes.Plan{Name: UpgradeNameV4_2, Height: 900}, wantHeight: 900, want: &v42},
+		{name: "fork wins over mainnet's stale v3 plan file", info: upgradetypes.Plan{Name: UpgradeNameV3, Height: 680000}, forkHeight: 1000, wantHeight: 1000, want: &v42},
+		{name: "fork with no plan file", info: upgradetypes.Plan{}, forkHeight: 1000, wantHeight: 1000, want: &v42},
+		{name: "plan file naming v4.2 beats the fork height", info: upgradetypes.Plan{Name: UpgradeNameV4_2, Height: 900}, forkHeight: 1000, wantHeight: 900, want: &v42},
+		{name: "v3 plan file without a fork", info: upgradetypes.Plan{Name: UpgradeNameV3, Height: 680000}, wantHeight: 680000, want: &v3},
+		{name: "v4.1 had no store changes", info: upgradetypes.Plan{Name: UpgradeNameV4_1, Height: 817700}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			height, got := pendingStoreUpgrades(tc.info, tc.forkHeight)
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.wantHeight, height)
+		})
+	}
+}
+
+// Replays the restart at the v4.2 height against a real multistore: the last
+// commit holds a mint store and v4.2 no longer mounts one. Loading succeeds,
+// other stores keep their data, and mint is gone from the commit. The app
+// hash is the same with or without the loader: consensus never depends on it.
+func TestV4_2StoreLoadDeletesMint(t *testing.T) {
+	commitAfterUpgrade := func(t *testing.T, withLoader bool) []byte {
+		t.Helper()
+		db := dbm.NewMemDB()
+		bankKey := storetypes.NewKVStoreKey("bank")
+		mintKey := storetypes.NewKVStoreKey(mintStoreKey)
+
+		pre := rootmulti.NewStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
+		pre.MountStoreWithDB(bankKey, storetypes.StoreTypeIAVL, nil)
+		pre.MountStoreWithDB(mintKey, storetypes.StoreTypeIAVL, nil)
+		require.NoError(t, pre.LoadLatestVersion())
+		pre.GetKVStore(mintKey).Set([]byte("minter"), []byte{1})
+		pre.GetKVStore(bankKey).Set([]byte("balance"), []byte{2})
+		last := pre.Commit()
+
+		post := rootmulti.NewStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
+		post.MountStoreWithDB(bankKey, storetypes.StoreTypeIAVL, nil)
+		if withLoader {
+			height, upgrades := pendingStoreUpgrades(upgradetypes.Plan{}, last.Version+1)
+			require.NoError(t, upgradetypes.UpgradeStoreLoader(height, upgrades)(post))
+		} else {
+			require.NoError(t, post.LoadLatestVersion())
+		}
+		require.Equal(t, []byte{2}, post.GetKVStore(bankKey).Get([]byte("balance")))
+		next := post.Commit()
+		info, err := post.GetCommitInfo(next.Version)
+		require.NoError(t, err)
+		for _, si := range info.StoreInfos {
+			require.NotEqual(t, mintStoreKey, si.Name, "mint store is still in the commit")
+		}
+		return next.Hash
+	}
+	require.Equal(t, commitAfterUpgrade(t, true), commitAfterUpgrade(t, false))
+}
+
+// x/distro v1 params carried max_supply (field 4). The v4.2 upgrade re-writes
+// them without it, keeping every other value, and moves x/distro to v2.
+func TestV4_2MigratesDistroParams(t *testing.T) {
+	env, ctx := setupV4_2(t)
+	chainApp := env.app
+	store := ctx.KVStore(chainApp.GetKey(distrotypes.StoreKey))
+	paramsKey := []byte(distrotypes.ParamsKey)
+
+	params, err := chainApp.DistroKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	bz, err := params.Marshal()
+	require.NoError(t, err)
+	v1 := protowire.AppendTag(append([]byte(nil), bz...), 4, protowire.BytesType)
+	v1 = protowire.AppendString(v1, "21000000000000000000000000")
+	store.Set(paramsKey, v1)
+	require.True(t, hasProtoField(t, store.Get(paramsKey), 4))
+
+	vm, err := chainApp.UpgradeKeeper.GetModuleVersionMap(ctx)
+	require.NoError(t, err)
+	vm[distrotypes.ModuleName] = 1
+	require.NoError(t, chainApp.UpgradeKeeper.SetModuleVersionMap(ctx, vm))
+
+	applyV4_2(t, chainApp, ctx)
+
+	require.False(t, hasProtoField(t, store.Get(paramsKey), 4), "max_supply survived the upgrade")
+	after, err := chainApp.DistroKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	require.Equal(t, params, after)
+	vm, err = chainApp.UpgradeKeeper.GetModuleVersionMap(ctx)
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), vm[distrotypes.ModuleName])
+}
+
+func hasProtoField(t *testing.T, bz []byte, field protowire.Number) bool {
+	t.Helper()
+	for len(bz) > 0 {
+		num, typ, n := protowire.ConsumeTag(bz)
+		require.GreaterOrEqual(t, n, 0)
+		bz = bz[n:]
+		if num == field {
+			return true
+		}
+		m := protowire.ConsumeFieldValue(num, typ, bz)
+		require.GreaterOrEqual(t, m, 0)
+		bz = bz[m:]
+	}
+	return false
 }
