@@ -49,7 +49,7 @@ const (
 	v4_2SignedBlocksWindow int64 = 10_000
 
 	// legacyGaslessKindAuthorize is the GaslessCounters kind gasless
-	// MsgAuthorizeActivationKey used before nodelabs v0.3.0-alpha.2 made it a
+	// MsgAuthorizeActivationKey used before nodelabs v0.3.0 made it a
 	// paid msg. Nothing reads these counters any more.
 	legacyGaslessKindAuthorize = "authorize"
 
@@ -70,7 +70,7 @@ const (
 //     keep their store keys, so there are no store upgrades. max_gasless_gas
 //     is raised to v4_2MaxGaslessGas so a gasless tx fits max_gasless_msgs
 //     activations.
-//   - nodelabs v0.3.0-alpha.2: MsgAuthorizeActivationKey always pays a fee
+//   - nodelabs v0.3.0: MsgAuthorizeActivationKey always pays a fee
 //     (off the gasless allowlist). Its leftover daily admission counters are
 //     deleted (clearLegacyAuthorizeCounters).
 //   - Fixed 21,000,000 TSC supply: x/distro's max_supply param is replaced by
