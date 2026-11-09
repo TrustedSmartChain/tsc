@@ -58,7 +58,7 @@ func (env *gaslessEnv) authorizeKeyMsg(operator sdk.AccAddress) *networktypes.Ms
 	return &networktypes.MsgAuthorizeActivationKey{Operator: operator.String(), ActivationAddress: key.String()}
 }
 
-// MsgAuthorizeActivationKey always pays a fee (nodelabs v0.3.0-alpha.2): it
+// MsgAuthorizeActivationKey always pays a fee (nodelabs v0.3.0): it
 // is off the gasless allowlist, so even a licensed operator's zero-fee
 // authorization is refused, and a paid one is admitted.
 func TestAuthorizeActivationKeyRequiresFee(t *testing.T) {
