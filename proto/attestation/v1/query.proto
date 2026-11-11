@@ -2,6 +2,7 @@ syntax = "proto3";
 package attestation.v1;
 
 import "attestation/v1/attestation.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 
@@ -13,6 +14,18 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/tsc/attestation/v1/params";
   }
+
+  // NodeStats queries when one node last sent an RWA and an RWU attestation.
+  // Nodes that have never attested return unset times.
+  rpc NodeStats(QueryNodeStatsRequest) returns (QueryNodeStatsResponse) {
+    option (google.api.http).get = "/tsc/attestation/v1/node_stats/{node_address}";
+  }
+
+  // AllNodeStats queries when every node that has attested last sent an RWA
+  // and an RWU attestation, ordered by node address. Pagination is optional.
+  rpc AllNodeStats(QueryAllNodeStatsRequest) returns (QueryAllNodeStatsResponse) {
+    option (google.api.http).get = "/tsc/attestation/v1/node_stats";
+  }
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
@@ -22,4 +35,34 @@ message QueryParamsRequest {}
 message QueryParamsResponse {
   // params defines the parameters of the module.
   Params params = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryNodeStatsRequest is the request type for the Query/NodeStats RPC method.
+message QueryNodeStatsRequest {
+  // node_address is the node to query.
+  string node_address = 1;
+}
+
+// QueryNodeStatsResponse is the response type for the Query/NodeStats RPC
+// method.
+message QueryNodeStatsResponse {
+  // stats are the node's last attestation times.
+  AttestationStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryAllNodeStatsRequest is the request type for the Query/AllNodeStats RPC
+// method.
+message QueryAllNodeStatsRequest {
+  // pagination is optional; omitted, the default page size applies and
+  // pagination.next_key in the response points at the next page.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryAllNodeStatsResponse is the response type for the Query/AllNodeStats
+// RPC method.
+message QueryAllNodeStatsResponse {
+  // stats are the nodes' last attestation times.
+  repeated AttestationStats stats = 1 [(gogoproto.nullable) = false];
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

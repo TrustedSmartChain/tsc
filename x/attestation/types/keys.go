@@ -11,6 +11,8 @@ var (
 	RwaCountersKey = collections.NewPrefix(1)
 	// RwuCountersKey saves the per-node daily RWU attestation counters.
 	RwuCountersKey = collections.NewPrefix(2)
+	// NodeStatsKey saves the per-node lifetime attestation totals.
+	NodeStatsKey = collections.NewPrefix(3)
 )
 
 const (

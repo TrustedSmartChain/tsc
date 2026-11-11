@@ -37,6 +37,10 @@ func (ms msgServer) AttestRwa(ctx context.Context, msg *types.MsgAttestRwa) (*ty
 		return nil, err
 	}
 
+	if err := ms.k.recordNodeStats(ctx, node.Address, rwaStats); err != nil {
+		return nil, err
+	}
+
 	return &types.MsgAttestRwaResponse{}, nil
 }
 
@@ -55,6 +59,10 @@ func (ms msgServer) AttestRwu(ctx context.Context, msg *types.MsgAttestRwu) (*ty
 	}
 
 	if err := ms.recordAttestations(ctx, node, msg.Attestations, types.EventTypeAttestRwu); err != nil {
+		return nil, err
+	}
+
+	if err := ms.k.recordNodeStats(ctx, node.Address, rwuStats); err != nil {
 		return nil, err
 	}
 

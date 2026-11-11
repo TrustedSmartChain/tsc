@@ -25,10 +25,20 @@ func TestGenesisRoundTrip(t *testing.T) {
 		Attestations: attestations(1),
 	}))
 
+	// And execute an attestation so the export carries a last-attested time.
+	_, err := f.msgServer.AttestRwu(f.ctx, &types.MsgAttestRwu{
+		NodeAddress:  node.Address,
+		Attestations: attestations(1),
+	})
+	require.NoError(t, err)
+
 	exported := f.k.ExportGenesis(f.ctx)
 	require.NoError(t, exported.Validate())
 	require.Len(t, exported.RwaCounters, 1)
 	require.Len(t, exported.RwuCounters, 1)
+	require.Len(t, exported.NodeStats, 1)
+	require.NotNil(t, exported.NodeStats[0].LastRwuTime)
+	require.Nil(t, exported.NodeStats[0].LastRwaTime)
 
 	g := SetupTest(t)
 	require.NoError(t, g.k.InitGenesis(g.ctx, exported))
@@ -41,6 +51,8 @@ func TestGenesisValidate(t *testing.T) {
 		NodeAddress: node,
 		Counter:     types.ActivityCounter{LatestTime: fixtureBlockTime, DailyCount: 1},
 	}
+	lastRwa := fixtureBlockTime
+	validStats := types.AttestationStats{NodeAddress: node, LastRwaTime: &lastRwa}
 
 	tests := []struct {
 		name      string
@@ -79,6 +91,27 @@ func TestGenesisValidate(t *testing.T) {
 			},
 			expErrMsg: "latest_time must be set",
 		},
+		{
+			name: "duplicate node stats",
+			mutate: func(gs *types.GenesisState) {
+				gs.NodeStats = append(gs.NodeStats, validStats)
+			},
+			expErrMsg: "duplicate stats",
+		},
+		{
+			name: "invalid node stats address",
+			mutate: func(gs *types.GenesisState) {
+				gs.NodeStats[0].NodeAddress = "not-bech32"
+			},
+			expErrMsg: "invalid node address",
+		},
+		{
+			name: "stats with no times set",
+			mutate: func(gs *types.GenesisState) {
+				gs.NodeStats[0] = types.AttestationStats{NodeAddress: node}
+			},
+			expErrMsg: "at least one of last_rwa_time and last_rwu_time must be set",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -86,6 +119,7 @@ func TestGenesisValidate(t *testing.T) {
 				Params:      types.DefaultParams(),
 				RwaCounters: []types.AttestationCounter{valid},
 				RwuCounters: []types.AttestationCounter{valid},
+				NodeStats:   []types.AttestationStats{validStats},
 			}
 			tc.mutate(&gs)
 			err := gs.Validate()

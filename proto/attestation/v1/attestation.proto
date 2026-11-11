@@ -54,3 +54,18 @@ message ContractAttestation {
   // block_height is the height the observation was made at.
   uint64 block_height = 3;
 }
+
+// AttestationStats records when a node last attested each kind. Every
+// successfully executed attestation msg updates it, whether its tx was gasless
+// or paid a fee, unlike the daily ActivityCounter, which only gasless
+// admission increments.
+message AttestationStats {
+  // node_address is the node the stats belong to.
+  string node_address = 1;
+  // last_rwa_time is the block time of the node's most recent MsgAttestRwa.
+  // Unset if the node has never sent one.
+  google.protobuf.Timestamp last_rwa_time = 2 [(gogoproto.stdtime) = true];
+  // last_rwu_time is the block time of the node's most recent MsgAttestRwu.
+  // Unset if the node has never sent one.
+  google.protobuf.Timestamp last_rwu_time = 3 [(gogoproto.stdtime) = true];
+}
