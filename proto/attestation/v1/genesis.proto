@@ -16,7 +16,8 @@ message AttestationCounter {
 }
 
 // GenesisState defines the attestation module genesis state. Attestation
-// payloads are never stored in state; only the daily counters carry over.
+// payloads are never stored in state; only the daily counters and the
+// per-node last attestation times carry over.
 message GenesisState {
   // Params defines all the parameters of the module.
   Params params = 1 [(gogoproto.nullable) = false];
@@ -24,4 +25,6 @@ message GenesisState {
   repeated AttestationCounter rwa_counters = 2 [(gogoproto.nullable) = false];
   // rwu_counters are the per-node daily RWU attestation counters.
   repeated AttestationCounter rwu_counters = 3 [(gogoproto.nullable) = false];
+  // node_stats are the per-node last RWA/RWU attestation times.
+  repeated AttestationStats node_stats = 4 [(gogoproto.nullable) = false];
 }

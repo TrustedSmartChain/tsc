@@ -17,6 +17,17 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "params",
 					Short:     "Query the attestation module parameters",
 				},
+				{
+					RpcMethod:      "NodeStats",
+					Use:            "node-stats [node-address]",
+					Short:          "Query when a node last sent an RWA and an RWU attestation",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "node_address"}},
+				},
+				{
+					RpcMethod: "AllNodeStats",
+					Use:       "all-node-stats",
+					Short:     "Query when every node last sent an RWA and an RWU attestation",
+				},
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{

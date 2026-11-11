@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Query_Params_FullMethodName = "/attestation.v1.Query/Params"
+	Query_Params_FullMethodName       = "/attestation.v1.Query/Params"
+	Query_NodeStats_FullMethodName    = "/attestation.v1.Query/NodeStats"
+	Query_AllNodeStats_FullMethodName = "/attestation.v1.Query/AllNodeStats"
 )
 
 // QueryClient is the client API for Query service.
@@ -28,6 +30,12 @@ const (
 type QueryClient interface {
 	// Params queries all parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// NodeStats queries when one node last sent an RWA and an RWU attestation.
+	// Nodes that have never attested return unset times.
+	NodeStats(ctx context.Context, in *QueryNodeStatsRequest, opts ...grpc.CallOption) (*QueryNodeStatsResponse, error)
+	// AllNodeStats queries when every node that has attested last sent an RWA
+	// and an RWU attestation, ordered by node address. Pagination is optional.
+	AllNodeStats(ctx context.Context, in *QueryAllNodeStatsRequest, opts ...grpc.CallOption) (*QueryAllNodeStatsResponse, error)
 }
 
 type queryClient struct {
@@ -47,12 +55,36 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
+func (c *queryClient) NodeStats(ctx context.Context, in *QueryNodeStatsRequest, opts ...grpc.CallOption) (*QueryNodeStatsResponse, error) {
+	out := new(QueryNodeStatsResponse)
+	err := c.cc.Invoke(ctx, Query_NodeStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) AllNodeStats(ctx context.Context, in *QueryAllNodeStatsRequest, opts ...grpc.CallOption) (*QueryAllNodeStatsResponse, error) {
+	out := new(QueryAllNodeStatsResponse)
+	err := c.cc.Invoke(ctx, Query_AllNodeStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
 type QueryServer interface {
 	// Params queries all parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
+	// NodeStats queries when one node last sent an RWA and an RWU attestation.
+	// Nodes that have never attested return unset times.
+	NodeStats(context.Context, *QueryNodeStatsRequest) (*QueryNodeStatsResponse, error)
+	// AllNodeStats queries when every node that has attested last sent an RWA
+	// and an RWU attestation, ordered by node address. Pagination is optional.
+	AllNodeStats(context.Context, *QueryAllNodeStatsRequest) (*QueryAllNodeStatsResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -62,6 +94,12 @@ type UnimplementedQueryServer struct {
 
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
+}
+func (UnimplementedQueryServer) NodeStats(context.Context, *QueryNodeStatsRequest) (*QueryNodeStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NodeStats not implemented")
+}
+func (UnimplementedQueryServer) AllNodeStats(context.Context, *QueryAllNodeStatsRequest) (*QueryAllNodeStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AllNodeStats not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -94,6 +132,42 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_NodeStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryNodeStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).NodeStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_NodeStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).NodeStats(ctx, req.(*QueryNodeStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_AllNodeStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAllNodeStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).AllNodeStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_AllNodeStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).AllNodeStats(ctx, req.(*QueryAllNodeStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -104,6 +178,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Params",
 			Handler:    _Query_Params_Handler,
+		},
+		{
+			MethodName: "NodeStats",
+			Handler:    _Query_NodeStats_Handler,
+		},
+		{
+			MethodName: "AllNodeStats",
+			Handler:    _Query_AllNodeStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

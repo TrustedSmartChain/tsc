@@ -31,6 +31,11 @@ type Keeper struct {
 	RwaCounters collections.Map[string, types.ActivityCounter]
 	RwuCounters collections.Map[string, types.ActivityCounter]
 
+	// NodeStats are the per-node last RWA/RWU attestation times. Unlike the
+	// daily counters, they are set by the msg handlers, so every executed
+	// attestation counts whether its tx was gasless or paid a fee.
+	NodeStats collections.Map[string, types.AttestationStats]
+
 	authority string
 
 	networkKeeper types.NetworkKeeper
@@ -59,6 +64,7 @@ func NewKeeper(
 		Params:      collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		RwaCounters: collections.NewMap(sb, types.RwaCountersKey, "rwa_counters", collections.StringKey, codec.CollValue[types.ActivityCounter](cdc)),
 		RwuCounters: collections.NewMap(sb, types.RwuCountersKey, "rwu_counters", collections.StringKey, codec.CollValue[types.ActivityCounter](cdc)),
+		NodeStats:   collections.NewMap(sb, types.NodeStatsKey, "node_stats", collections.StringKey, codec.CollValue[types.AttestationStats](cdc)),
 
 		authority: authority,
 
@@ -102,6 +108,11 @@ func (k *Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) erro
 			return err
 		}
 	}
+	for _, s := range data.NodeStats {
+		if err := k.NodeStats.Set(ctx, s.NodeAddress, s); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -123,9 +134,18 @@ func (k *Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		return out
 	}
 
+	var nodeStats []types.AttestationStats
+	if err := k.NodeStats.Walk(ctx, nil, func(_ string, stats types.AttestationStats) (bool, error) {
+		nodeStats = append(nodeStats, stats)
+		return false, nil
+	}); err != nil {
+		panic(err)
+	}
+
 	return &types.GenesisState{
 		Params:      params,
 		RwaCounters: exportCounters(k.RwaCounters),
 		RwuCounters: exportCounters(k.RwuCounters),
+		NodeStats:   nodeStats,
 	}
 }

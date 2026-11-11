@@ -73,6 +73,10 @@ const (
 //   - nodelabs v0.3.0: MsgAuthorizeActivationKey always pays a fee
 //     (off the gasless allowlist). Its leftover daily admission counters are
 //     deleted (clearLegacyAuthorizeCounters).
+//   - nodelabs v0.3.1: network Node records gain last_status_time, stamped by
+//     MsgUpdateNodeStatus and returned by the node queries. Existing records
+//     read it as zero (never reported) until their next status update, so
+//     there is no migration.
 //   - Fixed 21,000,000 TSC supply: x/distro's max_supply param is replaced by
 //     the compiled-in types.MaxSupply (x/distro v1->v2 migration, run by
 //     RunMigrations, re-writes its params without the field), and x/mint is
@@ -93,6 +97,12 @@ const (
 //     ante router rejects the Web3Tx extension.
 //   - Chain ID derivation from genesis (app/chain_id.go). Mainnet still
 //     derives EVM chain ID 87878.
+//   - x/attestation per-node last RWA/RWU attestation times (NodeStats,
+//     prefix 3 of the existing attestation store), set by the msg handlers
+//     so gasless and fee-paying attestations both count, plus the
+//     NodeStats/AllNodeStats queries. The map starts empty and fills from
+//     the upgrade height: attestation payloads were never stored in state to
+//     backfill from.
 //
 // All of it changes execution, so every node must switch at the same block
 // (see ForkHeightV4_2).
